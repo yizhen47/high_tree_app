@@ -57,6 +57,7 @@ class _InnerState extends State<SettingScreen> {
                     height: 200),
               ],
             ),
+            
             Column(children: <Widget>[
               const Padding(padding: EdgeInsets.all(10)),
               const Padding(padding: EdgeInsets.all(10)),
