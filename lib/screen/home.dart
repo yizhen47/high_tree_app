@@ -1,20 +1,20 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/left.dart';
+import 'package:flutter_application_1/screen/question.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
-import 'package:flutter_application_1/setting.dart';
-import 'package:flutter_application_1/achievement.dart';
+import 'package:flutter_application_1/screen/setting.dart';
+import 'package:flutter_application_1/screen/achievement.dart';
 
 //动态页面：按照下面的方法创建。特点：每一次setState都会刷新控件，比如下面的按一下加次数，文本会被重新构建。
-class MyApp3 extends StatefulWidget {
-  const MyApp3({super.key, required this.title});
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key, required this.title});
   final String title;
   @override
-  State<MyApp3> createState() => _MyHomePageState();
+  State<HomeScreen> createState() => _MyHomePageState();
 }
 
 //这里是在一个页面中加了PageView，PageView可以载入更多的StatefulWidget或者StatelessWidget（也就是页面中加载其他页面作为子控件）
-class _MyHomePageState extends State<MyApp3> {
+class _MyHomePageState extends State<HomeScreen> {
   int _currentIndex = 1;
   final PageController _pageController = PageController(initialPage: 1);
 
@@ -36,6 +36,7 @@ class _MyHomePageState extends State<MyApp3> {
     return Scaffold(
       appBar: const TDNavBar(
         title: ' ',
+        useDefaultBack: false
       ),
       resizeToAvoidBottomInset: false, // 设置为 false 避免底部溢出
       body: PageView(
@@ -106,7 +107,9 @@ class CommunityPageState extends State<CommunityPage> {
           context,
           visible: true,
           drawerTop: 40,
-          items: List.empty(growable: true),
+          items: [
+             TDDrawerItem(title: "test",icon: const Icon(Icons.add_box_sharp))
+          ],
           onItemClick: (index, item) {
             print('drawer item被点击，index：$index，title：${item.title}');
           },
@@ -138,7 +141,7 @@ class MainHomePageState extends State<MainHomePage> {
           });
           Navigator.push(
             context,
-            CupertinoPageRoute(builder: (context) => const MyApp2()),
+            CupertinoPageRoute(builder: (context) => const QuestionScreen()),
           );
         },
         child: Container(
@@ -252,7 +255,7 @@ class ProfilePageState extends State<ProfilePage> {
           ),
         ),
         Padding(
-          padding: EdgeInsets.all(5),
+          padding:const EdgeInsets.all(5),
           child: TDButton(
             text: '成就',
             size: TDButtonSize.large,
@@ -264,7 +267,7 @@ class ProfilePageState extends State<ProfilePage> {
               Navigator.push(
                 context,
                 CupertinoPageRoute(
-                    builder: (context) => const MyApp5(
+                    builder: (context) => const AchievementScreen(
                           title: '',
                         )),
               );
@@ -272,7 +275,7 @@ class ProfilePageState extends State<ProfilePage> {
           ),
         ),
         Padding(
-          padding: EdgeInsets.all(5),
+          padding: const EdgeInsets.all(5),
           child: TDButton(
             text: '设置',
             size: TDButtonSize.large,
@@ -284,16 +287,16 @@ class ProfilePageState extends State<ProfilePage> {
               Navigator.push(
                 context,
                 CupertinoPageRoute(
-                    builder: (context) => const MyApp4(
+                    builder: (context) => const SettingScreen(
                           title: '',
                         )),
               );
             },
           ),
         ),
-        Padding(
+        const Padding(
           padding: EdgeInsets.all(5),
-          child: const TDButton(
+          child: TDButton(
             text: '关于',
             size: TDButtonSize.large,
             type: TDButtonType.fill,

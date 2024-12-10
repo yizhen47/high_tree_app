@@ -199,15 +199,15 @@ Future<void> generateByDocx(File fromFile, File saveFile) async {
   for (final file in archiveDecoder) {
     if (file.isFile) {
       if (file.name.startsWith("word/media/")) {
-        // futures.add((() async {
-        //   final contents = await _wmf2png!.convert(file.content);
-        //   print(file.name);
-        //   ArchiveFile archiveFile = ArchiveFile(
-        //       'assets/images/${imageRels[(file.name)]}.png',
-        //       contents.length,
-        //       contents);
-        //   archive.addFile(archiveFile);
-        // })());
+        futures.add((() async {
+          final contents = await _wmf2png!.convert(file.content);
+          print(file.name);
+          ArchiveFile archiveFile = ArchiveFile(
+              'assets/images/${imageRels[(file.name)]}.png',
+              contents.length,
+              contents);
+          archive.addFile(archiveFile);
+        })());
       }
     }
   }

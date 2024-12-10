@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 
-class MyApp4 extends StatefulWidget {
-  const MyApp4({super.key, required this.title});
+class SettingScreen extends StatefulWidget {
+  const SettingScreen({super.key, required this.title});
   final String title;
   @override
-  State<MyApp4> createState() => _MyHomePageState();
+  State<SettingScreen> createState() => _InnerState();
 }
 
 //这里是在一个页面中加了PageView，PageView可以载入更多的StatefulWidget或者StatelessWidget（也就是页面中加载其他页面作为子控件）
-class _MyHomePageState extends State<MyApp4> {
+class _InnerState extends State<SettingScreen> {
   int _currentIndex = 1;
   final PageController _pageController = PageController(initialPage: 1);
-
-
 
   Future<void> fetchAll() async {}
 

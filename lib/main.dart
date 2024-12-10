@@ -4,7 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
-import './home.dart';
+import 'screen/home.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:flutter/widgets.dart';
@@ -13,12 +13,12 @@ import 'tool/question_bank.dart';
 
 //整个软件入口（测试用）
 void main() {
-  runApp(const MyApp1());
+  runApp(const MainEnterScreen());
 }
 
 //这里是入口代码，不用改
-class MyApp1 extends StatelessWidget {
-  const MyApp1({super.key});
+class MainEnterScreen extends StatelessWidget {
+  const MainEnterScreen({super.key});
 
   // This widget is the root of your application.
   @override
@@ -30,18 +30,18 @@ class MyApp1 extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: ' '),
+      home: const _MainEnterScreen(title: ' '),
     );
   }
 }
 
 //这里也是一个标准的动态页面
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+class _MainEnterScreen extends StatefulWidget {
+  const _MainEnterScreen({super.key, required this.title});
   final String title;
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<_MainEnterScreen> createState() => _MainEnterScreenState();
 }
 
 //这个应该是折叠控件的数据
@@ -53,7 +53,7 @@ class CollapseDataItem {
   CollapseDataItem();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MainEnterScreenState extends State<_MainEnterScreen> {
   //tdCollapse好像有点问题，我也不知道这里怎么跑起来的，反正跑起来了
   final _basicData = [CollapseDataItem()];
 
@@ -64,12 +64,11 @@ class _MyHomePageState extends State<MyHomePage> {
     SchedulerBinding.instance.addPostFrameCallback((_) {
       fetchAll();
     });
-
-    final GlobalKey<_MyHomePageState> myWidgetKey = GlobalKey();
     //future.delay xxxxx格式：延时执行一串代码
     Future.delayed(const Duration(milliseconds: 500), () {
-      Navigator.push(myWidgetKey.currentContext!,
-          CupertinoPageRoute(builder: (context) => const MyApp3(title: '')));
+      // ignore: use_build_context_synchronously
+      Navigator.push(context,
+          CupertinoPageRoute(builder: (context) => const HomeScreen(title: '')));
     });
   }
 
@@ -123,7 +122,7 @@ class _MyHomePageState extends State<MyHomePage> {
             Navigator.push(
               context,
               CupertinoPageRoute(
-                  builder: (context) => const MyApp3(
+                  builder: (context) => const HomeScreen(
                         title: '',
                       )),
             );
