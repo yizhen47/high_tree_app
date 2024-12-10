@@ -20,8 +20,6 @@ class _MyHomePageState extends State<HomeScreen> {
   int _currentIndex = 1;
   final PageController _pageController = PageController(initialPage: 1);
 
-  Future<void> fetchAll() async {}
-
   void _onTabTapped(int index) {
     setState(() {
       _currentIndex = index;
@@ -48,28 +46,26 @@ class _MyHomePageState extends State<HomeScreen> {
       ),
       resizeToAvoidBottomInset: false, // 设置为 false 避免底部溢出
 
-      body: Container(
-        color: Colors.white,
-        child: PageView(
-          controller: _pageController,
-          onPageChanged: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          children: const [
-            CommunityPage(
-              title: ' ',
-            ),
-            MainHomePage(
-              title: ' ',
-            ),
-            ProfilePage(
-              title: ' ',
-            ),
-          ],
-        ),
+      body: PageView(
+        controller: _pageController,
+        onPageChanged: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        children: const [
+          CommunityPage(
+            title: ' ',
+          ),
+          MainHomePage(
+            title: ' ',
+          ),
+          ProfilePage(
+            title: ' ',
+          ),
+        ],
       ),
+
       bottomNavigationBar: CurvedNavigationBar(
         backgroundColor: Colors.white,
         index: _currentIndex,
@@ -104,9 +100,6 @@ class CommunityPage extends StatefulWidget {
   @override
   State<CommunityPage> createState() => CommunityPageState();
 }
-
-
-
 
 class CommunityPageState extends State<CommunityPage> {
   @override
@@ -147,83 +140,163 @@ int clickNum = 1;
 class MainHomePageState extends State<MainHomePage> {
   @override
   Widget build(BuildContext context) {
-    return Stack(children: [
-      Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.blueAccent,
-                Color.fromARGB(137, 235, 235, 235)
-              ],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
+    return Stack(
+      children: [
+        const Column(children: [
+          SizedBox(
+            height: 120,
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Card(
+                  margin: EdgeInsets.all(8),
+                  color: Colors.lightGreen,
+                  borderOnForeground: false,
+                  elevation: 3,
+                  shape: BeveledRectangleBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(40)),
+                    side: BorderSide(color: Colors.white),
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(10, 60, 10, 40),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Text(
+                          "难度-",
+                          style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.white,
+                              shadows: [
+                                Shadow(
+                                  offset: Offset(1, 1),
+                                  blurRadius: 1.0,
+                                  color: Colors.black54,
+                                )
+                              ]),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Card(
+                  margin: EdgeInsets.all(8),
+                  color: Colors.deepOrange,
+                  borderOnForeground: false,
+                  elevation: 3,
+                  shape: BeveledRectangleBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(40)),
+                    side: BorderSide(color: Colors.white),
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(10, 60, 10, 40),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(
+                          "难度+",
+                          style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.white,
+                              shadows: [
+                                Shadow(
+                                  offset: Offset(1, 1),
+                                  blurRadius: 1.0,
+                                  color: Colors.black54,
+                                )
+                              ]),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              )
+            ],
+          ),
+        ]),
+        Column(
+          //InkWell：可以给任意控件外面套，然后可以监听点击之类的事件
+          children: [
+            Container(
+              height: 50,
             ),
-          ),
-          height: 150),
-      Column(
-        //InkWell：可以给任意控件外面套，然后可以监听点击之类的事件
-        children: [
-          Container(
-            height: 50,
-          ),
-          Center(
-            child: InkWell(
-              onTap: () {
-                setState(() {
-                  clickNum += 1;
-                });
-                Navigator.push(
-                  context,
-                  CupertinoPageRoute(
-                      builder: (context) => const QuestionScreen()),
-                );
-              },
-              child: RippleAnimation(
-                color: Colors.blueAccent,
-                // delay: const Duration(milliseconds: -1000),
-                repeat: true,
-                minRadius: 50,
-                maxRadius: 80,
-                ripplesCount: 10,
-                duration: const Duration(milliseconds: 6000),
-                child: Container(
-                  width: 200,
-                  height: 200,
-                  decoration: const BoxDecoration(
-                      shape: BoxShape.circle, color: Colors.blueAccent),
-                  child: const Center(
-                    child: Text(
-                      '开始刷题',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold,
+            Center(
+              child: Container(
+                width: 200,
+                height: 200,
+                decoration: const BoxDecoration(
+                    shape: BoxShape.circle, color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+        Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.blueAccent,
+                  Color.fromARGB(0, 68, 138, 255)
+                 ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+            height: 150),
+        Column(
+          //InkWell：可以给任意控件外面套，然后可以监听点击之类的事件
+          children: [
+            Container(
+              height: 80,
+            ),
+            Center(
+              child: InkWell(
+                onTap: () {
+                  setState(() {
+                    clickNum += 1;
+                  });
+                  Navigator.push(
+                    context,
+                    CupertinoPageRoute(
+                        builder: (context) => const QuestionScreen()),
+                  );
+                },
+                child: RippleAnimation(
+                  color: Colors.blueAccent,
+                  // delay: const Duration(milliseconds: -1000),
+                  repeat: true,
+                  minRadius: 50,
+                  maxRadius: 80,
+                  ripplesCount: 10,
+                  duration: const Duration(milliseconds: 6000),
+                  child: Container(
+                    width: 140,
+                    height: 140,
+                    decoration: const BoxDecoration(
+                        shape: BoxShape.circle, color: Colors.blueAccent),
+                    child: const Center(
+                      child: Text(
+                        '开始刷题',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 30,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-          const Row(
-            children: [
-              Expanded(
-                child: Card(
-                  margin: EdgeInsets.all(20),
-                  color: Colors.blueAccent,
-                  child: Text("data"),
-                ),
-              ),
-              Expanded(
-                child: Card(
-                  child: Text("data"),
-                ),
-              ),
-            ],
-          )
-        ],
-      )
-    ]);
+          ],
+        )
+      ],
+    );
   }
 }
 
