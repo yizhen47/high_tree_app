@@ -105,11 +105,14 @@ class CommunityPage extends StatefulWidget {
   State<CommunityPage> createState() => CommunityPageState();
 }
 
+
+
+
 class CommunityPageState extends State<CommunityPage> {
   @override
   Widget build(BuildContext context) {
     return TDButton(
-      text: '基础抽屉',
+      text: '查看章节',
       isBlock: true,
       type: TDButtonType.outline,
       theme: TDButtonTheme.primary,
@@ -160,7 +163,8 @@ class MainHomePageState extends State<MainHomePage> {
       Column(
         //InkWell：可以给任意控件外面套，然后可以监听点击之类的事件
         children: [
-          Container(height: 50,),
+          Container(
+            height: 50,),
           Center(
             child: InkWell(
               onTap: () {

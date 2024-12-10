@@ -32,7 +32,9 @@ class _InnerState extends State<AchievementScreen> {
     var screenWidth = MediaQuery.of(context).size.width;
     return Scaffold(
       appBar: TDNavBar(title: '成就', onBack: () {}),
-      body: const SingleChildScrollView(
+      body: 
+      
+      const SingleChildScrollView(
         scrollDirection: Axis.vertical, // 水平滚动
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,

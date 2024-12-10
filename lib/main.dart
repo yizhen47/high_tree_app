@@ -61,11 +61,11 @@ class _MainEnterScreenState extends State<_MainEnterScreen> {
       fetchAll();
     });
     //future.delay xxxxx格式：延时执行一串代码
-    // Future.delayed(const Duration(milliseconds: 5000), () {
-    //   // ignore: use_build_context_synchronously
-    //   Navigator.push(context,
-    //       MaterialPageRoute(builder: (context) => const HomeScreen(title: '')));
-    // });
+    Future.delayed(const Duration(milliseconds: 5000), () {
+      //   // ignore: use_build_context_synchronously
+      Navigator.push(context,
+          MaterialPageRoute(builder: (context) => const HomeScreen(title: '')));
+    });
   }
 
   Future<void> fetchAll() async {
@@ -88,6 +88,7 @@ class _MainEnterScreenState extends State<_MainEnterScreen> {
           verticalDirection: VerticalDirection.up,
           children: <Widget>[
             Container(
+              color: Colors.white,
               height: 80,
             ),
             Row(
@@ -103,17 +104,21 @@ class _MainEnterScreenState extends State<_MainEnterScreen> {
                 ),
               ],
             ),
-            SizedBox(
-              width: 250.0,
-              child: TextLiquidFill(
-                text: 'CHU',
-                waveColor: Colors.blueAccent,
-                boxBackgroundColor: Colors.redAccent,
-                textStyle: const TextStyle(
-                  fontSize: 80.0,
-                  fontWeight: FontWeight.bold,
+            Expanded(
+              child: Center(
+                child: SizedBox(
+                  width: 250.0,
+                  child: TextLiquidFill(
+                    text: 'CHU',
+                    waveColor: Colors.blueAccent,
+                    boxBackgroundColor: Colors.redAccent,
+                    textStyle: const TextStyle(
+                      fontSize: 80.0,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    boxHeight: 300.0,
+                  ),
                 ),
-                boxHeight: 300.0,
               ),
             )
           ],
