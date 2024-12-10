@@ -1,12 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_application_1/left.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:flutter_application_1/setting.dart';
 import 'package:flutter_application_1/achievement.dart';
-import 'dart:io';
 
 //动态页面：按照下面的方法创建。特点：每一次setState都会刷新控件，比如下面的按一下加次数，文本会被重新构建。
 class MyApp3 extends StatefulWidget {
@@ -221,7 +218,7 @@ class ProfilePageState extends State<ProfilePage> {
         Row(
           children: [
             Padding(
-              padding: EdgeInsets.all(50),
+              padding: const EdgeInsets.all(50),
               child: Container(
                 width: 100,
                 height: 100,
@@ -231,8 +228,8 @@ class ProfilePageState extends State<ProfilePage> {
                 ),
               ),
             ),
-            Column(
-              children: const [
+            const Column(
+              children: [
                 Text(
                   '姓名',
                   textScaler: TextScaler.linear(2),

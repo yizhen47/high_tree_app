@@ -1,10 +1,15 @@
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/home.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
+import './home.dart';
+import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_application_1/left.dart';
 
+import 'tool/question_bank.dart';
 
 //整个软件入口（测试用）
 void main() {
@@ -34,6 +39,7 @@ class MyApp1 extends StatelessWidget {
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
   final String title;
+
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
@@ -43,7 +49,7 @@ class CollapseDataItem {
   var isExpanded = false;
   var randomString = "知识点";
   var headerValue = "章节名称";
-  
+
   CollapseDataItem();
 }
 
@@ -51,19 +57,31 @@ class _MyHomePageState extends State<MyHomePage> {
   //tdCollapse好像有点问题，我也不知道这里怎么跑起来的，反正跑起来了
   final _basicData = [CollapseDataItem()];
 
-
 //init: 在页面初始化的时候执行
   @override
   void initState() {
     super.initState();
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      fetchAll();
+    });
 
+    final GlobalKey<_MyHomePageState> myWidgetKey = GlobalKey();
     //future.delay xxxxx格式：延时执行一串代码
     Future.delayed(const Duration(milliseconds: 500), () {
-       Navigator.push(
-              context,
-              CupertinoPageRoute(builder: (context) => const MyApp3(title: '',)),
-            );
+      Navigator.push(myWidgetKey.currentContext!,
+          CupertinoPageRoute(builder: (context) => const MyApp3(title: '')));
     });
+  }
+
+  Future<void> fetchAll() async {
+    //设置安卓平台的高屏幕刷新率
+    if (Platform.isAndroid) {
+      try {
+        await FlutterDisplayMode.setHighRefreshRate();
+      } on PlatformException catch (e) {
+        print(e);
+      }
+    }
   }
 
   //界面1的界面内容
@@ -79,21 +97,21 @@ class _MyHomePageState extends State<MyHomePage> {
           style: Theme.of(context).textTheme.headlineMedium,
         ),
         TDButton(
-          text: '测试按钮（刷题界面）',
+          text: '测试按钮（题库设置）',
           size: TDButtonSize.large,
           type: TDButtonType.ghost,
           shape: TDButtonShape.rectangle,
           theme: TDButtonTheme.primary,
-          onTap: () {
-            //前往另外一个页面（需要import）
-            Navigator.push(
-              context,
-              CupertinoPageRoute(builder: (context) => const MyApp2()),
-            );
+          onTap: () async {
+            FilePickerResult? result = await FilePicker.platform.pickFiles();
+            if (result != null) {
+              // QuestionBank(result.files.single.path!).load();
+              QuestionBank.create(result.files.single.path!);
+            } else {
+              // User canceled the picker
+            }
           },
         ),
-        
-        
         TDButton(
           text: '测试按钮（刷题主页）',
           size: TDButtonSize.large,
@@ -111,10 +129,7 @@ class _MyHomePageState extends State<MyHomePage> {
             );
           },
         ),
-       
       ]),
-
-     
     );
   }
 }
