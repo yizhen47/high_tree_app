@@ -24,8 +24,8 @@ class MainEnterScreen extends StatelessWidget {
     return MaterialApp(
       title: '高数',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color.fromARGB(255, 255, 255, 255)),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        scaffoldBackgroundColor: const Color.fromRGBO(250, 250, 250, 1),
         useMaterial3: true,
       ),
       home: const _MainEnterScreen(title: ' '),
@@ -43,6 +43,7 @@ class _MainEnterScreen extends StatefulWidget {
 }
 
 class _MainEnterScreenState extends State<_MainEnterScreen> {
+
 //init: 在页面初始化的时候执行
   @override
   void initState() {
@@ -52,7 +53,7 @@ class _MainEnterScreenState extends State<_MainEnterScreen> {
     });
     //future.delay xxxxx格式：延时执行一串代码
     Future.delayed(const Duration(milliseconds: 5000), () {
-      //   // ignore: use_build_context_synchronously
+      // ignore: use_build_context_synchronously
       Navigator.push(context,
           MaterialPageRoute(builder: (context) => const HomeScreen(title: '')));
     });
@@ -78,7 +79,6 @@ class _MainEnterScreenState extends State<_MainEnterScreen> {
           verticalDirection: VerticalDirection.up,
           children: <Widget>[
             Container(
-              color: Colors.white,
               height: 80,
             ),
             Row(
@@ -89,9 +89,18 @@ class _MainEnterScreenState extends State<_MainEnterScreen> {
                   width: 60,
                   height: 60,
                 ),
-                const Text(
-                  '长安大学高数题库练习软件',
-                ),
+                const Column(
+                  children: [
+                    Text(
+                      '长安大学高数练习软件',
+                      style: TextStyle(color: Colors.black,fontSize: 20),
+                    ),
+                    Text(
+                      '上高树，学高数',
+                      style: TextStyle(color: Colors.grey,fontSize: 16),
+                    ),
+                  ],
+                )
               ],
             ),
             Expanded(

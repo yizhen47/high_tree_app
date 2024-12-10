@@ -44,7 +44,7 @@ class _InnerState extends State<SettingScreen> {
             Stack(
               children: [
                 Container(
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
                           Colors.blueAccent,
