@@ -1,13 +1,9 @@
 import 'dart:io';
-import 'package:file_picker/file_picker.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'screen/home.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
-import 'package:tdesign_flutter/tdesign_flutter.dart';
-import 'package:flutter/widgets.dart';
 
 import 'tool/question_bank.dart';
 
@@ -65,10 +61,10 @@ class _MainEnterScreenState extends State<_MainEnterScreen> {
       fetchAll();
     });
     //future.delay xxxxx格式：延时执行一串代码
-    Future.delayed(const Duration(milliseconds: 500), () {
+    Future.delayed(const Duration(milliseconds: 2000), () {
       // ignore: use_build_context_synchronously
       Navigator.push(context,
-          CupertinoPageRoute(builder: (context) => const HomeScreen(title: '')));
+          MaterialPageRoute(builder: (context) => const HomeScreen(title: '')));
     });
   }
 
@@ -86,49 +82,64 @@ class _MainEnterScreenState extends State<_MainEnterScreen> {
   //界面1的界面内容
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      //定义假面内容
-      body:
-          Column(mainAxisAlignment: MainAxisAlignment.start, children: <Widget>[
-        const Padding(padding: EdgeInsets.fromLTRB(50, 100, 0, 70)),
-        Text(
-          '加入你不熟悉的知识点就开始练习吧！',
-          style: Theme.of(context).textTheme.headlineMedium,
-        ),
-        TDButton(
-          text: '测试按钮（题库设置）',
-          size: TDButtonSize.large,
-          type: TDButtonType.ghost,
-          shape: TDButtonShape.rectangle,
-          theme: TDButtonTheme.primary,
-          onTap: () async {
-            FilePickerResult? result = await FilePicker.platform.pickFiles();
-            if (result != null) {
-              // QuestionBank(result.files.single.path!).load();
-              QuestionBank.create(result.files.single.path!);
-            } else {
-              // User canceled the picker
-            }
-          },
-        ),
-        TDButton(
-          text: '测试按钮（刷题主页）',
-          size: TDButtonSize.large,
-          type: TDButtonType.ghost,
-          shape: TDButtonShape.rectangle,
-          theme: TDButtonTheme.primary,
-          onTap: () {
-            //前往另外一个页面（需要import）
-            Navigator.push(
-              context,
-              CupertinoPageRoute(
-                  builder: (context) => const HomeScreen(
-                        title: '',
-                      )),
-            );
-          },
-        ),
-      ]),
+    // return Scaffold(
+    //   //定义内容
+    //   body:
+    //       Column(mainAxisAlignment: MainAxisAlignment.start, children: <Widget>[
+    //     const Padding(padding: EdgeInsets.fromLTRB(50, 100, 0, 70)),
+    //     Text(
+    //       '加入你不熟悉的知识点就开始练习吧！',
+    //       style: Theme.of(context).textTheme.headlineMedium,
+    //     ),
+    //     TDButton(
+    //       text: '测试按钮（题库设置）',
+    //       size: TDButtonSize.large,
+    //       type: TDButtonType.ghost,
+    //       shape: TDButtonShape.rectangle,
+    //       theme: TDButtonTheme.primary,
+    //       onTap: () async {
+    //         FilePickerResult? result = await FilePicker.platform.pickFiles();
+    //         if (result != null) {
+    //           // QuestionBank(result.files.single.path!).load();
+    //           QuestionBank.create(result.files.single.path!);
+    //         } else {
+    //           // User canceled the picker
+    //         }
+    //       },
+    //     ),
+    //     TDButton(
+    //       text: '测试按钮（刷题主页）',
+    //       size: TDButtonSize.large,
+    //       type: TDButtonType.ghost,
+    //       shape: TDButtonShape.rectangle,
+    //       theme: TDButtonTheme.primary,
+    //       onTap: () {
+    //         //前往另外一个页面（需要import）
+    //         Navigator.push(
+    //           context,
+    //           CupertinoPageRoute(
+    //               builder: (context) => const HomeScreen(
+    //                     title: '',
+    //                   )),
+    //         );
+    //       },
+    //     ),
+    //   ]),
+    // );
+    return const Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(
+              'You have pushed the button this many times:',
+            ),
+            Text(
+              'counter',
+            )
+          ]
+        )
+      )
     );
   }
 }

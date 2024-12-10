@@ -1,3 +1,4 @@
+import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screen/question.dart';
@@ -34,52 +35,63 @@ class _MyHomePageState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const TDNavBar(
+      appBar: TDNavBar(
         title: ' ',
-        useDefaultBack: false
+        height: 45,
+        useDefaultBack: false,
+        backgroundColor: Colors.blueAccent,
+        leftBarItems: [
+          TDNavBarItem(iconColor: Colors.white, icon: Icons.people,action: (){
+
+          })
+        ],
+        
       ),
       resizeToAvoidBottomInset: false, // 设置为 false 避免底部溢出
-      body: PageView(
-        controller: _pageController,
-        onPageChanged: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        children: const [
-          CommunityPage(
-            title: ' ',
-          ),
-          MainHomePage(
-            title: ' ',
-          ),
-          ProfilePage(
-            title: ' ',
-          ),
-        ],
+      body: Container(
+        color: Colors.white,
+        child: PageView(
+          controller: _pageController,
+          onPageChanged: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+          children: const [
+            CommunityPage(
+              title: ' ',
+            ),
+            MainHomePage(
+              title: ' ',
+            ),
+            ProfilePage(
+              title: ' ',
+            ),
+          ],
+        ),
       ),
-      bottomNavigationBar: TDBottomTabBar(
-        TDBottomTabBarBasicType.iconText, // 确保使用正确的属性名
-        useVerticalDivider: false,
-        barHeight: 60,
-        currentIndex: _currentIndex, // 确保绑定 currentIndex
-        navigationTabs: [
-          TDBottomTabBarTabConfig(
-              unselectedIcon: const Icon(CupertinoIcons.text_justify),
-              selectedIcon: const Icon(CupertinoIcons.text_quote),
-              tabText: '题库',
-              onTap: () => _onTabTapped(0)),
-          TDBottomTabBarTabConfig(
-              selectedIcon: const Icon(CupertinoIcons.pencil_outline),
-              unselectedIcon: const Icon(CupertinoIcons.pencil),
-              tabText: '刷题',
-              onTap: () => _onTabTapped(1)),
-          TDBottomTabBarTabConfig(
-              unselectedIcon: const Icon(CupertinoIcons.person),
-              selectedIcon: const Icon(CupertinoIcons.person_fill),
-              tabText: '我',
-              onTap: () => _onTabTapped(2)),
+      bottomNavigationBar: CurvedNavigationBar(
+        backgroundColor: Colors.white,
+        index: _currentIndex,
+        height: 56,
+        color: Colors.blueAccent,
+        items: const <Widget>[
+          Icon(
+            CupertinoIcons.text_justify,
+            color: Colors.white,
+          ),
+          Icon(
+            CupertinoIcons.pencil_outline,
+            color: Colors.white,
+          ),
+          Icon(
+            CupertinoIcons.person,
+            color: Colors.white,
+          ),
         ],
+        onTap: (index) {
+          _onTabTapped(index);
+        },
       ),
     );
   }
@@ -108,7 +120,7 @@ class CommunityPageState extends State<CommunityPage> {
           visible: true,
           drawerTop: 40,
           items: [
-             TDDrawerItem(title: "test",icon: const Icon(Icons.add_box_sharp))
+            TDDrawerItem(title: "test", icon: const Icon(Icons.add_box_sharp))
           ],
           onItemClick: (index, item) {
             print('drawer item被点击，index：$index，title：${item.title}');
@@ -132,63 +144,83 @@ int clickNum = 1;
 class MainHomePageState extends State<MainHomePage> {
   @override
   Widget build(BuildContext context) {
-    return Center(
-      //InkWell：可以给任意控件外面套，然后可以监听点击之类的事件
-      child: InkWell(
-        onTap: () {
-          setState(() {
-            clickNum += 1;
-          });
-          Navigator.push(
-            context,
-            CupertinoPageRoute(builder: (context) => const QuestionScreen()),
-          );
-        },
-        child: Container(
-          width: 200,
-          height: 200,
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            color: Color.fromARGB(255, 74, 126, 123),
+    return Stack(children: [
+      Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.blueAccent,
+                Colors.white,
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
           ),
-          child: Column(
-            verticalDirection: VerticalDirection.up,
-            children: [
-              const Text(
-                ' ',
-                style: TextStyle(
-                  color: Color.fromARGB(255, 236, 236, 236),
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
+          height: 150),
+      Column(
+        //InkWell：可以给任意控件外面套，然后可以监听点击之类的事件
+        children: [
+          Container(height: 50,),
+          Center(
+            child: InkWell(
+              onTap: () {
+                setState(() {
+                  clickNum += 1;
+                });
+                Navigator.push(
+                  context,
+                  CupertinoPageRoute(
+                      builder: (context) => const QuestionScreen()),
+                );
+              },
+              child: Container(
+                width: 200,
+                height: 200,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.blueAccent
+                ),
+                child: Column(
+                  verticalDirection: VerticalDirection.up,
+                  children: [
+                    const Text(
+                      ' ',
+                      style: TextStyle(
+                        color: Color.fromARGB(255, 236, 236, 236),
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Text(
+                      '点击继续',
+                      style: TextStyle(
+                        color: Color.fromARGB(255, 236, 236, 236),
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      '$clickNum次',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 36,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Text('您已刷题',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 36,
+                          fontWeight: FontWeight.bold,
+                        )),
+                  ],
                 ),
               ),
-              const Text(
-                '点击继续',
-                style: TextStyle(
-                  color: Color.fromARGB(255, 236, 236, 236),
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                '$clickNum次',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 36,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const Text('您已刷题',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                  )),
-            ],
-          ),
-        ),
-      ),
-    );
+            ),
+          )
+        ],
+      )
+    ]);
   }
 }
 
@@ -255,7 +287,7 @@ class ProfilePageState extends State<ProfilePage> {
           ),
         ),
         Padding(
-          padding:const EdgeInsets.all(5),
+          padding: const EdgeInsets.all(5),
           child: TDButton(
             text: '成就',
             size: TDButtonSize.large,
