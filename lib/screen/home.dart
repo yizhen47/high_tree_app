@@ -2,6 +2,7 @@ import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screen/question.dart';
+import 'package:simple_ripple_animation/simple_ripple_animation.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:flutter_application_1/screen/setting.dart';
 import 'package:flutter_application_1/screen/achievement.dart';
@@ -41,13 +42,12 @@ class _MyHomePageState extends State<HomeScreen> {
         useDefaultBack: false,
         backgroundColor: Colors.blueAccent,
         leftBarItems: [
-          TDNavBarItem(iconColor: Colors.white, icon: Icons.people,action: (){
-
-          })
+          TDNavBarItem(
+              iconColor: Colors.white, icon: Icons.people, action: () {})
         ],
-        
       ),
       resizeToAvoidBottomInset: false, // 设置为 false 避免底部溢出
+      
       body: Container(
         color: Colors.white,
         child: PageView(
@@ -146,11 +146,11 @@ class MainHomePageState extends State<MainHomePage> {
   Widget build(BuildContext context) {
     return Stack(children: [
       Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             gradient: LinearGradient(
               colors: [
                 Colors.blueAccent,
-                Colors.white,
+                Color.fromARGB(137, 235, 235, 235)
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -160,7 +160,9 @@ class MainHomePageState extends State<MainHomePage> {
       Column(
         //InkWell：可以给任意控件外面套，然后可以监听点击之类的事件
         children: [
-          Container(height: 50,),
+          Container(
+            height: 50,
+          ),
           Center(
             child: InkWell(
               onTap: () {
@@ -173,50 +175,48 @@ class MainHomePageState extends State<MainHomePage> {
                       builder: (context) => const QuestionScreen()),
                 );
               },
-              child: Container(
-                width: 200,
-                height: 200,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.blueAccent
-                ),
-                child: Column(
-                  verticalDirection: VerticalDirection.up,
-                  children: [
-                    const Text(
-                      ' ',
+              child: RippleAnimation(
+                color: Colors.blueAccent,
+                // delay: const Duration(milliseconds: -1000),
+                repeat: true,
+                minRadius: 50,
+                maxRadius: 80,
+                ripplesCount: 10,
+                duration: const Duration(milliseconds: 6000),
+                child: Container(
+                  width: 200,
+                  height: 200,
+                  decoration: const BoxDecoration(
+                      shape: BoxShape.circle, color: Colors.blueAccent),
+                  child: const Center(
+                    child: Text(
+                      '开始刷题',
                       style: TextStyle(
-                        color: Color.fromARGB(255, 236, 236, 236),
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Text(
-                      '点击继续',
-                      style: TextStyle(
-                        color: Color.fromARGB(255, 236, 236, 236),
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      '$clickNum次',
-                      style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 36,
+                        fontSize: 30,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const Text('您已刷题',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 36,
-                          fontWeight: FontWeight.bold,
-                        )),
-                  ],
+                  ),
                 ),
               ),
             ),
+          ),
+          const Row(
+            children: [
+              Expanded(
+                child: Card(
+                  margin: EdgeInsets.all(20),
+                  color: Colors.blueAccent,
+                  child: Text("data"),
+                ),
+              ),
+              Expanded(
+                child: Card(
+                  child: Text("data"),
+                ),
+              ),
+            ],
           )
         ],
       )
