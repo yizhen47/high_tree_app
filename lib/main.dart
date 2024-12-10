@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
+import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'screen/home.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
@@ -23,7 +24,8 @@ class MainEnterScreen extends StatelessWidget {
     return MaterialApp(
       title: '高数',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 255, 255, 255)),
+        colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color.fromARGB(255, 255, 255, 255)),
         useMaterial3: true,
       ),
       home: const _MainEnterScreen(title: ' '),
@@ -40,19 +42,7 @@ class _MainEnterScreen extends StatefulWidget {
   State<_MainEnterScreen> createState() => _MainEnterScreenState();
 }
 
-//这个应该是折叠控件的数据
-class CollapseDataItem {
-  var isExpanded = false;
-  var randomString = "知识点";
-  var headerValue = "章节名称";
-
-  CollapseDataItem();
-}
-
 class _MainEnterScreenState extends State<_MainEnterScreen> {
-  //tdCollapse好像有点问题，我也不知道这里怎么跑起来的，反正跑起来了
-  final _basicData = [CollapseDataItem()];
-
 //init: 在页面初始化的时候执行
   @override
   void initState() {
@@ -106,6 +96,13 @@ class _MainEnterScreenState extends State<_MainEnterScreen> {
             ),
             Expanded(
               child: Center(
+                  child: InkWell(
+                onTap: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const HomeScreen(title: '')));
+                },
                 child: SizedBox(
                   width: 250.0,
                   child: TextLiquidFill(
@@ -116,10 +113,10 @@ class _MainEnterScreenState extends State<_MainEnterScreen> {
                       fontSize: 80.0,
                       fontWeight: FontWeight.bold,
                     ),
-                    boxHeight: 300.0,
+                    boxHeight: 250.0,
                   ),
                 ),
-              ),
+              )),
             )
           ],
         ),

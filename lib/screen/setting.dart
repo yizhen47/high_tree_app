@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
+import 'package:yako_theme_switch/yako_theme_switch.dart';
 
 class SettingScreen extends StatefulWidget {
   const SettingScreen({super.key, required this.title});
@@ -33,9 +34,9 @@ class _InnerState extends State<SettingScreen> {
     return Scaffold(
       appBar: TDNavBar(title: '设置', onBack: () {}),
       body:
-      // ignore: prefer_const_literals_to_create_immutables
-  
-      SingleChildScrollView(
+          // ignore: prefer_const_literals_to_create_immutables
+
+          SingleChildScrollView(
         scrollDirection: Axis.vertical, // 水平滚动
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
@@ -56,66 +57,99 @@ class _InnerState extends State<SettingScreen> {
                     height: 200),
               ],
             ),
-            const Column(
-              children: [
-                Padding(padding: EdgeInsets.all(10)),
-                Card(
-                  child: Row(children: [
-                    Text(
-                      "允许中途退出",
-                      textScaler: TextScaler.linear(1.5),
-                    ),
+            Column(children: <Widget>[
+              const Padding(padding: EdgeInsets.all(10)),
+              const Padding(padding: EdgeInsets.all(10)),
+              Card(
+                  color: Color.fromARGB(0, 0, 0, 0),
+                  child: Column(children: [
                     Padding(
-                      padding: EdgeInsets.all(10),
-                      child: Padding(
-                          padding: EdgeInsets.only(left: 30),
-                          child: const TDSwitch(
-                              isOn: true, trackOnColor: Colors.green)),
-                    ),
-                  ]),
-                ),
-                Padding(padding: EdgeInsets.all(10)),
-                Card(
-                  child: Row(children: [
-                    Text(
-                      "中途退不计次",
-                      textScaler: TextScaler.linear(1.5),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.all(10),
-                      child: Padding(
-                        padding: EdgeInsets.only(left: 30),
-                        child: const TDSwitch(
-                            isOn: true, trackOnColor: Colors.green),
+                      padding: EdgeInsets.all(15),
+                      child: Stack(
+                        children: [
+                        const Text(
+                            "正确的题跳过",
+                            textScaler: TextScaler.linear(1.5),
+                            selectionColor: Color(0),
+                          ),
+                           Row(
+                            verticalDirection: VerticalDirection.down,
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              YakoThemeSwitch(
+                                onChanged: ({bool? changed}) {},
+                                width: 50,
+                                enabledBackgroundColor: Colors.blue,
+                                disabledBackgroundColor: const Color.fromARGB(255, 176, 176, 180),
+                                disabledToggleColor: Colors.white,
+                                animationDuration:
+                                    const Duration(milliseconds: 300),
+                                enabledToggleBorderRadius: 8,
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
-                  ]),
-                ),
-                Padding(padding: EdgeInsets.all(10)),
-                Card(
-                  child: Row(children: [
-                    Text(
-                      "正确的题跳过",
-                      textScaler: TextScaler.linear(1.5),
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(20, 0, 5, 0),
+                      child: SizedBox(
+                        height: 2,
+                        child: Container(
+                          alignment: Alignment.center,
+                          child: const TDDivider(),
+                        ),
+                      ),
                     ),
                     Padding(
-                      padding: EdgeInsets.all(10),
-                      child: Padding(
-                          padding: EdgeInsets.only(left: 30),
-                          child: const TDSwitch(
-                              isOn: true, trackOnColor: Colors.green)),
+                        padding: EdgeInsets.all(15),
+                        child: Stack(
+                          children: [
+                            const Text(
+                              "正确的题跳过",
+                              textScaler: TextScaler.linear(1.5),
+                              selectionColor: Color(0),
+                            ), Row(
+                            verticalDirection: VerticalDirection.down,
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              YakoThemeSwitch(
+                                onChanged: ({bool? changed}) {},
+                                width: 50,
+                                enabledBackgroundColor: const Color.fromARGB(255, 105, 134, 159),
+                                disabledBackgroundColor: const Color.fromARGB(255, 215, 219, 231),
+                                disabledToggleColor: Colors.white,
+                                animationDuration:
+                                    const Duration(milliseconds: 300),
+                                enabledToggleBorderRadius: 8,
+                              ),
+                            ],
+                          ),
+                            const Row(
+                                verticalDirection: VerticalDirection.down,
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: []),
+                          ],
+                        )),
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(20, 0, 5, 0),
+                      child: SizedBox(
+                        height: 2,
+                        child: Container(
+                          alignment: Alignment.center,
+                          child: const TDDivider(),
+                        ),
+                      ),
                     ),
-                  ]),
-                ),
-                Text('主题设置'),
-              ],
-            )
+                  ]))
+            ]),
           ],
         ),
       ),
     );
   }
 }
+
 Map<String, Color> themeColorMap = {
   'gray': Colors.grey,
   'blue': Colors.blue,

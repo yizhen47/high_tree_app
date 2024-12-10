@@ -44,17 +44,10 @@ class _InnerState extends State<AchievementScreen> {
                 Padding(padding: EdgeInsets.all(10)),
                 Card(
                   child: Row(children: [
-                    Text(
-                      "成就1",
-                      textScaler: TextScaler.linear(1.5),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.all(10),
-                      child: Padding(
-                          padding: EdgeInsets.only(left: 30),
-                          child: const TDSwitch(
-                              isOn: true, trackOnColor: Colors.green)),
-                    ),
+                    
+
+
+                    
                   ]),
                 ),
                 Padding(padding: EdgeInsets.all(10)),

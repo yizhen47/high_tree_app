@@ -20,6 +20,7 @@ dependencies:
   path: ^1.9.0
   simple_ripple_animation: ^0.1.0
   animated_text_kit: ^4.2.2
+  yako_theme_switch: ^1.0.0+1
 
 
 dev_dependencies:
@@ -32,5 +33,3 @@ flutter:
   assets:
     - bin/wmf2png.exe
     - assets/logo.png
-provider: ^4.0.5
-flustars: ^0.2.6+1
