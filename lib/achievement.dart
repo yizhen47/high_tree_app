@@ -45,7 +45,7 @@ class _MyHomePageState extends State<MyApp5> {
                 Card(
                   child: Row(children: [
                     Text(
-                      "允许中途退出",
+                      "成就1",
                       textScaler: TextScaler.linear(1.5),
                     ),
                     Padding(

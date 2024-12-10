@@ -9,10 +9,6 @@ import 'package:flutter/material.dart';
 class MyApp2 extends StatelessWidget {
   const MyApp2({super.key});
 
-
-
-
-
   //这修改页面2的内容
   @override
   Widget build(BuildContext context) {
