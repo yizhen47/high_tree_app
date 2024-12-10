@@ -4,7 +4,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'screen/home.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
-
+import 'package:animated_text_kit/animated_text_kit.dart';
 import 'tool/question_bank.dart';
 
 //整个软件入口（测试用）
@@ -61,11 +61,11 @@ class _MainEnterScreenState extends State<_MainEnterScreen> {
       fetchAll();
     });
     //future.delay xxxxx格式：延时执行一串代码
-    Future.delayed(const Duration(milliseconds: 2000), () {
-      // ignore: use_build_context_synchronously
-      Navigator.push(context,
-          MaterialPageRoute(builder: (context) => const HomeScreen(title: '')));
-    });
+    // Future.delayed(const Duration(milliseconds: 5000), () {
+    //   // ignore: use_build_context_synchronously
+    //   Navigator.push(context,
+    //       MaterialPageRoute(builder: (context) => const HomeScreen(title: '')));
+    // });
   }
 
   Future<void> fetchAll() async {
@@ -82,64 +82,43 @@ class _MainEnterScreenState extends State<_MainEnterScreen> {
   //界面1的界面内容
   @override
   Widget build(BuildContext context) {
-    // return Scaffold(
-    //   //定义内容
-    //   body:
-    //       Column(mainAxisAlignment: MainAxisAlignment.start, children: <Widget>[
-    //     const Padding(padding: EdgeInsets.fromLTRB(50, 100, 0, 70)),
-    //     Text(
-    //       '加入你不熟悉的知识点就开始练习吧！',
-    //       style: Theme.of(context).textTheme.headlineMedium,
-    //     ),
-    //     TDButton(
-    //       text: '测试按钮（题库设置）',
-    //       size: TDButtonSize.large,
-    //       type: TDButtonType.ghost,
-    //       shape: TDButtonShape.rectangle,
-    //       theme: TDButtonTheme.primary,
-    //       onTap: () async {
-    //         FilePickerResult? result = await FilePicker.platform.pickFiles();
-    //         if (result != null) {
-    //           // QuestionBank(result.files.single.path!).load();
-    //           QuestionBank.create(result.files.single.path!);
-    //         } else {
-    //           // User canceled the picker
-    //         }
-    //       },
-    //     ),
-    //     TDButton(
-    //       text: '测试按钮（刷题主页）',
-    //       size: TDButtonSize.large,
-    //       type: TDButtonType.ghost,
-    //       shape: TDButtonShape.rectangle,
-    //       theme: TDButtonTheme.primary,
-    //       onTap: () {
-    //         //前往另外一个页面（需要import）
-    //         Navigator.push(
-    //           context,
-    //           CupertinoPageRoute(
-    //               builder: (context) => const HomeScreen(
-    //                     title: '',
-    //                   )),
-    //         );
-    //       },
-    //     ),
-    //   ]),
-    // );
-    return const Scaffold(
+    return Scaffold(
       body: Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          verticalDirection: VerticalDirection.up,
           children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
+            Container(
+              height: 80,
             ),
-            Text(
-              'counter',
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.asset(
+                  'assets/logo.png',
+                  width: 60,
+                  height: 60,
+                ),
+                const Text(
+                  '长安大学高数题库练习软件',
+                ),
+              ],
+            ),
+            SizedBox(
+              width: 250.0,
+              child: TextLiquidFill(
+                text: 'CHU',
+                waveColor: Colors.blueAccent,
+                boxBackgroundColor: Colors.redAccent,
+                textStyle: const TextStyle(
+                  fontSize: 80.0,
+                  fontWeight: FontWeight.bold,
+                ),
+                boxHeight: 300.0,
+              ),
             )
-          ]
-        )
-      )
+          ],
+        ),
+      ),
     );
   }
 }
