@@ -32,3 +32,5 @@ flutter:
   assets:
     - bin/wmf2png.exe
     - assets/logo.png
+provider: ^4.0.5
+flustars: ^0.2.6+1
