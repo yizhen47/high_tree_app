@@ -47,7 +47,7 @@ class _MyHomePageState extends State<HomeScreen> {
         ],
       ),
       resizeToAvoidBottomInset: false, // 设置为 false 避免底部溢出
-      
+
       body: Container(
         color: Colors.white,
         child: PageView(
@@ -105,11 +105,14 @@ class CommunityPage extends StatefulWidget {
   State<CommunityPage> createState() => CommunityPageState();
 }
 
+
+
+
 class CommunityPageState extends State<CommunityPage> {
   @override
   Widget build(BuildContext context) {
     return TDButton(
-      text: '基础抽屉',
+      text: '查看章节',
       isBlock: true,
       type: TDButtonType.outline,
       theme: TDButtonTheme.primary,

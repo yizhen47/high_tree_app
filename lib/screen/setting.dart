@@ -32,76 +32,81 @@ class _InnerState extends State<SettingScreen> {
     var screenWidth = MediaQuery.of(context).size.width;
     return Scaffold(
       appBar: TDNavBar(title: '设置', onBack: () {}),
-      body: 
-      
-      
-      const SingleChildScrollView(
+      body:
+      // ignore: prefer_const_literals_to_create_immutables
+  
+      SingleChildScrollView(
         scrollDirection: Axis.vertical, // 水平滚动
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            Column(
+            Stack(
+              children: [
+                Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.blueAccent,
+                          Colors.white,
+                        ],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
+                    ),
+                    height: 200),
+              ],
+            ),
+            const Column(
               children: [
                 Padding(padding: EdgeInsets.all(10)),
-                Card(child: Row(children:[
-                Text(
-                  "允许中途退出",
-                  textScaler: TextScaler.linear(1.5),),
-                
-                
-                Padding(
-                  padding: EdgeInsets.all(10),
-                  child: Padding(
-                      padding: EdgeInsets.only(left: 30),
-                      child: const TDSwitch(
-                          isOn: true, trackOnColor: Colors.green)),
+                Card(
+                  child: Row(children: [
+                    Text(
+                      "允许中途退出",
+                      textScaler: TextScaler.linear(1.5),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.all(10),
+                      child: Padding(
+                          padding: EdgeInsets.only(left: 30),
+                          child: const TDSwitch(
+                              isOn: true, trackOnColor: Colors.green)),
+                    ),
+                  ]),
                 ),
-                
-                ]
-            
-                ),),
                 Padding(padding: EdgeInsets.all(10)),
-                Card(child: Row(children:[
-                Text(
-                  "中途退不计次",
-                  textScaler: TextScaler.linear(1.5),),
-                
-                
-                Padding(
-                  padding: EdgeInsets.all(10),
-                  child: Padding(
-                      padding: EdgeInsets.only(left: 30),
-                      child: const TDSwitch(
-                          isOn: true, trackOnColor: Colors.green),
-                          
-                       
-             
-                          
-                          ),
-               
+                Card(
+                  child: Row(children: [
+                    Text(
+                      "中途退不计次",
+                      textScaler: TextScaler.linear(1.5),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.all(10),
+                      child: Padding(
+                        padding: EdgeInsets.only(left: 30),
+                        child: const TDSwitch(
+                            isOn: true, trackOnColor: Colors.green),
+                      ),
+                    ),
+                  ]),
                 ),
-                
-                ]
-            
-                ),),
                 Padding(padding: EdgeInsets.all(10)),
-                Card(child: Row(children:[
-                Text(
-                  "正确的题跳过",
-                  textScaler: TextScaler.linear(1.5),),
-                
-                
-                Padding(
-                  padding: EdgeInsets.all(10),
-                  child: Padding(
-                      padding: EdgeInsets.only(left: 30),
-                      child: const TDSwitch(
-                          isOn: true, trackOnColor: Colors.green)),
+                Card(
+                  child: Row(children: [
+                    Text(
+                      "正确的题跳过",
+                      textScaler: TextScaler.linear(1.5),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.all(10),
+                      child: Padding(
+                          padding: EdgeInsets.only(left: 30),
+                          child: const TDSwitch(
+                              isOn: true, trackOnColor: Colors.green)),
+                    ),
+                  ]),
                 ),
-                
-                ]
-            
-                ),),
               ],
             )
           ],
