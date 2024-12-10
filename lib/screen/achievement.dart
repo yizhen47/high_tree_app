@@ -43,7 +43,7 @@ class _InnerState extends State<AchievementScreen> {
                 Card(
                   child: Row(children: [
                     Text(
-                      "允许中途退出",
+                      "成就1",
                       textScaler: TextScaler.linear(1.5),
                     ),
                     Padding(
