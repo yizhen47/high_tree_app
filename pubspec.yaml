@@ -23,7 +23,8 @@ dependencies:
   yako_theme_switch: ^1.0.0+1
   flutter_card_swiper: ^7.0.2
   card_swiper: ^3.0.1
-
+  liquid_swipe: ^3.1.0
+  flutter_swiper_view: ^1.1.8
 
 dev_dependencies:
   flutter_test:
@@ -35,3 +36,4 @@ flutter:
   assets:
     - bin/wmf2png.exe
     - assets/logo.png
+    - assets/chu.png

@@ -62,15 +62,15 @@ class _InnerState extends State<SettingScreen> {
               const Padding(padding: EdgeInsets.all(10)),
               const Padding(padding: EdgeInsets.all(10)),
               Card(
-                  color: Color.fromARGB(0, 0, 0, 0),
+                  color: Colors.white,
                   child: Column(children: [
                     Padding(
-                      padding: EdgeInsets.all(15),
+                      padding: EdgeInsets.all(14),
                       child: Stack(
                         children: [
                         const Text(
                             "正确的题跳过",
-                            textScaler: TextScaler.linear(1.5),
+                            textScaler: TextScaler.linear(1.2),
                             selectionColor: Color(0),
                           ),
                            Row(
@@ -108,7 +108,7 @@ class _InnerState extends State<SettingScreen> {
                           children: [
                             const Text(
                               "正确的题跳过",
-                              textScaler: TextScaler.linear(1.5),
+                              textScaler: TextScaler.linear(1.2),
                               selectionColor: Color(0),
                             ), Row(
                             verticalDirection: VerticalDirection.down,
