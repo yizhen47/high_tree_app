@@ -21,6 +21,8 @@ dependencies:
   simple_ripple_animation: ^0.1.0
   animated_text_kit: ^4.2.2
   yako_theme_switch: ^1.0.0+1
+  flutter_card_swiper: ^7.0.2
+  card_swiper: ^3.0.1
 
 
 dev_dependencies:

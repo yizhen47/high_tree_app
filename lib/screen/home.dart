@@ -239,10 +239,7 @@ class MainHomePageState extends State<MainHomePage> {
         Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  Colors.blueAccent,
-                  Color.fromARGB(0, 68, 138, 255)
-                 ],
+                colors: [Colors.blueAccent, Color.fromARGB(0, 68, 138, 255)],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
@@ -262,8 +259,7 @@ class MainHomePageState extends State<MainHomePage> {
                   });
                   Navigator.push(
                     context,
-                    CupertinoPageRoute(
-                        builder: (context) => const QuestionScreen()),
+                    CupertinoPageRoute(builder: (context) => QuestionScreen()),
                   );
                 },
                 child: RippleAnimation(
