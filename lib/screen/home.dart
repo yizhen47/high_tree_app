@@ -346,7 +346,7 @@ class MainHomePageState extends State<MainHomePage> {
                     Navigator.push(
                       context,
                       CupertinoPageRoute(
-                          builder: (context) => const QuestionScreen()),
+                          builder: (context) => QuestionScreen()),
                     );
                   },
                   child: RippleAnimation(

@@ -32,9 +32,7 @@ class _InnerState extends State<AchievementScreen> {
     var screenWidth = MediaQuery.of(context).size.width;
     return Scaffold(
       appBar: TDNavBar(title: '成就', onBack: () {}),
-      body: 
-      
-      const SingleChildScrollView(
+      body:  SingleChildScrollView(
         scrollDirection: Axis.vertical, // 水平滚动
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
@@ -45,14 +43,24 @@ class _InnerState extends State<AchievementScreen> {
                 Card(
                   child: Row(children: [
                     
-
-
-                    
+                    TDInput(
+                      backgroundColor: Colors.white,
+                      hintText: '请输入您所在的地区',
+                      onChanged: (text) {
+                        setState(() {});
+                      },
+                      onClearTap: () {
+                        setState(() {});
+                      },
+                    ),
+                    const SizedBox(
+                      height: 16,
+                    )
                   ]),
                 ),
                 Padding(padding: EdgeInsets.all(10)),
                 Card(
-                  child: Row(children: [
+                  child: const Row(children: [
                     Text(
                       "中途退不计次",
                       textScaler: TextScaler.linear(1.5),
@@ -61,14 +69,14 @@ class _InnerState extends State<AchievementScreen> {
                       padding: EdgeInsets.all(10),
                       child: Padding(
                         padding: EdgeInsets.only(left: 30),
-                        child: const TDSwitch(
+                        child: TDSwitch(
                             isOn: true, trackOnColor: Colors.green),
                       ),
                     ),
                   ]),
                 ),
-                Padding(padding: EdgeInsets.all(10)),
-                Card(
+                const Padding(padding: EdgeInsets.all(10)),
+                const Card(
                   child: Row(children: [
                     Text(
                       "正确的题跳过",
@@ -78,7 +86,7 @@ class _InnerState extends State<AchievementScreen> {
                       padding: EdgeInsets.all(10),
                       child: Padding(
                           padding: EdgeInsets.only(left: 30),
-                          child: const TDSwitch(
+                          child: TDSwitch(
                               isOn: true, trackOnColor: Colors.green)),
                     ),
                   ]),
