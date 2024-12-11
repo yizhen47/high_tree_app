@@ -69,6 +69,7 @@ class _MyHomePageState extends State<HomeScreen> {
       bottomNavigationBar: CurvedNavigationBar(
         backgroundColor: Colors.white,
         index: _currentIndex,
+        animationDuration: const Duration(milliseconds: 300),
         height: 56,
         color: Colors.blueAccent,
         items: const <Widget>[
@@ -140,162 +141,245 @@ int clickNum = 1;
 class MainHomePageState extends State<MainHomePage> {
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        const Column(children: [
-          SizedBox(
-            height: 120,
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
+    return SingleChildScrollView(
+      child: Stack(
+        children: [
+          const Column(
             children: [
-              Expanded(
-                child: Card(
-                  margin: EdgeInsets.all(8),
-                  color: Colors.lightGreen,
-                  borderOnForeground: false,
-                  elevation: 3,
-                  shape: BeveledRectangleBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(40)),
-                    side: BorderSide(color: Colors.white),
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(10, 60, 10, 40),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Text(
-                          "难度-",
-                          style: TextStyle(
-                              fontSize: 18,
-                              color: Colors.white,
-                              shadows: [
-                                Shadow(
-                                  offset: Offset(1, 1),
-                                  blurRadius: 1.0,
-                                  color: Colors.black54,
-                                )
-                              ]),
+              SizedBox(
+                height: 120,
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Card(
+                      margin: EdgeInsets.all(8),
+                      color: Colors.lightGreen,
+                      borderOnForeground: false,
+                      elevation: 3,
+                      shape: BeveledRectangleBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(40)),
+                        side: BorderSide(color: Colors.white),
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(10, 60, 10, 40),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Text(
+                              "难度-",
+                              style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.white,
+                                  shadows: [
+                                    Shadow(
+                                      offset: Offset(1, 1),
+                                      blurRadius: 1.0,
+                                      color: Colors.black54,
+                                    )
+                                  ]),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
+                  Expanded(
+                    child: Card(
+                      margin: EdgeInsets.all(8),
+                      color: Colors.deepOrange,
+                      borderOnForeground: false,
+                      elevation: 3,
+                      shape: BeveledRectangleBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(40)),
+                        side: BorderSide(color: Colors.white),
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(10, 60, 10, 40),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              "难度+",
+                              style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.white,
+                                  shadows: [
+                                    Shadow(
+                                      offset: Offset(1, 1),
+                                      blurRadius: 1.0,
+                                      color: Colors.black54,
+                                    )
+                                  ]),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  )
+                ],
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.all(10),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.access_time_rounded,
+                            size: 40,
+                            color: Colors.blueAccent,
+                          ),
+                          Text(
+                            "题库选择",
+                            style: TextStyle(fontSize: 12, color: Colors.black),
+                          )
+                        ],
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.all(10),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.access_time_rounded,
+                            size: 40,
+                            color: Colors.blueAccent,
+                          ),
+                          Text(
+                            "题库选择",
+                            style: TextStyle(fontSize: 12, color: Colors.black),
+                          )
+                        ],
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.all(10),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.access_time_rounded,
+                            size: 40,
+                            color: Colors.blueAccent,
+                          ),
+                          Text(
+                            "题库选择",
+                            style: TextStyle(fontSize: 12, color: Colors.black),
+                          )
+                        ],
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.all(10),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.access_time_rounded,
+                            size: 40,
+                            color: Colors.blueAccent,
+                          ),
+                          Text(
+                            "题库选择",
+                            style: TextStyle(fontSize: 12, color: Colors.black),
+                          )
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              Card(
+                color: Colors.white,
+                child: Column(
+                  children: [Text("211")],
                 ),
               ),
-              Expanded(
-                child: Card(
-                  margin: EdgeInsets.all(8),
-                  color: Colors.deepOrange,
-                  borderOnForeground: false,
-                  elevation: 3,
-                  shape: BeveledRectangleBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(40)),
-                    side: BorderSide(color: Colors.white),
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(10, 60, 10, 40),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Text(
-                          "难度+",
-                          style: TextStyle(
-                              fontSize: 18,
-                              color: Colors.white,
-                              shadows: [
-                                Shadow(
-                                  offset: Offset(1, 1),
-                                  blurRadius: 1.0,
-                                  color: Colors.black54,
-                                )
-                              ]),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              )
             ],
           ),
-        ]),
-        Column(
-          //InkWell：可以给任意控件外面套，然后可以监听点击之类的事件
-          children: [
-            Container(
-              height: 50,
-            ),
-            Center(
-              child: Container(
-                width: 200,
-                height: 200,
-                decoration: const BoxDecoration(
-                    shape: BoxShape.circle, color: Colors.white),
+          Column(
+            //InkWell：可以给任意控件外面套，然后可以监听点击之类的事件
+            children: [
+              Container(
+                height: 50,
               ),
-            ),
-          ],
-        ),
-        Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.blueAccent,
-                  Color.fromARGB(0, 68, 138, 255)
-                 ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
+              Center(
+                child: Container(
+                  width: 200,
+                  height: 200,
+                  decoration: const BoxDecoration(
+                      shape: BoxShape.circle, color: Colors.white),
+                ),
               ),
-            ),
-            height: 150),
-        Column(
-          //InkWell：可以给任意控件外面套，然后可以监听点击之类的事件
-          children: [
-            Container(
-              height: 80,
-            ),
-            Center(
-              child: InkWell(
-                onTap: () {
-                  setState(() {
-                    clickNum += 1;
-                  });
-                  Navigator.push(
-                    context,
-                    CupertinoPageRoute(
-                        builder: (context) => const QuestionScreen()),
-                  );
-                },
-                child: RippleAnimation(
-                  color: Colors.blueAccent,
-                  // delay: const Duration(milliseconds: -1000),
-                  repeat: true,
-                  minRadius: 50,
-                  maxRadius: 80,
-                  ripplesCount: 10,
-                  duration: const Duration(milliseconds: 6000),
-                  child: Container(
-                    width: 140,
-                    height: 140,
-                    decoration: const BoxDecoration(
-                        shape: BoxShape.circle, color: Colors.blueAccent),
-                    child: const Center(
-                      child: Text(
-                        '开始刷题',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 30,
-                          fontWeight: FontWeight.bold,
+            ],
+          ),
+          Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.blueAccent, Color.fromARGB(0, 68, 138, 255)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+              height: 150),
+          Column(
+            //InkWell：可以给任意控件外面套，然后可以监听点击之类的事件
+            children: [
+              Container(
+                height: 80,
+              ),
+              Center(
+                child: InkWell(
+                  onTap: () {
+                    setState(() {
+                      clickNum += 1;
+                    });
+                    Navigator.push(
+                      context,
+                      CupertinoPageRoute(
+                          builder: (context) => const QuestionScreen()),
+                    );
+                  },
+                  child: RippleAnimation(
+                    color: Colors.blueAccent,
+                    // delay: const Duration(milliseconds: -1000),
+                    repeat: true,
+                    minRadius: 30,
+                    maxRadius: 50,
+                    ripplesCount: 10,
+                    duration: const Duration(milliseconds: 6000),
+                    child: Container(
+                      width: 140,
+                      height: 140,
+                      decoration: const BoxDecoration(
+                          shape: BoxShape.circle, color: Colors.blueAccent),
+                      child: const Center(
+                        child: Text(
+                          '开始刷题',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 30,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
-        )
-      ],
+            ],
+          )
+        ],
+      ),
     );
   }
 }
