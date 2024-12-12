@@ -33,6 +33,8 @@ class MainEnterScreen extends StatelessWidget {
   }
 }
 
+var isStarted = false;
+
 //这里也是一个标准的动态页面
 class _MainEnterScreen extends StatefulWidget {
   const _MainEnterScreen({super.key, required this.title});
@@ -52,10 +54,14 @@ class _MainEnterScreenState extends State<_MainEnterScreen> {
       fetchAll();
     });
     //future.delay xxxxx格式：延时执行一串代码
+
+    QuestionBank.clean();
     Future.delayed(const Duration(milliseconds: 5000), () {
-      // ignore: use_build_context_synchronously
-      Navigator.push(context,
+      if(!isStarted) {
+        // ignore: use_build_context_synchronously
+        Navigator.push(context,
           MaterialPageRoute(builder: (context) => const HomeScreen(title: '')));
+      }
     });
   }
 
@@ -107,6 +113,7 @@ class _MainEnterScreenState extends State<_MainEnterScreen> {
               child: Center(
                   child: InkWell(
                 onTap: () {
+                  isStarted = true;
                   Navigator.push(
                       context,
                       MaterialPageRoute(

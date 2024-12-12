@@ -14,7 +14,7 @@ class Wmf2Png {
     }
 
     // Extract wmf2png.exe to a fixed directory if it doesn't exist
-    if (!File(exePath).existsSync()) {
+    if (!await File(exePath).exists()) {
       final bytes = await rootBundle.load('bin/wmf2png.exe');
       await File(exePath).writeAsBytes(bytes.buffer.asUint8List());
     }
@@ -39,7 +39,7 @@ class Wmf2Png {
       }
 
       // Check if output file exists
-      if (!tempOutputFile.existsSync()) {
+      if (!await tempOutputFile.exists()) {
         throw Exception('Output file not found: ${tempOutputFile.path}');
       }
       // Read output from temporary file and write to output file
@@ -55,14 +55,14 @@ class Wmf2Png {
   }
 
   Future<void> _deleteIfExists(File file) async {
-    if (file.existsSync()) {
+    if (await file.exists()) {
       await file.delete();
     }
   }
 
   // Method to clean up wmf2png.exe when the application ends
   Future<void> cleanup() async {
-    if (File(exePath).existsSync()) {
+    if (await File(exePath).exists()) {
       await File(exePath).delete();
     }
   }
