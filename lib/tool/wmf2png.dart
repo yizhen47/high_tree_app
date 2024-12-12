@@ -6,7 +6,7 @@ import 'package:flutter/services.dart' show rootBundle;
 
 class Wmf2Png {
   static final String exePath =
-      path.join(Directory.current.path, 'wmf2png.exe');
+      path.join(Directory.systemTemp.path, 'wmf2png.exe');
 
   Future<Uint8List> convert(Uint8List inputBytes) async {
     if (!Platform.isWindows) {
@@ -67,4 +67,3 @@ class Wmf2Png {
     }
   }
 }
-

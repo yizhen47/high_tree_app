@@ -1,14 +1,25 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:archive/archive.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:uuid/uuid.dart';
 import 'package:xml/xml.dart' as xml;
 import 'dart:convert';
 import './wmf2png.dart';
 import 'package:xml/xml.dart';
+import 'package:path/path.dart' as path;
 
 ZipDecoder? _zipDecoder;
 ZipEncoder? _zipEncoder;
 Wmf2Png? _wmf2png;
+Random? _random;
+
+void mksureInit() {
+  _zipDecoder ??= ZipDecoder();
+  _zipEncoder ??= ZipEncoder();
+  _wmf2png ??= Wmf2Png();
+  _random ??= Random();
+}
 
 class Section {
   String index;
@@ -38,7 +49,7 @@ class Section {
   }
 }
 
-Map<String, dynamic> parseTextToJSON(String text) {
+Map<String, dynamic> parseWordToJSONData(String text, String title) {
   var lines = text.trim().split('\n');
   var root = Section('', '');
   var stack = [root];
@@ -164,14 +175,17 @@ Map<String, dynamic> parseTextToJSON(String text) {
   }
 
   // Ensure we're returning the top-level children as data
-  return {'data': root.children.map((child) => child.toJson()).toList()};
+  return {
+    'data': root.children.map((child) => child.toJson()).toList(),
+    "version": 1,
+    "id": const Uuid().v4(),
+    "displayName": title
+  };
 }
 
 Future<void> generateByDocx(File fromFile, File saveFile) async {
+  mksureInit();
   final bytes = fromFile.readAsBytesSync();
-  _zipDecoder ??= ZipDecoder();
-  _zipEncoder ??= ZipEncoder();
-  _wmf2png ??= Wmf2Png();
 
   final archiveDecoder = _zipDecoder!.decodeBytes(bytes);
 
@@ -294,7 +308,8 @@ Future<void> generateByDocx(File fromFile, File saveFile) async {
       ArchiveFile('data.txt', jsonContentTester.length, jsonContentTester));
 
   try {
-    final result = parseTextToJSON(list.join('\n'));
+    final result =
+        parseWordToJSONData(list.join('\n'), path.basename( fromFile.path.split('/').first));
     final jsonContent = utf8.encode(jsonEncode(result,
         toEncodable: (value) => value is Map ? value : null));
     archive.addFile(ArchiveFile('data.json', jsonContent.length, jsonContent));
@@ -316,15 +331,72 @@ String mathToLatex(xml.XmlElement mathElement) {
   return '[LaTeX representation]';
 }
 
+class SingleQuestionData {
+  List<String> fromKonwledgePoint;
+  List<String> fromKonwledgeIndex;
+  Map<String, String> question;
+
+  SingleQuestionData(
+      this.fromKonwledgePoint, this.fromKonwledgeIndex, this.question);
+}
+
 class QuestionBank {
   String filePath;
-
+  List<Section>? data;
+  String? displayName;
+  int? version;
+  String? id;
   QuestionBank(this.filePath);
   Future<void> load() async {
-    File file = File(filePath);
+    mksureInit();
+    File fromFile = File(filePath);
+    final achieve = _zipDecoder!.decodeBytes(fromFile.readAsBytesSync());
+    for (final file in achieve) {
+      if (file.name == "data.json") {
+        var json = jsonDecode(utf8.decode(file.content));
+        data = json.data;
+        displayName = json.name;
+        id = json.id;
+        version = json.version;
+      }
+    }
   }
 
-  void save() {}
+  close() {}
+
+  SingleQuestionData _randomSectionQuestion(List<Section> sects,
+      List<String> fromKonwledgePoint, List<String> fromKonwledgeIndex) {
+    var sec = sects[_random!.nextInt(sects.length)];
+    if (_random!.nextInt(3) == 1) {
+      // ignore: unnecessary_null_comparison
+      if (sec.questions == null) {
+        return _randomSectionQuestion(data!, [], []);
+      }
+      fromKonwledgePoint.add(sec.title);
+      fromKonwledgeIndex.add(sec.index);
+      return SingleQuestionData(fromKonwledgePoint, fromKonwledgeIndex,
+          sec.questions[_random!.nextInt(sec.questions.length)]);
+    } else {
+      // ignore: unnecessary_null_comparison
+      if (sec.children == null) {
+        return _randomSectionQuestion(data!, [], []);
+      } else {
+        fromKonwledgePoint.add(sec.title);
+        fromKonwledgeIndex.add(sec.index);
+        return _randomSectionQuestion(
+            sec.children, fromKonwledgePoint, fromKonwledgeIndex);
+      }
+    }
+  }
+
+  List<SingleQuestionData> randomChoiceQuestion({int num = 1}) {
+    mksureInit();
+    final List<SingleQuestionData> allQuestions = [];
+    for (int i = 0; i < num; i++) {
+      allQuestions.add(_randomSectionQuestion(data!, [], []));
+    }
+    return allQuestions;
+  }
 
   static create(String path) async {
     String? outputFile = await FilePicker.platform.saveFile(
