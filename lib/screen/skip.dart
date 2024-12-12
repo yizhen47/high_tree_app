@@ -3,10 +3,10 @@ import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 
 //静态页面：创建完毕后就不能更改，没有setState这个刷新控件的函数
-class BankScreen extends StatelessWidget {
+class SkipScreen extends StatelessWidget {
   final List<Card> cards = [
     Card(
-      color: const Color.fromARGB(255, 222, 234, 255),
+      color: Colors.white,
       elevation: 4,
       child: SingleChildScrollView(
           child: Padding(
@@ -265,13 +265,13 @@ D''',
     ),
   ];
 
-  BankScreen({super.key});
+  SkipScreen({super.key});
 
   //这修改页面2的内容
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: TDNavBar(title: '题库选择', onBack: () {}),
+        appBar: TDNavBar(title: '跳过的题', onBack: () {}),
         body: Column(
           children: [
             Flexible(

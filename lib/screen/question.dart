@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screen/Wrong.dart';
+import 'package:flutter_application_1/screen/bank.dart';
+import 'package:flutter_application_1/screen/skip.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 
@@ -271,7 +274,7 @@ D''',
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: TDNavBar(title: '', onBack: () {}),
+        appBar: TDNavBar(title: '刷题界面', onBack: () {}),
         body: Column(
           children: [
             Flexible(
@@ -282,15 +285,42 @@ D''',
                         cards[index],
               ),
             ),
-            const Stack(children: <Widget>[
+            Stack(children: <Widget>[
               Padding(
-                padding: EdgeInsets.only(bottom: 20),
+                padding: const EdgeInsets.only(bottom: 20),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    Expanded(child: Icon(Icons.playlist_add_check)),
-                    Expanded(child: Icon(Icons.notes)),
-                    Expanded(child: Icon(Icons.quiz_outlined))
+                    Expanded(
+                      child: InkWell(
+                          onTap: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => SkipScreen()));
+                          },
+                          child: const Icon(Icons.playlist_add_check)),
+                    ),
+                    Expanded(
+                      child: InkWell(
+                          onTap: () => <Future>{
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => BankScreen())),
+                              },
+                          child: const Icon(Icons.notes)),
+                    ),
+                    Expanded(
+                      child:InkWell(onTap: ()=>{
+                        Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => WrongScreen(title: '',))),
+                      },
+                       child: const Icon(Icons.quiz_outlined))
+                      )
+                     
                   ],
                 ),
               ),

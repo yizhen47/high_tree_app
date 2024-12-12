@@ -8,6 +8,9 @@ import 'package:simple_ripple_animation/simple_ripple_animation.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:flutter_application_1/screen/setting.dart';
 import 'package:flutter_application_1/screen/achievement.dart';
+import 'bank.dart';
+import 'skip.dart';
+import 'note.dart';
 
 //动态页面：按照下面的方法创建。特点：每一次setState都会刷新控件，比如下面的按一下加次数，文本会被重新构建。
 class HomeScreen extends StatefulWidget {
@@ -233,26 +236,41 @@ class MainHomePageState extends State<MainHomePage> {
               ),
               Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Padding(
-                      padding: EdgeInsets.all(10),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.playlist_add_check,
-                            size: 45,
-                            color: Colors.blueAccent,
+                        padding: const EdgeInsets.all(10),
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => SkipScreen()));
+                          },
+                          child: const Column(
+                            children: [
+                              Icon(
+                                Icons.playlist_add_check,
+                                size: 45,
+                                color: Colors.blueAccent,
+                              ),
+                              Text(
+                                "跳过的题",
+                                style: TextStyle(
+                                    fontSize: 12, color: Colors.black),
+                              )
+                            ],
                           ),
-                          Text(
-                            "跳过的题",
-                            style: TextStyle(fontSize: 12, color: Colors.black),
-                          )
-                        ],
-                      ),
-                    ),
+                        )),
                   ),
-                  const Expanded(
-                    child: Padding(
+                  Expanded(
+                      child: InkWell(
+                    onTap: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => NoteScreen()));
+                    },
+                    child: const Padding(
                       padding: EdgeInsets.all(10),
                       child: Column(
                         children: [
@@ -268,22 +286,31 @@ class MainHomePageState extends State<MainHomePage> {
                         ],
                       ),
                     ),
-                  ),
-                  const Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.all(10),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.notes,
-                            size: 40,
-                            color: Colors.blueAccent,
-                          ),
-                          Text(
-                            "题库选择",
-                            style: TextStyle(fontSize: 12, color: Colors.black),
-                          )
-                        ],
+                  )),
+                  Expanded(
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => BankScreen()));
+                      },
+                      child: const Padding(
+                        padding: EdgeInsets.all(10),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.notes,
+                              size: 40,
+                              color: Colors.blueAccent,
+                            ),
+                            Text(
+                              "题库选择",
+                              style:
+                                  TextStyle(fontSize: 12, color: Colors.black),
+                            )
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -566,7 +593,7 @@ class ProfilePageState extends State<ProfilePage> {
                           verticalDirection: VerticalDirection.down,
                           children: [
                             Icon(
-                              Icons.import_contacts_sharp,
+                              Icons.settings,
                               size: 20,
                               color: Colors.blueAccent,
                             ),
@@ -607,7 +634,7 @@ class ProfilePageState extends State<ProfilePage> {
                     Navigator.push(
                         context,
                         CupertinoPageRoute(
-                            builder: (context) => const SettingScreen(
+                            builder: (context) => const AchievementScreen(
                                   title: '',
                                 )));
                   },
@@ -619,7 +646,7 @@ class ProfilePageState extends State<ProfilePage> {
                           verticalDirection: VerticalDirection.down,
                           children: [
                             Icon(
-                              Icons.import_contacts_sharp,
+                              Icons.star_border,
                               size: 20,
                               color: Colors.blueAccent,
                             ),
@@ -627,7 +654,7 @@ class ProfilePageState extends State<ProfilePage> {
                               width: 15,
                             ),
                             Text(
-                              "设置",
+                              "收藏",
                               style: TextStyle(
                                 fontSize: 16,
                                 color: Colors.black,

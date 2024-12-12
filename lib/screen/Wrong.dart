@@ -32,7 +32,7 @@ class _InnerState extends State<WrongScreen> {
   Widget build(BuildContext context) {
     var screenWidth = MediaQuery.of(context).size.width;
     return Scaffold(
-      appBar: TDNavBar(title: '设置', onBack: () {}),
+      appBar: TDNavBar(title: '疑难题集', onBack: () {}),
       body: const SingleChildScrollView(
         scrollDirection: Axis.vertical, //
       ),
