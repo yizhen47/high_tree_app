@@ -305,73 +305,62 @@ class MainHomePageState extends State<MainHomePage> {
                   ),
                 ],
               ),
-              Card(
-                color: Colors.white,
-                margin: const EdgeInsets.all(0),
-                shape: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  borderSide: const BorderSide(color: Colors.black12),
-                ),
-                child: Column(
-                  children: [
-                    const SizedBox(
-                      width: double.infinity,
-                    ),
-                    Card(
-                        color: Colors.white,
-                        child: Row(
-                          children: [
-                            Image.asset(
-                              'assets/logo.png',
-                              width: 60,
-                              height: 60,
-                            ),
-                            const Column(
-                              children: [
-                                Text(
-                                  '长安大学高数练习软件',
-                                  style: TextStyle(
-                                      color: Colors.black, fontSize: 20),
-                                ),
-                                Text(
-                                  '上高树，学高数',
-                                  style: TextStyle(
-                                      color: Colors.grey, fontSize: 16),
-                                ),
-                              ],
-                            )
-                          ],
-                        )),
-                    Card(
+              Column(
+                children: [
+                  const SizedBox(
+                    width: double.infinity,
+                  ),
+                  Card(
                       color: Colors.white,
                       child: Row(
                         children: [
-                          Image.asset('assets/chu.png', width: 100),
+                          Image.asset(
+                            'assets/logo.png',
+                            width: 60,
+                            height: 60,
+                          ),
                           const Column(
                             children: [
                               Text(
-                                '弘毅明德，笃学创新',
+                                '  长安大学高数练习软件',
                                 style: TextStyle(
-                                    color: Colors.black, fontSize: 20),
+                                    color: Colors.black, fontSize: 16),
                               ),
                               Text(
-                                '为党育人，为国育才',
+                                '  上高树，学高数',
                                 style:
-                                    TextStyle(color: Colors.grey, fontSize: 16),
+                                    TextStyle(color: Colors.grey, fontSize: 14),
                               ),
                             ],
                           )
                         ],
-                      ),
+                      )),
+                  Card(
+                    color: Colors.white,
+                    child: Row(
+                      children: [
+                        Image.asset('assets/chu.png', width: 60),
+                        const Column(
+                          children: [
+                            Text(
+                              '  弘毅明德，笃学创新',
+                              style:
+                                  TextStyle(color: Colors.black, fontSize: 16),
+                            ),
+                            Text(
+                              '  为党育人，为国育才',
+                              style:
+                                  TextStyle(color: Colors.grey, fontSize: 14),
+                            ),
+                          ],
+                        )
+                      ],
                     ),
-                    
-    
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
           ),
-          
           Column(
             //InkWell：可以给任意控件外面套，然后可以监听点击之类的事件
             children: [
@@ -445,7 +434,6 @@ class MainHomePageState extends State<MainHomePage> {
             ],
           )
         ],
-        
       ),
     );
   }

@@ -65,13 +65,13 @@ class _InnerState extends State<SettingScreen> {
                   color: Colors.white,
                   child: Column(children: [
                     Padding(
-                      padding: EdgeInsets.all(14),
+                      padding: const EdgeInsets.all(14),
                       child: Stack(
                         children: [
                         const Text(
                             "正确的题跳过",
                             textScaler: TextScaler.linear(1.2),
-                            selectionColor: Color(0),
+                            selectionColor: Color(0x00000000),
                           ),
                            Row(
                             verticalDirection: VerticalDirection.down,
@@ -93,7 +93,7 @@ class _InnerState extends State<SettingScreen> {
                       ),
                     ),
                     Padding(
-                      padding: EdgeInsets.fromLTRB(20, 0, 5, 0),
+                      padding: const EdgeInsets.fromLTRB(20, 0, 5, 0),
                       child: SizedBox(
                         height: 2,
                         child: Container(
@@ -103,13 +103,13 @@ class _InnerState extends State<SettingScreen> {
                       ),
                     ),
                     Padding(
-                        padding: EdgeInsets.all(15),
+                        padding: const EdgeInsets.all(15),
                         child: Stack(
                           children: [
                             const Text(
                               "正确的题跳过",
                               textScaler: TextScaler.linear(1.2),
-                              selectionColor: Color(0),
+                              selectionColor: Color(0x00000000),
                             ), Row(
                             verticalDirection: VerticalDirection.down,
                             mainAxisAlignment: MainAxisAlignment.end,
@@ -133,7 +133,7 @@ class _InnerState extends State<SettingScreen> {
                           ],
                         )),
                     Padding(
-                      padding: EdgeInsets.fromLTRB(20, 0, 5, 0),
+                      padding: const EdgeInsets.fromLTRB(20, 0, 5, 0),
                       child: SizedBox(
                         height: 2,
                         child: Container(
@@ -151,21 +151,3 @@ class _InnerState extends State<SettingScreen> {
   }
 }
 
-Map<String, Color> themeColorMap = {
-  'gray': Colors.grey,
-  'blue': Colors.blue,
-  'blueAccent': Colors.blueAccent,
-  'cyan': Colors.cyan,
-  'deepPurple': Colors.purple,
-  'deepPurpleAccent': Colors.deepPurpleAccent,
-  'deepOrange': Colors.orange,
-  'green': Colors.green,
-  'indigo': Colors.indigo,
-  'indigoAccent': Colors.indigoAccent,
-  'orange': Colors.orange,
-  'purple': Colors.purple,
-  'pink': Colors.pink,
-  'red': Colors.red,
-  'teal': Colors.teal,
-  'black': Colors.black,
-};
