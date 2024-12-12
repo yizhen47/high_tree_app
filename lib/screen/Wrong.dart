@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:yako_theme_switch/yako_theme_switch.dart';
 
-class SettingScreen extends StatefulWidget {
-  const SettingScreen({super.key, required this.title});
+class WrongScreen extends StatefulWidget {
+  const WrongScreen({super.key, required this.title});
   final String title;
   @override
-  State<SettingScreen> createState() => _InnerState();
+  State<WrongScreen> createState() => _InnerState();
 }
 
 //这里是在一个页面中加了PageView，PageView可以载入更多的StatefulWidget或者StatelessWidget（也就是页面中加载其他页面作为子控件）
-class _InnerState extends State<SettingScreen> {
+class _InnerState extends State<WrongScreen> {
   int _currentIndex = 1;
   final PageController _pageController = PageController(initialPage: 1);
 
@@ -33,11 +33,9 @@ class _InnerState extends State<SettingScreen> {
     var screenWidth = MediaQuery.of(context).size.width;
     return Scaffold(
       appBar: TDNavBar(title: '设置', onBack: () {}),
-      body:    const SingleChildScrollView(
+      body: const SingleChildScrollView(
         scrollDirection: Axis.vertical, //
-      
       ),
-      );
+    );
   }
 }
-

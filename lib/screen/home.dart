@@ -1,6 +1,7 @@
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screen/Wrong.dart';
 import 'package:flutter_application_1/screen/question.dart';
 import 'package:flutter_swiper_view/flutter_swiper_view.dart';
 import 'package:simple_ripple_animation/simple_ripple_animation.dart';
@@ -152,6 +153,7 @@ class MainHomePageState extends State<MainHomePage> {
       child: Stack(
         children: [
           Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(
                 height: 120,
@@ -229,16 +231,16 @@ class MainHomePageState extends State<MainHomePage> {
                   )
                 ],
               ),
-              const Row(
+              Row(
                 children: [
-                  Expanded(
+                  const Expanded(
                     child: Padding(
                       padding: EdgeInsets.all(10),
                       child: Column(
                         children: [
                           Icon(
                             Icons.playlist_add_check,
-                            size: 40,
+                            size: 45,
                             color: Colors.blueAccent,
                           ),
                           Text(
@@ -249,7 +251,7 @@ class MainHomePageState extends State<MainHomePage> {
                       ),
                     ),
                   ),
-                  Expanded(
+                  const Expanded(
                     child: Padding(
                       padding: EdgeInsets.all(10),
                       child: Column(
@@ -267,7 +269,7 @@ class MainHomePageState extends State<MainHomePage> {
                       ),
                     ),
                   ),
-                  Expanded(
+                  const Expanded(
                     child: Padding(
                       padding: EdgeInsets.all(10),
                       child: Column(
@@ -286,24 +288,45 @@ class MainHomePageState extends State<MainHomePage> {
                     ),
                   ),
                   Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.all(10),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.quiz_outlined,
-                            size: 40,
-                            color: Colors.blueAccent,
-                          ),
-                          Text(
-                            "疑难题集",
-                            style: TextStyle(fontSize: 12, color: Colors.black),
-                          )
-                        ],
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const WrongScreen(
+                                      title: '',
+                                    )));
+                      },
+                      child: const Padding(
+                        padding: EdgeInsets.all(10),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.quiz_outlined,
+                              size: 35,
+                              color: Colors.blueAccent,
+                            ),
+                            Text(
+                              "疑难题集",
+                              style:
+                                  TextStyle(fontSize: 12, color: Colors.black),
+                            )
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ],
+              ),
+              const Padding(
+                padding: EdgeInsets.fromLTRB(10, 5, 5, 5),
+                child: Text(
+                  '公告',
+                  style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.black,
+                      fontWeight: FontWeight.w400),
+                ),
               ),
               Column(
                 children: [
@@ -311,52 +334,83 @@ class MainHomePageState extends State<MainHomePage> {
                     width: double.infinity,
                   ),
                   Card(
-                      color: Colors.white,
-                      child: Row(
-                        children: [
-                          Image.asset(
-                            'assets/logo.png',
-                            width: 60,
-                            height: 60,
-                          ),
-                          const Column(
-                            children: [
-                              Text(
-                                '  长安大学高数练习软件',
-                                style: TextStyle(
-                                    color: Colors.black, fontSize: 16),
-                              ),
-                              Text(
-                                '  上高树，学高数',
-                                style:
-                                    TextStyle(color: Colors.grey, fontSize: 14),
-                              ),
-                            ],
-                          )
-                        ],
-                      )),
-                  Card(
                     color: Colors.white,
-                    child: Row(
-                      children: [
-                        Image.asset('assets/chu.png', width: 60),
-                        const Column(
-                          children: [
-                            Text(
-                              '  弘毅明德，笃学创新',
-                              style:
-                                  TextStyle(color: Colors.black, fontSize: 16),
-                            ),
-                            Text(
-                              '  为党育人，为国育才',
-                              style:
-                                  TextStyle(color: Colors.grey, fontSize: 14),
-                            ),
-                          ],
-                        )
-                      ],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(2),
                     ),
+                    child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: Row(
+                          children: [
+                            const SizedBox(
+                              width: 4,
+                            ),
+                            Image.asset(
+                              'assets/logo.png',
+                              width: 50,
+                              height: 50,
+                            ),
+                            const SizedBox(
+                              width: 10,
+                            ),
+                            const Column(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '长安大学高数练习软件',
+                                  style: TextStyle(
+                                      color: Colors.black, fontSize: 16),
+                                ),
+                                Text(
+                                  '上高树，学高数',
+                                  style: TextStyle(
+                                      color: Colors.grey, fontSize: 14),
+                                ),
+                              ],
+                            )
+                          ],
+                        )),
                   ),
+                  Card(
+                      color: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: Row(
+                          children: [
+                            const SizedBox(
+                              width: 4,
+                            ),
+                            Image.asset(
+                              'assets/chu.png',
+                              width: 50,
+                              height: 50,
+                            ),
+                            const SizedBox(
+                              width: 10,
+                            ),
+                            const Column(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '弘毅明德，笃学创新',
+                                  style: TextStyle(
+                                      color: Colors.black, fontSize: 16),
+                                ),
+                                Text(
+                                  '为党育人，为国育才',
+                                  style: TextStyle(
+                                      color: Colors.grey, fontSize: 14),
+                                ),
+                              ],
+                            )
+                          ],
+                        ),
+                      )),
                 ],
               ),
             ],
@@ -450,107 +504,160 @@ class ProfilePage extends StatefulWidget {
 class ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
-    var screenWidth = MediaQuery.of(context).size.width;
-    TDSwipeCell(
-      groupTag: 'test',
-      left: TDSwipeCellPanel(
-        extentRatio: 60 / screenWidth,
-        children: [],
-      ),
-      cell: const TDCell(
-        title: '左右滑操作',
-        note: '辅助信息',
-      ),
-    );
-
     return Column(
       children: [
-        Row(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(50),
-              child: Container(
-                width: 100,
-                height: 100,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Color.fromARGB(255, 74, 126, 123),
+        Card(
+          color: Colors.white,
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(50),
+                    child: Container(
+                      width: 100,
+                      height: 100,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Color.fromARGB(255, 74, 126, 123),
+                      ),
+                    ),
+                  ),
+                  const Column(
+                    children: [
+                      Text(
+                        '姓名',
+                        textScaler: TextScaler.linear(2),
+                        style: TextStyle(),
+                      ),
+                      Text(
+                        '签名',
+                        textScaler: TextScaler.linear(1.2),
+                        style: TextStyle(),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+        Card(
+          color: Colors.white,
+          child: Column(
+            children: [
+              Container(
+                color: Colors.white,
+                child: InkWell(
+                  onTap: () {
+                    Navigator.push(
+                        context,
+                        CupertinoPageRoute(
+                            builder: (context) => const SettingScreen(
+                                  title: '',
+                                )));
+                  },
+                  child: const Padding(
+                    padding: EdgeInsets.all(14),
+                    child: Stack(
+                      children: [
+                        Row(
+                          verticalDirection: VerticalDirection.down,
+                          children: [
+                            Icon(
+                              Icons.import_contacts_sharp,
+                              size: 20,
+                              color: Colors.blueAccent,
+                            ),
+                            SizedBox(
+                              width: 15,
+                            ),
+                            Text(
+                              "设置",
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.black,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            )
+                          ],
+                        ),
+                        Row(
+                          verticalDirection: VerticalDirection.up,
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Icon(
+                              Icons.chevron_right,
+                              color: Colors.grey,
+                              size: 22,
+                            )
+                          ],
+                        )
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ),
-            const Column(
-              children: [
-                Text(
-                  '姓名',
-                  textScaler: TextScaler.linear(2),
-                  style: TextStyle(),
+              const TDDivider(),
+              Container(
+                color: Colors.white,
+                child: InkWell(
+                  onTap: () {
+                    Navigator.push(
+                        context,
+                        CupertinoPageRoute(
+                            builder: (context) => const SettingScreen(
+                                  title: '',
+                                )));
+                  },
+                  child: const Padding(
+                    padding: EdgeInsets.all(14),
+                    child: Stack(
+                      children: [
+                        Row(
+                          verticalDirection: VerticalDirection.down,
+                          children: [
+                            Icon(
+                              Icons.import_contacts_sharp,
+                              size: 20,
+                              color: Colors.blueAccent,
+                            ),
+                            SizedBox(
+                              width: 15,
+                            ),
+                            Text(
+                              "设置",
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.black,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            )
+                          ],
+                        ),
+                        Row(
+                          verticalDirection: VerticalDirection.up,
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Icon(
+                              Icons.chevron_right,
+                              color: Colors.grey,
+                              size: 22,
+                            )
+                          ],
+                        )
+                      ],
+                    ),
+                  ),
                 ),
-                Text(
-                  '签名',
-                  textScaler: TextScaler.linear(1.2),
-                  style: TextStyle(),
-                ),
-              ],
-            ),
-          ],
-        ),
-        SizedBox(
-          height: 20,
-          child: Container(
-            alignment: Alignment.center,
-            child: const TDDivider(),
+              ),
+              const TDDivider(),
+            ],
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(5),
-          child: TDButton(
-            text: '成就',
-            size: TDButtonSize.large,
-            type: TDButtonType.fill,
-            shape: TDButtonShape.filled,
-            theme: TDButtonTheme.defaultTheme,
-            onTap: () {
-              //前往另外一个页面（需要import）
-              Navigator.push(
-                context,
-                CupertinoPageRoute(
-                    builder: (context) => const AchievementScreen(
-                          title: '',
-                        )),
-              );
-            },
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(5),
-          child: TDButton(
-            text: '设置',
-            size: TDButtonSize.large,
-            type: TDButtonType.fill,
-            shape: TDButtonShape.filled,
-            theme: TDButtonTheme.defaultTheme,
-            onTap: () {
-              //前往另外一个页面（需要import）
-              Navigator.push(
-                context,
-                CupertinoPageRoute(
-                    builder: (context) => const SettingScreen(
-                          title: '',
-                        )),
-              );
-            },
-          ),
-        ),
-        const Padding(
-          padding: EdgeInsets.all(5),
-          child: TDButton(
-            text: '关于',
-            size: TDButtonSize.large,
-            type: TDButtonType.fill,
-            shape: TDButtonShape.filled,
-            theme: TDButtonTheme.defaultTheme,
-          ),
-        ), //点进去可以看团队信息
+        )
+
+        //点进去可以看团队信息
       ],
     );
   }
