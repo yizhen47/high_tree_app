@@ -1,8 +1,13 @@
+import 'dart:isolate';
+
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screen/Wrong.dart';
 import 'package:flutter_application_1/screen/question.dart';
+import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:flutter_swiper_view/flutter_swiper_view.dart';
 import 'package:simple_ripple_animation/simple_ripple_animation.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
@@ -124,6 +129,7 @@ class CommunityPageState extends State<CommunityPage> {
           items: [
             TDDrawerItem(title: "test", icon: const Icon(Icons.add_box_sharp))
           ],
+          
           onItemClick: (index, item) {
             print('drawer item被点击，index：$index，title：${item.title}');
           },
@@ -528,7 +534,58 @@ class ProfilePage extends StatefulWidget {
   State<ProfilePage> createState() => ProfilePageState();
 }
 
+
+
+
 class ProfilePageState extends State<ProfilePage> {
+  Widget buildSettingViews(
+      final IconData icon, final String name, final GestureTapCallback onTap) {
+    return Container(
+      color: Colors.white,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Stack(
+            children: [
+              Row(
+                verticalDirection: VerticalDirection.down,
+                children: [
+                  Icon(
+                    icon,
+                    size: 20,
+                    color: Colors.blueAccent,
+                  ),
+                  const SizedBox(
+                    width: 15,
+                  ),
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.black,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  )
+                ],
+              ),
+              const Row(
+                verticalDirection: VerticalDirection.up,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Icon(
+                    Icons.chevron_right,
+                    color: Colors.grey,
+                    size: 22,
+                  )
+                ],
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -574,111 +631,33 @@ class ProfilePageState extends State<ProfilePage> {
           color: Colors.white,
           child: Column(
             children: [
-              Container(
-                color: Colors.white,
-                child: InkWell(
-                  onTap: () {
-                    Navigator.push(
-                        context,
-                        CupertinoPageRoute(
-                            builder: (context) => const SettingScreen(
-                                  title: '',
-                                )));
-                  },
-                  child: const Padding(
-                    padding: EdgeInsets.all(14),
-                    child: Stack(
-                      children: [
-                        Row(
-                          verticalDirection: VerticalDirection.down,
-                          children: [
-                            Icon(
-                              Icons.settings,
-                              size: 20,
-                              color: Colors.blueAccent,
-                            ),
-                            SizedBox(
-                              width: 15,
-                            ),
-                            Text(
-                              "设置",
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.black,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            )
-                          ],
-                        ),
-                        Row(
-                          verticalDirection: VerticalDirection.up,
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Icon(
-                              Icons.chevron_right,
-                              color: Colors.grey,
-                              size: 22,
-                            )
-                          ],
-                        )
-                      ],
+              buildSettingViews(Icons.import_contacts_sharp, "设置", () {
+                Navigator.push(
+                  context,
+                  CupertinoPageRoute(
+                    builder: (context) => const SettingScreen(
+                      title: '',
                     ),
                   ),
-                ),
-              ),
+                );
+              }),
               const TDDivider(),
-              Container(
-                color: Colors.white,
-                child: InkWell(
-                  onTap: () {
-                    Navigator.push(
-                        context,
-                        CupertinoPageRoute(
-                            builder: (context) => const AchievementScreen(
-                                  title: '',
-                                )));
-                  },
-                  child: const Padding(
-                    padding: EdgeInsets.all(14),
-                    child: Stack(
-                      children: [
-                        Row(
-                          verticalDirection: VerticalDirection.down,
-                          children: [
-                            Icon(
-                              Icons.star_border,
-                              size: 20,
-                              color: Colors.blueAccent,
-                            ),
-                            SizedBox(
-                              width: 15,
-                            ),
-                            Text(
-                              "收藏",
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.black,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            )
-                          ],
-                        ),
-                        Row(
-                          verticalDirection: VerticalDirection.up,
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Icon(
-                              Icons.chevron_right,
-                              color: Colors.grey,
-                              size: 22,
-                            )
-                          ],
-                        )
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+              buildSettingViews(Icons.import_contacts_sharp, "设置题库", () {
+                () async {
+                  var fromFilePath = await FilePicker.platform.pickFiles(
+                      allowMultiple: false,
+                      allowedExtensions: ["qset", "zip", "rar", "7z"]);
+                  if (fromFilePath == null) return;
+                  var saveFilePath = await FilePicker.platform.saveFile(
+                    dialogTitle: "请选择保存路径",
+                    fileName: "custom.qset",
+                  );
+
+                  if (saveFilePath == null) return;
+                  await Isolate.run(() => QuestionBank.create(
+                      fromFilePath.files.single.path!, saveFilePath));
+                };
+              }),
               const TDDivider(),
             ],
           ),

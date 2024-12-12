@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:math';
 import 'package:archive/archive.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:xml/xml.dart' as xml;
 import 'dart:convert';
@@ -185,7 +185,7 @@ Map<String, dynamic> parseWordToJSONData(String text, String title) {
 
 Future<void> generateByDocx(File fromFile, File saveFile) async {
   mksureInit();
-  final bytes = fromFile.readAsBytesSync();
+  final bytes = await fromFile.readAsBytes();
 
   final archiveDecoder = _zipDecoder!.decodeBytes(bytes);
 
@@ -308,8 +308,8 @@ Future<void> generateByDocx(File fromFile, File saveFile) async {
       ArchiveFile('data.txt', jsonContentTester.length, jsonContentTester));
 
   try {
-    final result =
-        parseWordToJSONData(list.join('\n'), path.basename( fromFile.path.split('/').first));
+    final result = parseWordToJSONData(
+        list.join('\n'), path.basename(fromFile.path.split('/').first));
     final jsonContent = utf8.encode(jsonEncode(result,
         toEncodable: (value) => value is Map ? value : null));
     archive.addFile(ArchiveFile('data.json', jsonContent.length, jsonContent));
@@ -338,6 +338,14 @@ class SingleQuestionData {
 
   SingleQuestionData(
       this.fromKonwledgePoint, this.fromKonwledgeIndex, this.question);
+
+  getKonwledgePoint() {
+    return fromKonwledgePoint.join('/');
+  }
+
+  getKonwledgeIndex() {
+    return fromKonwledgeIndex.join('/');
+  }
 }
 
 class QuestionBank {
@@ -346,11 +354,12 @@ class QuestionBank {
   String? displayName;
   int? version;
   String? id;
+  String? cacheDir;
   QuestionBank(this.filePath);
   Future<void> load() async {
     mksureInit();
     File fromFile = File(filePath);
-    final achieve = _zipDecoder!.decodeBytes(fromFile.readAsBytesSync());
+    final achieve = _zipDecoder!.decodeBytes(await fromFile.readAsBytes());
     for (final file in achieve) {
       if (file.name == "data.json") {
         var json = jsonDecode(utf8.decode(file.content));
@@ -358,11 +367,30 @@ class QuestionBank {
         displayName = json.name;
         id = json.id;
         version = json.version;
+        cacheDir = path.join(
+            (await getApplicationCacheDirectory()).path, "questionBank", id);
       }
+    }
+    if (cacheDir == null) throw Exception("cache dir not found");
+    for (final file in achieve) {
+      path.join(cacheDir!, file.name);
     }
   }
 
-  close() {}
+  close() {
+    if (cacheDir != null) Directory(cacheDir!).delete();
+  }
+
+  static clean() async {
+    _deleteIfExists(Directory(path.join(
+              (await getApplicationDocumentsDirectory()).path, "questionBank")));
+  }
+
+  static Future<void> _deleteIfExists(Directory file) async {
+    if (await file.exists()) {
+      await file.delete();
+    }
+  }
 
   SingleQuestionData _randomSectionQuestion(List<Section> sects,
       List<String> fromKonwledgePoint, List<String> fromKonwledgeIndex) {
@@ -398,14 +426,7 @@ class QuestionBank {
     return allQuestions;
   }
 
-  static create(String path) async {
-    String? outputFile = await FilePicker.platform.saveFile(
-      dialogTitle: 'Please select an output file:',
-      fileName: 'custom.qset',
-    );
-    if (outputFile == null) {
-      return;
-    }
+  static create(String path, String outputFile) async {
     generateByDocx(File(path), File(outputFile));
   }
 }
