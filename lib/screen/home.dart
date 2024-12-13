@@ -5,7 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/screen/Wrong.dart';
+import 'package:flutter_application_1/screen/wrong.dart';
 import 'package:flutter_application_1/screen/question.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:flutter_swiper_view/flutter_swiper_view.dart';
@@ -129,7 +129,6 @@ class CommunityPageState extends State<CommunityPage> {
           items: [
             TDDrawerItem(title: "test", icon: const Icon(Icons.add_box_sharp))
           ],
-          
           onItemClick: (index, item) {
             print('drawer item被点击，index：$index，title：${item.title}');
           },
@@ -299,7 +298,7 @@ class MainHomePageState extends State<MainHomePage> {
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => BankScreen()));
+                                builder: (context) => const BankScreen(title: '',)));
                       },
                       child: const Padding(
                         padding: EdgeInsets.all(10),
@@ -534,9 +533,6 @@ class ProfilePage extends StatefulWidget {
   State<ProfilePage> createState() => ProfilePageState();
 }
 
-
-
-
 class ProfilePageState extends State<ProfilePage> {
   Widget buildSettingViews(
       final IconData icon, final String name, final GestureTapCallback onTap) {
@@ -586,6 +582,7 @@ class ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -642,21 +639,18 @@ class ProfilePageState extends State<ProfilePage> {
                 );
               }),
               const TDDivider(),
-              buildSettingViews(Icons.import_contacts_sharp, "设置题库", () {
-                () async {
-                  var fromFilePath = await FilePicker.platform.pickFiles(
-                      allowMultiple: false,
-                      allowedExtensions: ["qset", "zip", "rar", "7z"]);
-                  if (fromFilePath == null) return;
-                  var saveFilePath = await FilePicker.platform.saveFile(
-                    dialogTitle: "请选择保存路径",
-                    fileName: "custom.qset",
-                  );
+              buildSettingViews(Icons.import_contacts_sharp, "设置题库", () async {
+                var fromFilePath = await FilePicker.platform.pickFiles(
+                    allowMultiple: false, allowedExtensions: ["docx"]);
+                if (fromFilePath == null) return;
+                var saveFilePath = await FilePicker.platform.saveFile(
+                  dialogTitle: "请选择保存路径",
+                  fileName: "custom.qset",
+                );
 
-                  if (saveFilePath == null) return;
-                  await Isolate.run(() => QuestionBank.create(
-                      fromFilePath.files.single.path!, saveFilePath));
-                };
+                if (saveFilePath == null) return;
+                QuestionBank.create(
+                    fromFilePath.files.single.path!, saveFilePath);
               }),
               const TDDivider(),
             ],

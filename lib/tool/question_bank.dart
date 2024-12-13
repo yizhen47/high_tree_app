@@ -8,6 +8,9 @@ import 'dart:convert';
 import './wmf2png.dart';
 import 'package:xml/xml.dart';
 import 'package:path/path.dart' as path;
+import 'package:json_annotation/json_annotation.dart';
+
+part 'question_bank.g.dart';
 
 ZipDecoder? _zipDecoder;
 ZipEncoder? _zipEncoder;
@@ -21,31 +24,56 @@ void mksureInit() {
   _random ??= Random();
 }
 
+@JsonSerializable()
 class Section {
   String index;
   String title;
-  String note;
-  List<Section> children;
-  List<Map<String, String>> questions;
+  String? note;
+  List<Section>? children;
+  List<Map<String, String>>? questions;
+
+  factory Section.fromJson(Map<String, dynamic> json) =>
+      _$SectionFromJson(json);
+
+  Map<String, dynamic> toJson() => _$SectionToJson(this);
 
   Section(this.index, this.title)
       : children = [],
         questions = [],
         note = '';
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toTrimJson() {
     return {
       'index': index,
       'title': title,
-      'children': children.map((child) => child.toJson()).toList(),
-      'note': note.isNotEmpty ? note.trim() : null,
-      'questions': questions.isNotEmpty
-          ? questions
+      'children': children!.map((child) => child.toTrimJson()).toList(),
+      'note': note!.isNotEmpty ? note!.trim() : null,
+      'questions': questions!.isNotEmpty
+          ? questions!
               .map((q) => {'q': q['q']?.trim(), 'w': q['w']?.trim()})
               .toList()
           : null,
     }..removeWhere(
         (key, value) => value == null || (value is List && value.isEmpty));
+  }
+}
+
+@JsonSerializable() // 使用泛型的注解
+class QuestionBankData {
+  String? displayName;
+  List<Section>? data;
+  String? id;
+  int? version;
+
+  factory QuestionBankData.fromJson(Map<String, dynamic> json) =>
+      _$QuestionBankDataFromJson(json);
+
+  Map<String, dynamic> toJson() => _$QuestionBankDataToJson(this);
+
+  QuestionBankData();
+  @override
+  String toString() {
+    return jsonEncode(this);
   }
 }
 
@@ -71,22 +99,22 @@ Map<String, dynamic> parseWordToJSONData(String text, String title) {
     if (RegExp(r'[一二三四五六七八九]+、.*题').hasMatch(line) && inExercises) continue;
 
     if ((line.startsWith('例') || (inExercises && matchf.hasMatch(line)))) {
-      stack.last.questions.add({'q': '', 'w': ''});
+      stack.last.questions!.add({'q': '', 'w': ''});
       inState = 1;
       if (!inExercises && line.startsWith('例')) {
         appendQuestionOrAnswer(
-            stack.last.questions.last, 'q', line.substring(2).trim());
+            stack.last.questions!.last, 'q', line.substring(2).trim());
       } else if (inExercises) {
         // Inside exercises section, treat numbered lines as questions
-        appendQuestionOrAnswer(stack.last.questions.last, 'q',
+        appendQuestionOrAnswer(stack.last.questions!.last, 'q',
             line.substring(matchf.firstMatch(line)?.end ?? 0 + 1).trim());
       }
     } else if (line.startsWith('解')) {
       // Handle solutions
       inState = 2;
-      if (stack.last.questions.isNotEmpty) {
+      if (stack.last.questions!.isNotEmpty) {
         appendQuestionOrAnswer(
-            stack.last.questions.last, 'w', line.substring(2).trim());
+            stack.last.questions!.last, 'w', line.substring(2).trim());
       }
     } else if (line.startsWith('习题')) {
       // Start of exercises section
@@ -137,10 +165,10 @@ Map<String, dynamic> parseWordToJSONData(String text, String title) {
         while (stack.length > 1) {
           stack.removeLast();
         }
-        stack.last.children.add(newSection);
+        stack.last.children!.add(newSection);
         stack.add(newSection);
       } else if (inSummerize) {
-        stack.last.note += '$line\n';
+        stack.last.note = '${stack.last.note!}$line\n';
       } else if (matchSub != null) {
         // Reset exercise flag when a new section starts
         inExercises = false;
@@ -160,15 +188,15 @@ Map<String, dynamic> parseWordToJSONData(String text, String title) {
         }
 
         var newSection = Section(newIndex, newTitle);
-        stack.last.children.add(newSection);
+        stack.last.children!.add(newSection);
         stack.add(newSection);
       } else {
         if (inState == 1) {
-          appendQuestionOrAnswer(stack.last.questions.last, 'q', line);
+          appendQuestionOrAnswer(stack.last.questions!.last, 'q', line);
         } else if (inState == 2) {
-          appendQuestionOrAnswer(stack.last.questions.last, 'w', line);
+          appendQuestionOrAnswer(stack.last.questions!.last, 'w', line);
         } else {
-          stack.last.note += '$line\n';
+          stack.last.note = '${stack.last.note!}$line\n';
         }
       }
     }
@@ -176,7 +204,7 @@ Map<String, dynamic> parseWordToJSONData(String text, String title) {
 
   // Ensure we're returning the top-level children as data
   return {
-    'data': root.children.map((child) => child.toJson()).toList(),
+    'data': root.children!.map((child) => child.toTrimJson()).toList(),
     "version": 1,
     "id": const Uuid().v4(),
     "displayName": title
@@ -355,41 +383,68 @@ class QuestionBank {
   int? version;
   String? id;
   String? cacheDir;
+
+  static String? importedDirPath;
+  static String? loadedDirPath;
+
   QuestionBank(this.filePath);
-  Future<void> load() async {
+  Future<void> loadIntoData() async {
+    mksureInit();
+    var achieve = _zipDecoder!.decodeBytes(await File(filePath).readAsBytes());
+    if (cacheDir == null) throw Exception("cache dir not found");
+    List<Future> waitList = [];
+    for (final file in achieve) {
+      Directory(path.dirname(path.join(cacheDir!, file.name)))
+          .createSync(recursive: true);
+      waitList.add(
+          File(path.join(cacheDir!, file.name)).writeAsBytes(file.content));
+    }
+    await Future.wait(waitList);
+  }
+
+  Future<void> removeFromData() async {
+    mksureInit();
+    print(path.join(cacheDir!, '$id.qset'));
+    await _deleteIfExists(Directory(cacheDir!));
+  }
+
+  Future<QuestionBank> getQuestionBankInf() async {
     mksureInit();
     File fromFile = File(filePath);
     final achieve = _zipDecoder!.decodeBytes(await fromFile.readAsBytes());
     for (final file in achieve) {
       if (file.name == "data.json") {
-        var json = jsonDecode(utf8.decode(file.content));
+        Map<String, dynamic> jsonO = jsonDecode(utf8.decode(file.content));
+        var json = QuestionBankData.fromJson(jsonO);
         data = json.data;
-        displayName = json.name;
+        displayName = json.displayName;
         id = json.id;
         version = json.version;
-        cacheDir = path.join(
-            (await getApplicationCacheDirectory()).path, "questionBank", id);
+        cacheDir = path.join(loadedDirPath!, id);
+        break;
       }
     }
-    if (cacheDir == null) throw Exception("cache dir not found");
-    for (final file in achieve) {
-      path.join(cacheDir!, file.name);
-    }
+    return this;
   }
 
-  close() {
+  void close() {
     if (cacheDir != null) Directory(cacheDir!).delete();
   }
 
   static clean() async {
-    _deleteIfExists(Directory(path.join(
-              (await getApplicationDocumentsDirectory()).path, "questionBank")));
+    return Directory(QuestionBank.loadedDirPath!).list().forEach((e) async {
+      if ((await e.stat()).type == FileSystemEntityType.directory) {
+        e.delete();
+      }
+    });
   }
 
-  static Future<void> _deleteIfExists(Directory file) async {
+  static Future<bool> _deleteIfExists(Directory file) async {
     if (await file.exists()) {
-      await file.delete();
+      await file.delete(recursive: true);
+      return true;
     }
+    return false;
   }
 
   SingleQuestionData _randomSectionQuestion(List<Section> sects,
@@ -403,7 +458,7 @@ class QuestionBank {
       fromKonwledgePoint.add(sec.title);
       fromKonwledgeIndex.add(sec.index);
       return SingleQuestionData(fromKonwledgePoint, fromKonwledgeIndex,
-          sec.questions[_random!.nextInt(sec.questions.length)]);
+          sec.questions![_random!.nextInt(sec.questions!.length)]);
     } else {
       // ignore: unnecessary_null_comparison
       if (sec.children == null) {
@@ -412,7 +467,7 @@ class QuestionBank {
         fromKonwledgePoint.add(sec.title);
         fromKonwledgeIndex.add(sec.index);
         return _randomSectionQuestion(
-            sec.children, fromKonwledgePoint, fromKonwledgeIndex);
+            sec.children!, fromKonwledgePoint, fromKonwledgeIndex);
       }
     }
   }
@@ -424,6 +479,85 @@ class QuestionBank {
       allQuestions.add(_randomSectionQuestion(data!, [], []));
     }
     return allQuestions;
+  }
+
+  static void importQuestionBank(File file) async {
+    mksureInit();
+    if (!file.existsSync()) {
+      throw Exception("文件不存在");
+    }
+    var achieve = _zipDecoder!.decodeBytes(await file.readAsBytes());
+    String? id;
+    for (final f in achieve) {
+      if (f.name == "data.json") {
+        var json = jsonDecode(utf8.decode(f.content));
+        id = json["id"];
+        break;
+      }
+    }
+    if (id == null) {
+      throw Exception("文件格式不正确");
+    }
+    var npath = path.join(QuestionBank.importedDirPath!, "$id.qset");
+    await file.copy(npath);
+  }
+
+  static Future<List<QuestionBank>> getAllImportedQuestionBanks() async {
+    mksureInit();
+    var dir = Directory(QuestionBank.importedDirPath!);
+    if (!dir.existsSync()) {
+      return [];
+    }
+    final List<QuestionBank> res = [];
+    for (var action in List.from(dir
+        .listSync()
+        .where((element) => element.path.endsWith(".qset"))
+        .map((e) => (e.path)))) {
+      res.add(await QuestionBank(action).getQuestionBankInf());
+    }
+    return res;
+  }
+
+  static Future<List<QuestionBank>> getAllLoadedQuestionBanks() async {
+    mksureInit();
+    List<QuestionBank> q = [];
+    for (var action in getAllLoadedQuestionBankIds()) {
+      q.add(await QuestionBank(action).getQuestionBankInf());
+    }
+    return q;
+  }
+
+  static List<String> getAllLoadedQuestionBankIds() {
+    mksureInit();
+    var dir = Directory(QuestionBank.loadedDirPath!);
+    if (!dir.existsSync()) {
+      return [];
+    }
+
+    return List.from(dir.listSync().map((e) => (path.basename(e.path))));
+  }
+
+  bool isLoaded() {
+    return Directory(path.join(QuestionBank.loadedDirPath!, id)).existsSync();
+  }
+
+  static Future<QuestionBank> getQuestionBankById(String id) async {
+    mksureInit();
+    var p = path.join(QuestionBank.importedDirPath!, '$id.qset');
+    var q = QuestionBank(p);
+    await q.getQuestionBankInf();
+    return q;
+  }
+
+  static init() async {
+    mksureInit();
+    QuestionBank.importedDirPath = path.join(
+        (await getApplicationSupportDirectory()).path, "questionBank");
+    QuestionBank.loadedDirPath = path.join(
+        (await getApplicationCacheDirectory()).path, "questionBankLoaded");
+    await Directory(QuestionBank.importedDirPath!).create();
+    await Directory(QuestionBank.loadedDirPath!).create();
+    // await clean();
   }
 
   static create(String path, String outputFile) async {

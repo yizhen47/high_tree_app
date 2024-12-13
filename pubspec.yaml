@@ -28,11 +28,14 @@ dependencies:
   rflutter_alert: ^2.0.7
   uuid: ^4.5.1
   path_provider: ^2.1.5
+  json_annotation: ^4.9.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
+  json_serializable: ^6.9.0
+  build_runner: ^2.4.13
 
 flutter:
   uses-material-design: true
