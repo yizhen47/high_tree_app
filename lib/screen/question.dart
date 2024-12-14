@@ -171,77 +171,132 @@ Card buildCard(
 }
 
 class _InnerState extends State<QuestionScreen> {
-
   //这修改页面2的内容
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: TDNavBar(title: '刷题界面', onBack: () {}),
-        body: Column(
-          children: [
-            Flexible(
-                child: FutureBuilder(
-              future: QuestionBank.getAllLoadedQuestionBanks(),
-              builder: (context, snapshot) {
-                // 请求已结束
-                if (snapshot.connectionState == ConnectionState.done) {
-                  if (snapshot.hasError) {
-                    // 请求失败，显示错误
-                    return Text(
-                        "Error: ${snapshot.error}" '${snapshot.stackTrace}');
-                  } else {
-                    List<Card> cards = [];
-                    for(var i = 0; i < 5; i++){
-                      var q = snapshot.data![Random().nextInt(snapshot.data!.length)].randomChoiceQuestion().single;
-                      cards.add(buildCard(q.getKonwledgePoint(), q.question['q']!, q.question['w']));
-                    }
-                    return CardSwiper(
-                      cardsCount: cards.length,
-                      cardBuilder: (context, index, percentThresholdX,
-                              percentThresholdY) =>
-                          cards[index],
-                    );
-                  }
+      appBar: TDNavBar(title: '刷题界面', onBack: () {}),
+      body: Column(
+        children: [
+          Flexible(
+              child: FutureBuilder(
+            future: QuestionBank.getAllLoadedQuestionBanks(),
+            builder: (context, snapshot) {
+              // 请求已结束
+              if (snapshot.connectionState == ConnectionState.done) {
+                if (snapshot.hasError) {
+                  // 请求失败，显示错误
+                  return Text(
+                      "Error: ${snapshot.error}" '${snapshot.stackTrace}');
                 } else {
-                  return const Center(
-                    child: TDLoading(
-                      size: TDLoadingSize.large,
-                      icon: TDLoadingIcon.circle,
-                      text: '加载中…',
-                      axis: Axis.horizontal,
-                    ),
+                  List<Card> cards = [];
+                  for (var i = 0; i < 5; i++) {
+                    var q = snapshot
+                        .data![Random().nextInt(snapshot.data!.length)]
+                        .randomChoiceQuestion()
+                        .single;
+                    cards.add(buildCard(q.getKonwledgePoint(), q.question['q']!,
+                        q.question['w']));
+                  }
+                  return CardSwiper(
+                    cardsCount: cards.length,
+                    cardBuilder: (context, index, percentThresholdX,
+                            percentThresholdY) =>
+                        cards[index],
                   );
                 }
-              },
-            )),
-            Container(
-              color: Colors.white,
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  
-                  Expanded(
-                    child: Padding(
+              } else {
+                return const Center(
+                  child: TDLoading(
+                    size: TDLoadingSize.large,
+                    icon: TDLoadingIcon.circle,
+                    text: '加载中…',
+                    axis: Axis.horizontal,
+                  ),
+                );
+              }
+            },
+          )),
+          Container(
+            color: Colors.white,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.of(context).push(TDSlidePopupRoute(
+                          modalBarrierColor: TDTheme.of(context).fontGyColor2,
+                          slideTransitionFrom: SlideTransitionFrom.bottom,
+                          builder: (context) {
+                            return TDPopupBottomDisplayPanel(
+                              closeClick: () {
+                                Navigator.maybePop(context);
+                              },
+                              child: Container(
+                                height: 400,
+                              ),
+                            );
+                          }));
+                    },
+                    child: const Padding(
                       padding: EdgeInsets.only(bottom: 15, top: 15),
                       child: Icon(Icons.playlist_add_check),
                     ),
                   ),
-                  Expanded(
-                    child: Padding(
+                ),
+                Expanded(
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.of(context).push(TDSlidePopupRoute(
+                          modalBarrierColor: TDTheme.of(context).fontGyColor2,
+                          slideTransitionFrom: SlideTransitionFrom.bottom,
+                          builder: (context) {
+                            return TDPopupBottomDisplayPanel(
+                              closeClick: () {
+                                Navigator.maybePop(context);
+                              },
+                              child: Container(
+                                height: 200,
+                              ),
+                            );
+                          }));
+                    },
+                    child: const Padding(
                       padding: EdgeInsets.only(bottom: 15, top: 15),
                       child: Icon(Icons.notes),
                     ),
                   ),
-                  Expanded(
-                    child: Padding(
+                ),
+                Expanded(
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.of(context).push(TDSlidePopupRoute(
+                          modalBarrierColor: TDTheme.of(context).fontGyColor2,
+                          slideTransitionFrom: SlideTransitionFrom.bottom,
+                          builder: (context) {
+                            return TDPopupBottomDisplayPanel(
+                              closeClick: () {
+                                Navigator.maybePop(context);
+                              },
+                              child: const Text("111"),
+                            );
+                          }));
+
+                      const EdgeInsets.only(bottom: 15, top: 15);
+                  
+                    },
+                    child: const Padding(
                       padding: EdgeInsets.only(bottom: 15, top: 15),
                       child: Icon(Icons.quiz_outlined),
                     ),
                   ),
-                ],
-              ),
+                )
+              ],
             ),
-          ],
-        ),);
+          ),
+        ],
+      ),
+    );
   }
 }
