@@ -67,15 +67,15 @@ class _MainEnterScreenState extends State<_MainEnterScreen> {
   }
 
   Future<void> fetchAll() async {
-    List<Permission> permissionNames = [];
-    // permissionNames.add(Permission.location);
-    // permissionNames.add(Permission.camera);
-    permissionNames.add(Permission.storage);
-    for (var p in permissionNames) {
-      p.request();
-    }
     //设置安卓平台的高屏幕刷新率
     if (Platform.isAndroid) {
+      List<Permission> permissionNames = [];
+      // permissionNames.add(Permission.location);
+      // permissionNames.add(Permission.camera);
+      permissionNames.add(Permission.storage);
+      for (var p in permissionNames) {
+        p.request();
+      }
       try {
         await FlutterDisplayMode.setHighRefreshRate();
       } on PlatformException catch (e) {
