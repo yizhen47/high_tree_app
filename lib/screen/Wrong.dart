@@ -26,7 +26,7 @@ class _InnerState extends State<WrongScreen> {
       curve: Curves.easeInOut,
     );
   }
-
+  
   //这修改页面4的内容
   @override
   Widget build(BuildContext context) {
