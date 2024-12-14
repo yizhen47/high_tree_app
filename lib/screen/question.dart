@@ -185,6 +185,13 @@ class _InnerState extends State<QuestionScreen> {
   }
 
   final CardSwiperController controller = CardSwiperController();
+
+  final List<SingleQuestionData> allQuestions = [];
+  final List<bool> questionRemoved = [];
+  final List<SingleQuestionData> leftQuestions = [];
+  final List<SingleQuestionData> rightQuestions = [];
+  int questionRemain = 0;
+
   //这修改页面2的内容
   @override
   Widget build(BuildContext context) {
@@ -218,17 +225,40 @@ class _InnerState extends State<QuestionScreen> {
                         .data![Random().nextInt(snapshot.data!.length)]
                         .randomChoiceQuestion()
                         .single;
+                    allQuestions.add(q);
+                    questionRemoved.add(false);
+                    questionRemain++;
                     cards.add(buildCard(q.getKonwledgePoint(), q.question['q']!,
                         q.question['w']));
                   }
                   return CardSwiper(
-                    controller: controller,
-                    onUndo: _onUndo,
-                    cardsCount: cards.length,
-                    cardBuilder: (context, index, percentThresholdX,
-                            percentThresholdY) =>
-                        cards[index],
-                  );
+                      controller: controller,
+                      onSwipe: (previousIndex, currentIndex, direction) {
+                        if (direction == CardSwiperDirection.right) {
+                          rightQuestions.add(allQuestions[previousIndex]);
+                          questionRemoved[previousIndex] = true;
+                          questionRemain--;
+                        } else if (direction == CardSwiperDirection.left) {
+                          leftQuestions.add(allQuestions[previousIndex]);
+                          questionRemoved[previousIndex] = true;
+                          questionRemain--;
+                        }
+                        return true;
+                      },
+                      onUndo: _onUndo,
+                      cardsCount: cards.length,
+                      numberOfCardsDisplayed: 2,
+                      cardBuilder: (context, index, percentThresholdX,
+                          percentThresholdY) {
+                        if (questionRemain == 0) {
+                          return Text("ok");
+                        } else {
+                          while (questionRemoved[index]) {
+                            index = (index + 1) % cards.length;
+                          }
+                        }
+                        return cards[index];
+                      });
                 }
               } else {
                 return const Center(
