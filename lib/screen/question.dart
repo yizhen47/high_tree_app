@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/screen/Wrong.dart';
+import 'package:flutter_application_1/screen/wrong.dart';
 import 'package:flutter_application_1/screen/bank.dart';
 import 'package:flutter_application_1/screen/skip.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
@@ -23,6 +23,7 @@ class QuestionScreen extends StatelessWidget {
             ),
             Card(
               color: Colors.blueAccent,
+              margin: const EdgeInsets.fromLTRB(0, 4, 4, 4),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8)),
               child: const Padding(
@@ -34,8 +35,7 @@ class QuestionScreen extends StatelessWidget {
               ),
             ),
             const Text(
-              '''小明会飞，那么小明的爸爸会不会？
-''',
+              '''小明会飞，那么小明的爸爸会不会？''',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -212,8 +212,8 @@ class QuestionScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.start,
             verticalDirection: VerticalDirection.up,
-            children: const [
-              Row(
+            children: [
+              const Row(
                 children: [
                   Text('''
 A
@@ -285,46 +285,32 @@ D''',
                         cards[index],
               ),
             ),
-            Stack(children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.only(bottom: 20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: InkWell(
-                          onTap: () {
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => SkipScreen()));
-                          },
-                          child: const Icon(Icons.playlist_add_check)),
+            Container(
+              color: Colors.white,
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(bottom: 15, top: 15),
+                      child: Icon(Icons.playlist_add_check),
                     ),
-                    Expanded(
-                      child: InkWell(
-                          onTap: () => <Future>{
-                                Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => BankScreen())),
-                              },
-                          child: const Icon(Icons.notes)),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(bottom: 15, top: 15),
+                      child: Icon(Icons.notes),
                     ),
-                    Expanded(
-                      child:InkWell(onTap: ()=>{
-                        Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => WrongScreen(title: '',))),
-                      },
-                       child: const Icon(Icons.quiz_outlined))
-                      )
-                     
-                  ],
-                ),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(bottom: 15, top: 15),
+                      child: Icon(Icons.quiz_outlined),
+                    ),
+                  ),
+                ],
               ),
-            ]),
+            ),
           ],
         ));
   }

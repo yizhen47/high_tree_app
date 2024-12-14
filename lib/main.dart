@@ -55,7 +55,7 @@ class _MainEnterScreenState extends State<_MainEnterScreen> {
     });
     //future.delay xxxxx格式：延时执行一串代码
 
-    QuestionBank.clean();
+    QuestionBank.init();
     Future.delayed(const Duration(milliseconds: 5000), () {
       if(!isStarted) {
         // ignore: use_build_context_synchronously
