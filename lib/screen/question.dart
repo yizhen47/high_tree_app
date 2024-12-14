@@ -46,8 +46,9 @@ Card buildCard(
                   ),
                 ),
               ),
-              Text(
+              ExtendedText(
                 question,
+                specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -163,8 +164,9 @@ Card buildCard(
                   fontFamily: 'Times New Roman',
                 ),
               ),
-              Text(
+              ExtendedText(
                 answer ?? "暂无解析",
+                specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
                 style: const TextStyle(
                   fontSize: 14,
                   fontFamily: 'Times New Roman',
