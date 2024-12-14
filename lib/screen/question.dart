@@ -184,9 +184,14 @@ class _InnerState extends State<QuestionScreen> {
     int currentIndex,
     CardSwiperDirection direction,
   ) {
-    debugPrint(
-      'The card $currentIndex was undod from the ${direction.name}',
-    );
+    questionRemain++;
+    questionRemoved[currentIndex] = false;
+    if (direction == CardSwiperDirection.left) {
+      leftQuestions.removeLast();
+    }
+    if (direction == CardSwiperDirection.right) {
+      rightQuestions.removeLast();
+    }
     return true;
   }
 
@@ -260,7 +265,7 @@ class _InnerState extends State<QuestionScreen> {
                       cardBuilder: (context, index, percentThresholdX,
                           percentThresholdY) {
                         if (questionRemain == 0) {
-                          return Text("ok");
+                          return const Text("ok");
                         } else {
                           while (questionRemoved[index]) {
                             index = (index + 1) % cards.length;
