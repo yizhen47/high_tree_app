@@ -396,8 +396,10 @@ class QuestionBank {
     for (final file in achieve) {
       Directory(path.dirname(path.join(cacheDir!, file.name)))
           .createSync(recursive: true);
-      waitList.add(
-          File(path.join(cacheDir!, file.name)).writeAsBytes(file.content));
+      if (file.isFile) {
+        waitList.add(
+            File(path.join(cacheDir!, file.name)).writeAsBytes(file.content));
+      }
     }
     await Future.wait(waitList);
   }
@@ -522,7 +524,8 @@ class QuestionBank {
     mksureInit();
     List<QuestionBank> q = [];
     for (var action in getAllLoadedQuestionBankIds()) {
-      q.add(await (await QuestionBank.getQuestionBankById(action)).getQuestionBankInf());
+      q.add(await (await QuestionBank.getQuestionBankById(action))
+          .getQuestionBankInf());
     }
     return q;
   }

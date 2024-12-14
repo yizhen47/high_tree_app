@@ -44,6 +44,7 @@ class _InnerState extends State<BankScreen> {
                           selectIds: selectIds,
                           cardMode: true,
                           direction: Axis.vertical,
+                          maxSelected: 1,
                           directionalTdCheckboxes:
                               List.from((snapshot.data!.map((e) {
                             return TDCheckbox(

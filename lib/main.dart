@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
-import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'screen/home.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
@@ -37,7 +36,7 @@ var isStarted = false;
 
 //这里也是一个标准的动态页面
 class _MainEnterScreen extends StatefulWidget {
-  const _MainEnterScreen({super.key, required this.title});
+  const _MainEnterScreen({required this.title});
   final String title;
 
   @override

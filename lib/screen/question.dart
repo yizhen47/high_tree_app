@@ -1,9 +1,13 @@
 import 'dart:math';
 
+import 'package:extended_text/extended_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
+import 'package:flutter_application_1/widget/question_text.dart';
+import 'package:path/path.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
+import '../widget/question_text.dart';
 
 class QuestionScreen extends StatefulWidget {
   const QuestionScreen({super.key, required this.title});
@@ -157,8 +161,9 @@ Card buildCard(
               fontFamily: 'Times New Roman',
             ),
           ),
-          Text(
-            answer ?? "暂无解析",
+          ExtendedText(
+            (answer == null || answer == "") ? "暂无解析" : answer,
+            specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
             style: const TextStyle(
               fontSize: 14,
               fontFamily: 'Times New Roman',
@@ -171,77 +176,83 @@ Card buildCard(
 }
 
 class _InnerState extends State<QuestionScreen> {
-
   //这修改页面2的内容
   @override
   Widget build(BuildContext context) {
+    setCurMathImgPath(join(QuestionBank.loadedDirPath!,
+        QuestionBank.getAllLoadedQuestionBankIds().single, "assets", "images"));
+
     return Scaffold(
-        appBar: TDNavBar(title: '刷题界面', onBack: () {}),
-        body: Column(
-          children: [
-            Flexible(
-                child: FutureBuilder(
-              future: QuestionBank.getAllLoadedQuestionBanks(),
-              builder: (context, snapshot) {
-                // 请求已结束
-                if (snapshot.connectionState == ConnectionState.done) {
-                  if (snapshot.hasError) {
-                    // 请求失败，显示错误
-                    return Text(
-                        "Error: ${snapshot.error}" '${snapshot.stackTrace}');
-                  } else {
-                    List<Card> cards = [];
-                    for(var i = 0; i < 5; i++){
-                      var q = snapshot.data![Random().nextInt(snapshot.data!.length)].randomChoiceQuestion().single;
-                      cards.add(buildCard(q.getKonwledgePoint(), q.question['q']!, q.question['w']));
-                    }
-                    return CardSwiper(
-                      cardsCount: cards.length,
-                      cardBuilder: (context, index, percentThresholdX,
-                              percentThresholdY) =>
-                          cards[index],
-                    );
-                  }
+      appBar: TDNavBar(title: '刷题界面', onBack: () {}),
+      body: Column(
+        children: [
+          Flexible(
+              child: FutureBuilder(
+            future: QuestionBank.getAllLoadedQuestionBanks(),
+            builder: (context, snapshot) {
+              // 请求已结束
+              if (snapshot.connectionState == ConnectionState.done) {
+                if (snapshot.hasError) {
+                  // 请求失败，显示错误
+                  return Text(
+                      "Error: ${snapshot.error}" '${snapshot.stackTrace}');
                 } else {
-                  return const Center(
-                    child: TDLoading(
-                      size: TDLoadingSize.large,
-                      icon: TDLoadingIcon.circle,
-                      text: '加载中…',
-                      axis: Axis.horizontal,
-                    ),
+                  List<Card> cards = [];
+                  for (var i = 0; i < 5; i++) {
+                    var q = snapshot
+                        .data![Random().nextInt(snapshot.data!.length)]
+                        .randomChoiceQuestion()
+                        .single;
+                    cards.add(buildCard(q.getKonwledgePoint(), q.question['q']!,
+                        q.question['w']));
+                  }
+                  return CardSwiper(
+                    cardsCount: cards.length,
+                    cardBuilder: (context, index, percentThresholdX,
+                            percentThresholdY) =>
+                        cards[index],
                   );
                 }
-              },
-            )),
-            Container(
-              color: Colors.white,
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.only(bottom: 15, top: 15),
-                      child: Icon(Icons.playlist_add_check),
-                    ),
+              } else {
+                return const Center(
+                  child: TDLoading(
+                    size: TDLoadingSize.large,
+                    icon: TDLoadingIcon.circle,
+                    text: '加载中…',
+                    axis: Axis.horizontal,
                   ),
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.only(bottom: 15, top: 15),
-                      child: Icon(Icons.notes),
-                    ),
+                );
+              }
+            },
+          )),
+          Container(
+            color: Colors.white,
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: 15, top: 15),
+                    child: Icon(Icons.playlist_add_check),
                   ),
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.only(bottom: 15, top: 15),
-                      child: Icon(Icons.quiz_outlined),
-                    ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: 15, top: 15),
+                    child: Icon(Icons.notes),
                   ),
-                ],
-              ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: 15, top: 15),
+                    child: Icon(Icons.quiz_outlined),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),);
+          ),
+        ],
+      ),
+    );
   }
 }

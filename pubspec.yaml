@@ -29,6 +29,8 @@ dependencies:
   uuid: ^4.5.1
   path_provider: ^2.1.5
   json_annotation: ^4.9.0
+  extended_text: ^14.2.0
+  extended_image: ^9.0.7
 
 dev_dependencies:
   flutter_test:
