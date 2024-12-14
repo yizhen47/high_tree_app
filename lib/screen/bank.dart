@@ -86,6 +86,7 @@ class _InnerState extends State<BankScreen> {
                     onTap: () async {
                       var fromFilePath = await FilePicker.platform.pickFiles(
                           allowMultiple: false,
+                          type: FileType.custom,
                           allowedExtensions: ["qset", "zip", "rar", "7z"]);
                       if (fromFilePath == null) return;
                       QuestionBank.importQuestionBank(

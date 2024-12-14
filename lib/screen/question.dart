@@ -40,8 +40,9 @@ Card buildCard(
                     borderRadius: BorderRadius.circular(8)),
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(6, 2, 6, 2),
-                  child: Text(
+                  child: ExtendedText(
                     knowledgepoint,
+                    specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
                     style: const TextStyle(color: Colors.white, fontSize: 14),
                   ),
                 ),
@@ -248,14 +249,16 @@ class _InnerState extends State<QuestionScreen> {
                   return CardSwiper(
                       controller: controller,
                       onSwipe: (previousIndex, currentIndex, direction) {
-                        if (direction == CardSwiperDirection.right) {
-                          rightQuestions.add(allQuestions[previousIndex]);
-                          questionRemoved[previousIndex] = true;
-                          questionRemain--;
-                        } else if (direction == CardSwiperDirection.left) {
-                          leftQuestions.add(allQuestions[previousIndex]);
-                          questionRemoved[previousIndex] = true;
-                          questionRemain--;
+                        if (questionRemain > 0) {
+                          if (direction == CardSwiperDirection.right) {
+                            rightQuestions.add(allQuestions[previousIndex]);
+                            questionRemoved[previousIndex] = true;
+                            questionRemain--;
+                          } else if (direction == CardSwiperDirection.left) {
+                            leftQuestions.add(allQuestions[previousIndex]);
+                            questionRemoved[previousIndex] = true;
+                            questionRemain--;
+                          }
                         }
                         return true;
                       },

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'screen/home.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
@@ -44,7 +45,6 @@ class _MainEnterScreen extends StatefulWidget {
 }
 
 class _MainEnterScreenState extends State<_MainEnterScreen> {
-
 //init: 在页面初始化的时候执行
   @override
   void initState() {
@@ -56,15 +56,24 @@ class _MainEnterScreenState extends State<_MainEnterScreen> {
 
     QuestionBank.init();
     Future.delayed(const Duration(milliseconds: 5000), () {
-      if(!isStarted) {
+      if (!isStarted) {
         // ignore: use_build_context_synchronously
-        Navigator.push(context,
-          MaterialPageRoute(builder: (context) => const HomeScreen(title: '')));
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => const HomeScreen(title: '')));
       }
     });
   }
 
   Future<void> fetchAll() async {
+    List<Permission> permissionNames = [];
+    // permissionNames.add(Permission.location);
+    // permissionNames.add(Permission.camera);
+    permissionNames.add(Permission.storage);
+    for (var p in permissionNames) {
+      p.request();
+    }
     //设置安卓平台的高屏幕刷新率
     if (Platform.isAndroid) {
       try {
@@ -98,11 +107,11 @@ class _MainEnterScreenState extends State<_MainEnterScreen> {
                   children: [
                     Text(
                       '长安大学高数练习软件',
-                      style: TextStyle(color: Colors.black,fontSize: 20),
+                      style: TextStyle(color: Colors.black, fontSize: 20),
                     ),
                     Text(
                       '上高树，学高数',
-                      style: TextStyle(color: Colors.grey,fontSize: 16),
+                      style: TextStyle(color: Colors.grey, fontSize: 16),
                     ),
                   ],
                 )

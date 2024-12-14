@@ -114,7 +114,7 @@ Map<String, dynamic> parseWordToJSONData(String text, String title) {
       inState = 2;
       if (stack.last.questions!.isNotEmpty) {
         appendQuestionOrAnswer(
-            stack.last.questions!.last, 'w', line.substring(2).trim());
+            stack.last.questions!.last, 'w', line.substring(1).trim());
       }
     } else if (line.startsWith('习题')) {
       // Start of exercises section

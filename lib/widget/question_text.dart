@@ -4,6 +4,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:extended_text/extended_text.dart';
 import 'package:path/path.dart' as path;
+import 'dart:ui' as ui show PlaceholderAlignment;
+import 'package:flutter/material.dart';
 
 String _nowSingleUsedMathImagePath = "";
 void setCurMathImgPath(String path) {
@@ -33,11 +35,12 @@ class MathIncludeText extends SpecialText {
         fpath.length - MathIncludeText.flagEnd.length);
 
     var img = FileImage(File(path.join(_nowSingleUsedMathImagePath, fpath)));
-    return ImageSpan(
+    return MyImageSpan(
       img,
+      actualText: fpath,
       start: start,
-      imageWidth: 25.0,
-      imageHeight: 25.0,
+      fit: BoxFit.fitHeight,
+      filterQuality: FilterQuality.medium,
     );
   }
 }
@@ -75,4 +78,61 @@ class MathIncludeTextSpanBuilder extends SpecialTextSpanBuilder {
     }
     return null;
   }
+}
+
+class MyImageSpan extends ExtendedWidgetSpan {
+  MyImageSpan(
+    ImageProvider image, {
+    Key? key,
+    double? imageWidth,
+    double? imageHeight,
+    EdgeInsets? margin,
+    super.start,
+    super.alignment = ui.PlaceholderAlignment.middle,
+    super.actualText = null,
+    super.baseline,
+    BoxFit fit = BoxFit.scaleDown,
+    ImageLoadingBuilder? loadingBuilder,
+    ImageFrameBuilder? frameBuilder,
+    String? semanticLabel,
+    bool excludeFromSemantics = false,
+    Color? color,
+    BlendMode? colorBlendMode,
+    AlignmentGeometry imageAlignment = Alignment.center,
+    ImageRepeat repeat = ImageRepeat.noRepeat,
+    Rect? centerSlice,
+    bool matchTextDirection = false,
+    bool gaplessPlayback = false,
+    FilterQuality filterQuality = FilterQuality.low,
+    GestureTapCallback? onTap,
+    HitTestBehavior behavior = HitTestBehavior.deferToChild,
+  }) : super(
+          child: Container(
+            padding: margin,
+            child: GestureDetector(
+              onTap: onTap,
+              behavior: behavior,
+              child: Image(
+                key: key,
+                image: image,
+                width: imageWidth,
+                height: imageHeight,
+                fit: fit,
+                loadingBuilder: loadingBuilder,
+                frameBuilder: frameBuilder,
+                semanticLabel: semanticLabel,
+                excludeFromSemantics: excludeFromSemantics,
+                color: color,
+                colorBlendMode: colorBlendMode,
+                alignment: imageAlignment,
+                repeat: repeat,
+                centerSlice: centerSlice,
+                matchTextDirection: matchTextDirection,
+                gaplessPlayback: gaplessPlayback,
+                filterQuality: filterQuality,
+              ),
+            ),
+          ),
+          deleteAll: true,
+        );
 }
