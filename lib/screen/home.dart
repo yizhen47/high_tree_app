@@ -1,18 +1,14 @@
-import 'dart:isolate';
 
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screen/wrong.dart';
 import 'package:flutter_application_1/screen/question.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
-import 'package:flutter_swiper_view/flutter_swiper_view.dart';
 import 'package:simple_ripple_animation/simple_ripple_animation.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:flutter_application_1/screen/setting.dart';
-import 'package:flutter_application_1/screen/achievement.dart';
 import 'bank.dart';
 import 'skip.dart';
 import 'note.dart';
@@ -122,7 +118,7 @@ class CommunityPageState extends State<CommunityPage> {
       theme: TDButtonTheme.primary,
       size: TDButtonSize.large,
       onTap: () {
-        var tdDrawer = TDDrawer(
+        TDDrawer(
           context,
           visible: true,
           drawerTop: 40,
@@ -487,7 +483,7 @@ class MainHomePageState extends State<MainHomePage> {
                     Navigator.push(
                       context,
                       CupertinoPageRoute(
-                          builder: (context) => QuestionScreen()),
+                          builder: (context) => const QuestionScreen(title: '',)),
                     );
                   },
                   child: RippleAnimation(

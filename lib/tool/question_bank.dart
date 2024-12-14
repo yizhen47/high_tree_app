@@ -522,7 +522,7 @@ class QuestionBank {
     mksureInit();
     List<QuestionBank> q = [];
     for (var action in getAllLoadedQuestionBankIds()) {
-      q.add(await QuestionBank(action).getQuestionBankInf());
+      q.add(await (await QuestionBank.getQuestionBankById(action)).getQuestionBankInf());
     }
     return q;
   }

@@ -4,7 +4,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
-import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 
 class BankScreen extends StatefulWidget {
   const BankScreen({super.key, required this.title});
