@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:file_picker/file_picker.dart';
 
@@ -11,19 +12,57 @@ class AchievementScreen extends StatefulWidget {
 
 //这里是在一个页面中加了PageView，PageView可以载入更多的StatefulWidget或者StatelessWidget（也就是页面中加载其他页面作为子控件）
 class _InnerState extends State<AchievementScreen> {
-  int _currentIndex = 1;
-  final PageController _pageController = PageController(initialPage: 1);
-
-  Future<void> fetchAll() async {}
-
-  void _onTabTapped(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
-    _pageController.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
+  Widget buildSettingViews(final String name, final GestureTapCallback onTap,
+      {final child = const SizedBox(), final text = ''}) {
+    return Container(
+      color: Colors.white,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Stack(
+            children: [
+              Row(
+                verticalDirection: VerticalDirection.down,
+                children: [
+                  const SizedBox(
+                    width: 8,
+                  ),
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.black,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  )
+                ],
+              ),
+              Row(
+                verticalDirection: VerticalDirection.up,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    text,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  child,
+                  const SizedBox(width: 5),
+                  const Icon(
+                    Icons.chevron_right,
+                    color: Colors.grey,
+                    size: 22,
+                  ),
+                ],
+              )
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -31,48 +70,51 @@ class _InnerState extends State<AchievementScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: TDNavBar(
-        title: '用户信息', onBack: () {}),
-      body:  const SingleChildScrollView(
-        scrollDirection: Axis.vertical, // 水平滚动
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            Column(
-              children: [
-                Padding(padding: EdgeInsets.all(10)),
-             Text('请输入昵称：',
-          style: TextStyle(
-fontSize: 20,
-color: Colors.grey,
-
-          ),
-            
-             
-             
-             
-             
-             
-             ),
-TextField(
-  decoration: InputDecoration(
-    border: OutlineInputBorder(),
-    hintText: 'Enter a search term',
-  ),
-),
-
-
-
-
-
-
-
-             
-              ],
-            )
-          ],
-        ),
-      ),
-    );
+        appBar: TDNavBar(title: '用户信息', onBack: () {}),
+        body: SingleChildScrollView(
+          child: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
+            buildSettingViews("头像", () {},
+                child: const Icon(Icons.person_add_alt)),
+            const TDDivider(),
+            buildSettingViews("姓名", () {
+              Alert(
+                  context: context,
+                  title: "LOGIN",
+                  
+                  style: const AlertStyle(
+                    backgroundColor: Colors.white
+                  ),
+                  content: const Column(
+                    children: <Widget>[
+                      TextField(
+                        decoration: InputDecoration(
+                          icon: Icon(Icons.account_circle),
+                          labelText: 'Username',
+                        ),
+                      ),
+                      TextField(
+                        obscureText: true,
+                        decoration: InputDecoration(
+                          icon: Icon(Icons.lock),
+                          labelText: 'Password',
+                        ),
+                      ),
+                    ],
+                  ),
+                  buttons: [
+                    DialogButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text(
+                        "LOGIN",
+                        style: TextStyle(color: Colors.white, fontSize: 20),
+                      ),
+                    )
+                  ]).show();
+            }, text: "张三"),
+            const TDDivider(),
+            buildSettingViews("签名", () {}, text: "11112222"),
+            const TDDivider(),
+          ]),
+        ));
   }
 }
