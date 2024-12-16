@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'screen/home.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
@@ -55,6 +56,7 @@ class _MainEnterScreenState extends State<_MainEnterScreen> {
     //future.delay xxxxx格式：延时执行一串代码
 
     QuestionBank.init();
+    StudyData.instance.init();
     Future.delayed(const Duration(milliseconds: 5000), () {
       if (!isStarted) {
         // ignore: use_build_context_synchronously

@@ -1,4 +1,3 @@
-
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
@@ -44,10 +43,10 @@ class _MyHomePageState extends State<HomeScreen> {
         title: ' ',
         height: 45,
         useDefaultBack: false,
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: Colors.white,
         leftBarItems: [
           TDNavBarItem(
-              iconColor: Colors.white, icon: Icons.people, action: () {})
+              iconColor: Colors.blueAccent, icon: Icons.people, action: () {})
         ],
       ),
       resizeToAvoidBottomInset: false, // 设置为 false 避免底部溢出
@@ -159,79 +158,154 @@ class MainHomePageState extends State<MainHomePage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(
-                height: 120,
-              ),
-              const Row(
-                mainAxisAlignment: MainAxisAlignment.start,
+              Column(
+                //InkWell：可以给任意控件外面套，然后可以监听点击之类的事件
                 children: [
-                  Expanded(
-                    child: Card(
-                      margin: EdgeInsets.all(8),
-                      color: Colors.lightGreen,
-                      borderOnForeground: false,
-                      elevation: 3,
-                      shape: BeveledRectangleBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(40)),
-                        side: BorderSide(color: Colors.white),
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.fromLTRB(10, 60, 10, 40),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Text(
-                              "难度-",
-                              style: TextStyle(
-                                  fontSize: 18,
+                  Center(
+                    child: InkWell(
+                      onTap: () {
+                        setState(() {
+                          clickNum += 1;
+                        });
+                        Navigator.push(
+                          context,
+                          CupertinoPageRoute(
+                              builder: (context) => const QuestionScreen(
+                                    title: '',
+                                  )),
+                        );
+                      },
+                      child: Card(
+                        color: Colors.blueAccent,
+                        elevation: 2,
+                        margin: const EdgeInsets.all(20),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const SizedBox(
+                          width: double.infinity,
+                          height: 200,
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  CupertinoIcons.square_stack_3d_up_fill,
                                   color: Colors.white,
-                                  shadows: [
-                                    Shadow(
-                                      offset: Offset(1, 1),
-                                      blurRadius: 1.0,
-                                      color: Colors.black54,
-                                    )
-                                  ]),
+                                  size: 45,
+                                ),
+                                Text(
+                                  '开始刷题',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 30,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  '一阶线性微分方程',
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  '学习模式 | 普通难度',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                  Expanded(
-                    child: Card(
-                      margin: EdgeInsets.all(8),
-                      color: Colors.deepOrange,
-                      borderOnForeground: false,
-                      elevation: 3,
-                      shape: BeveledRectangleBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(40)),
-                        side: BorderSide(color: Colors.white),
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.fromLTRB(10, 60, 10, 40),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Text(
-                              "难度+",
-                              style: TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.white,
-                                  shadows: [
-                                    Shadow(
-                                      offset: Offset(1, 1),
-                                      blurRadius: 1.0,
-                                      color: Colors.black54,
-                                    )
-                                  ]),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: () {},
+                          child: Card(
+                            color: Colors.deepOrangeAccent,
+                            elevation: 2,
+                            margin: const EdgeInsets.only(
+                                left: 20, right: 10),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
                             ),
-                          ],
+                            child: const SizedBox(
+                              width: double.infinity,
+                              height: 80,
+                              child: Center(
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      CupertinoIcons.square_list,
+                                      color: Colors.white,
+                                      size: 35,
+                                    ),
+                                    SizedBox(
+                                      width: 10,
+                                    ),
+                                    Text('章节选择',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                        ))
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () {},
+                          child: Card(
+                            color: Colors.deepPurpleAccent,
+                            elevation: 2,
+                            margin: const EdgeInsets.only(
+                                left: 10, right: 20),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const SizedBox(
+                              width: double.infinity,
+                              height: 80,
+                              child: Center(
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      CupertinoIcons.square_list,
+                                      color: Colors.white,
+                                      size: 35,
+                                    ),
+                                    SizedBox(
+                                      width: 10,
+                                    ),
+                                    Text('题库设置',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                        ))
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   )
                 ],
               ),
@@ -294,7 +368,9 @@ class MainHomePageState extends State<MainHomePage> {
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => const BankScreen(title: '',)));
+                                builder: (context) => const BankScreen(
+                                      title: '',
+                                    )));
                       },
                       child: const Padding(
                         padding: EdgeInsets.all(10),
@@ -443,78 +519,6 @@ class MainHomePageState extends State<MainHomePage> {
               ),
             ],
           ),
-          Column(
-            //InkWell：可以给任意控件外面套，然后可以监听点击之类的事件
-            children: [
-              Container(
-                height: 50,
-              ),
-              Center(
-                child: Container(
-                  width: 200,
-                  height: 200,
-                  decoration: const BoxDecoration(
-                      shape: BoxShape.circle, color: Colors.white),
-                ),
-              ),
-            ],
-          ),
-          Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.blueAccent, Color.fromARGB(0, 68, 138, 255)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
-              height: 150),
-          Column(
-            //InkWell：可以给任意控件外面套，然后可以监听点击之类的事件
-            children: [
-              Container(
-                height: 80,
-              ),
-              Center(
-                child: InkWell(
-                  onTap: () {
-                    setState(() {
-                      clickNum += 1;
-                    });
-                    Navigator.push(
-                      context,
-                      CupertinoPageRoute(
-                          builder: (context) => const QuestionScreen(title: '',)),
-                    );
-                  },
-                  child: RippleAnimation(
-                    color: Colors.blueAccent,
-                    // delay: const Duration(milliseconds: -1000),
-                    repeat: true,
-                    minRadius: 30,
-                    maxRadius: 50,
-                    ripplesCount: 10,
-                    duration: const Duration(milliseconds: 6000),
-                    child: Container(
-                      width: 140,
-                      height: 140,
-                      decoration: const BoxDecoration(
-                          shape: BoxShape.circle, color: Colors.blueAccent),
-                      child: const Center(
-                        child: Text(
-                          '开始刷题',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 30,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          )
         ],
       ),
     );
