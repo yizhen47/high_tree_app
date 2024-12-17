@@ -268,7 +268,25 @@ class _InnerState extends State<QuestionScreen> {
                       cardBuilder: (context, index, percentThresholdX,
                           percentThresholdY) {
                         if (questionRemain == 0) {
-                          return const Text("ok");
+                          return TDButton(
+                            text: '确认类-带标题',
+                            size: TDButtonSize.large,
+                            type: TDButtonType.outline,
+                            theme: TDButtonTheme.primary,
+                            onTap: () {
+                              showGeneralDialog(
+                                context: context,
+                                pageBuilder: (BuildContext buildContext,
+                                    Animation<double> animation,
+                                    Animation<double> secondaryAnimation) {
+                                  return const TDAlertDialog(
+                                    title: '恭喜你，完成了今天的训练！',
+                                    content: '励志的话',
+                                  );
+                                },
+                              );
+                            },
+                          );
                         } else {
                           while (questionRemoved[index]) {
                             index = (index + 1) % cards.length;
