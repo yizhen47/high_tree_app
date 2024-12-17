@@ -6,6 +6,7 @@ import 'package:flutter_application_1/screen/mode.dart';
 import 'package:flutter_application_1/screen/wrong.dart';
 import 'package:flutter_application_1/screen/question.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
+import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:simple_ripple_animation/simple_ripple_animation.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:flutter_application_1/screen/setting.dart';
@@ -151,6 +152,7 @@ class MainHomePageState extends State<MainHomePage> {
     {"url": "http://img5.mtime.cn/mg/2021/08/24/112722.60735295_285X160X4.jpg"},
     {"url": "http://img5.mtime.cn/mg/2021/08/24/110937.63038065_285X160X4.jpg"},
   ];
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -174,7 +176,7 @@ class MainHomePageState extends State<MainHomePage> {
                               builder: (context) => const QuestionScreen(
                                     title: '',
                                   )),
-                        );
+                        ).then((onValue) => setState(() {}));
                       },
                       child: Card(
                         color: Colors.blueAccent,
@@ -183,19 +185,19 @@ class MainHomePageState extends State<MainHomePage> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: const SizedBox(
+                        child: SizedBox(
                           width: double.infinity,
                           height: 200,
                           child: Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(
+                                const Icon(
                                   CupertinoIcons.square_stack_3d_up_fill,
                                   color: Colors.white,
                                   size: 45,
                                 ),
-                                Text(
+                                const Text(
                                   '开始刷题',
                                   style: TextStyle(
                                     color: Colors.white,
@@ -203,7 +205,7 @@ class MainHomePageState extends State<MainHomePage> {
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                Text(
+                                const Text(
                                   '一阶线性微分方程',
                                   style: TextStyle(
                                     color: Colors.white70,
@@ -212,8 +214,8 @@ class MainHomePageState extends State<MainHomePage> {
                                   ),
                                 ),
                                 Text(
-                                  '学习模式 | 普通难度',
-                                  style: TextStyle(
+                                  '${StudyData.instance.getStudyType().getDisplayName()} | ${StudyData.instance.getStudyDifficulty().displayName}',
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 15,
                                     fontWeight: FontWeight.w400,
@@ -277,18 +279,18 @@ class MainHomePageState extends State<MainHomePage> {
                         child: InkWell(
                           onTap: () {
                             Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const ModeScreen(
-                                      title: '',
-                                    )));
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const ModeScreen(
+                                          title: '',
+                                        )));
                           },
                           child: Card(
                             color: Colors.deepOrangeAccent,
                             elevation: 2,
                             margin: const EdgeInsets.only(left: 10, right: 20),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius .circular(20),
+                              borderRadius: BorderRadius.circular(20),
                             ),
                             child: const SizedBox(
                               width: double.infinity,

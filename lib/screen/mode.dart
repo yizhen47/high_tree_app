@@ -55,7 +55,7 @@ class _InnerState extends State<ModeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "选择题目难度",
+                    "选择难度",
                     style: TextStyle(
                         fontSize: 18,
                         color: Colors.black,
@@ -66,6 +66,12 @@ class _InnerState extends State<ModeScreen> {
             ),
             TDRadioGroup(
               selectId: '${StudyData.instance.getStudyDifficulty().index}',
+              onRadioGroupChange: (selectedId) {
+                if (selectedId != null) {
+                  StudyData.instance.setStudyDifficulty(
+                      StudyDifficulty.values[int.parse(selectedId)]);
+                }
+              },
               cardMode: true,
               direction: Axis.horizontal,
               rowCount: 3,
@@ -108,6 +114,12 @@ class _InnerState extends State<ModeScreen> {
               cardMode: true,
               direction: Axis.horizontal,
               rowCount: 3,
+              onRadioGroupChange: (selectedId) {
+                if (selectedId != null) {
+                  StudyData.instance
+                      .setStudyType(StudyType.values[int.parse(selectedId)]);
+                }
+              },
               directionalTdRadios: [
                 TDRadio(
                   id: '${StudyType.studyMode.index}',
