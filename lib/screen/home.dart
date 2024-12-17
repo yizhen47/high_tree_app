@@ -2,6 +2,7 @@ import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screen/mode.dart';
 import 'package:flutter_application_1/screen/wrong.dart';
 import 'package:flutter_application_1/screen/question.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
@@ -229,51 +230,18 @@ class MainHomePageState extends State<MainHomePage> {
                     children: [
                       Expanded(
                         child: InkWell(
-                          onTap: () {},
-                          child: Card(
-                            color: Colors.deepOrangeAccent,
-                            elevation: 2,
-                            margin: const EdgeInsets.only(
-                                left: 20, right: 10),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const SizedBox(
-                              width: double.infinity,
-                              height: 80,
-                              child: Center(
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      CupertinoIcons.square_list,
-                                      color: Colors.white,
-                                      size: 35,
-                                    ),
-                                    SizedBox(
-                                      width: 10,
-                                    ),
-                                    Text('章节选择',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                        ))
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: InkWell(
-                          onTap: () {},
+                          onTap: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const BankScreen(
+                                          title: '',
+                                        )));
+                          },
                           child: Card(
                             color: Colors.deepPurpleAccent,
                             elevation: 2,
-                            margin: const EdgeInsets.only(
-                                left: 10, right: 20),
+                            margin: const EdgeInsets.only(left: 20, right: 10),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(20),
                             ),
@@ -293,6 +261,51 @@ class MainHomePageState extends State<MainHomePage> {
                                       width: 10,
                                     ),
                                     Text('题库设置',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                        ))
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const ModeScreen(
+                                      title: '',
+                                    )));
+                          },
+                          child: Card(
+                            color: Colors.deepOrangeAccent,
+                            elevation: 2,
+                            margin: const EdgeInsets.only(left: 10, right: 20),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius .circular(20),
+                            ),
+                            child: const SizedBox(
+                              width: double.infinity,
+                              height: 80,
+                              child: Center(
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      CupertinoIcons.square_on_square,
+                                      color: Colors.white,
+                                      size: 35,
+                                    ),
+                                    SizedBox(
+                                      width: 10,
+                                    ),
+                                    Text('模式选择',
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontSize: 20,
@@ -393,14 +406,7 @@ class MainHomePageState extends State<MainHomePage> {
                   ),
                   Expanded(
                     child: InkWell(
-                      onTap: () {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const WrongScreen(
-                                      title: '',
-                                    )));
-                      },
+                      onTap: () {},
                       child: const Padding(
                         padding: EdgeInsets.all(10),
                         child: Column(
