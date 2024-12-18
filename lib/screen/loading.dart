@@ -22,7 +22,7 @@ class _InnerState extends State<LoadingScreen> {
   void initState() {
     super.initState();
     
-    Future.delayed(const Duration(milliseconds: 500), () {
+    Future.delayed(const Duration(milliseconds: 100), () {
         // ignore: use_build_context_synchronously
         Navigator.push(
             context,
@@ -33,7 +33,7 @@ class _InnerState extends State<LoadingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: TDNavBar(title: ' ', onBack: () {}),
+     
       body: Column(
         children: [
           const TDLoading(
