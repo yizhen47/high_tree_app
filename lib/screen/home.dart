@@ -203,7 +203,8 @@ class MainHomePageState extends State<MainHomePage> {
                                   ),
                                 ),
                                 Text(
-                                  StudyData.instance.getStudySection() ?? "未选择",
+                                  StudyData.instance.getStudySection() == null ? "未选择" : StudyData.instance.getStudySection()!.startsWith("{")
+                                  ? "多个题库" : StudyData.instance.getStudySection()!,
                                   style: const TextStyle(
                                     color: Colors.white70,
                                     fontSize: 15,
