@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
@@ -241,7 +242,7 @@ class _InnerState extends State<QuestionScreen> {
                 } else {
                   String? secList = StudyData.instance.getStudySection();
                   Map<String, dynamic>? d;
-                  Map<String, List<int>>? dtype = {}; 
+                  Map<String, List<int>>? dtype = {};
                   if (secList != null) {
                     d = json.decode(secList);
                     for (var k in d!.entries) {
@@ -326,15 +327,15 @@ class _InnerState extends State<QuestionScreen> {
                                                       MaterialPageRoute(
                                                           builder: (context) =>
                                                               const LoadingScreen(
-                                                                  title: '')));
+                                                                title: '',
+                                                              )));
                                                 },
-                                                child: const TDButton(
-                                                  text: '继续刷题',
-                                                  size: TDButtonSize.large,
-                                                  type: TDButtonType.ghost,
-                                                  shape:
-                                                      TDButtonShape.rectangle,
-                                                  theme: TDButtonTheme.primary,
+                                                child: const Column(
+                                                  children: [
+                                                    Icon(Icons
+                                                        .drive_file_rename_outline_outlined),
+                                                    Text('继续刷题'),
+                                                  ],
                                                 ))
                                           ],
                                         ),

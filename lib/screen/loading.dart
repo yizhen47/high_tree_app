@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screen/question.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 
@@ -17,7 +18,18 @@ class LoadingScreen extends StatefulWidget {
 class _InnerState extends State<LoadingScreen> {
   List<String> selectIds = QuestionBank.getAllLoadedQuestionBankIds();
   List<String> lastSelectIds = QuestionBank.getAllLoadedQuestionBankIds();
-  //这修改页面2的内容
+  @override
+  void initState() {
+    super.initState();
+    
+    Future.delayed(const Duration(milliseconds: 500), () {
+        // ignore: use_build_context_synchronously
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => const QuestionScreen(title: '')));
+    });
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -37,6 +49,8 @@ class _InnerState extends State<LoadingScreen> {
             icon: TDLoadingIcon.point,
             iconColor: TDTheme.of(context).brandNormalColor,
           ),
+
+          
         ],
       ),
     );
