@@ -312,19 +312,13 @@ class _InnerState extends State<QuestionScreen> {
                                               ),
                                             ]),
                                             const Text(
-                                              '''太棒啦，您已完成本次任务！
-                                          
-
-                                              ''',
+                                              '''太棒啦，您已完成本次任务！  ''',
                                               style: TextStyle(fontSize: 20),
                                             ),
                                             const Icon(Icons.downhill_skiing,
                                                 size: 100),
                                             const Text('''现在你可以左右滑动体验从山顶滑下去的感觉
-                                         
-                                           提示：退出or继续
-                                           
-                                           '''),
+                                           提示：退出or继续'''),
                                             InkWell(
                                                 onTap: () {
                                                   Navigator.push(
