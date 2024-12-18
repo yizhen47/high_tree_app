@@ -1,5 +1,9 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
+import 'package:flutter_application_1/widget/itd_tree_select.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 
 class ModeScreen extends StatefulWidget {
@@ -9,27 +13,93 @@ class ModeScreen extends StatefulWidget {
   State<ModeScreen> createState() => _InnerState();
 }
 
-//这里是在一个页面中加了PageView，PageView可以载入更多的StatefulWidget或者StatelessWidget（也就是页面中加载其他页面作为子控件）
 class _InnerState extends State<ModeScreen> {
-  Widget _buildThirdTreeSelect(BuildContext context) {
-    List<TDSelectOption> options = [];
-
-    for (var i = 1; i <= 10; i++) {
-      options.add(TDSelectOption(label: '选项$i', value: i, children: []));
-
-      for (var j = 1; j <= 10; j++) {
-        options[i - 1].children.add(
-            TDSelectOption(label: '选项$i.$j', value: i * 10 + j, children: []));
-
-        for (var k = 1; k <= 10; k++) {
-          options[i - 1].children[j - 1].children.add(
-              TDSelectOption(label: '选项$i.$j.$k', value: i * 100 + j * 10 + k));
+  var desc = StudyData.instance.getStudySection() ?? "未选择";
+  Future<Widget> _buildStudyTreeSelect(BuildContext context) async {
+    var data = (await QuestionBank.getAllLoadedQuestionBanks()).single;
+    List<Map<dynamic, dynamic>> analyzeSeletion(List<Section> sections,
+        List<Map<dynamic, dynamic>> top, int needLayer) {
+      for (var i = 0; i < sections.length; i++) {
+        var section = sections[i];
+        var n = {};
+        n["label"] = section.title;
+        n["value"] = section.index;
+        if (section.children != null && section.children!.isNotEmpty) {
+          List<Map<dynamic, dynamic>> children = [];
+          n["children"] = children;
+          analyzeSeletion(section.children!, n["children"], needLayer - 1);
+        } else if (needLayer - 1 > 0) {
+          var child = n;
+          var layer = needLayer;
+          while (layer - 1 > 0) {
+            List<Map<dynamic, dynamic>> children = [
+              {"label": "确认", "value": "-1"}
+            ];
+            child["children"] = children;
+            child = child["children"].single;
+            layer--;
+          }
         }
+        top.add(n);
+      }
+      return top;
+    }
+
+    int getMaxLayer(List<Section> sections) {
+      int maxLayer = 0;
+      for (var i = 0; i < sections.length; i++) {
+        var section = sections[i];
+        if (section.children != null && section.children!.isNotEmpty) {
+          int layer = getMaxLayer(section.children!);
+          if (layer > maxLayer) {
+            maxLayer = layer;
+          }
+        }
+      }
+      return maxLayer + 1;
+    }
+
+    return TDCell(
+      arrow: false,
+      title: data.displayName,
+      description: desc,
+      onClick: (cell) {
+        TDCascader.showMultiCascader(context,
+            title: '选择章节',
+            data: (analyzeSeletion(data.data!, [], getMaxLayer(data.data!)))
+                as dynamic,
+            theme: 'step', onChange: (List<MultiCascaderListModel> selectData) {
+          setState(() {
+            desc = selectData
+                .map((toElement) => toElement.value)
+                .join("/")
+                .replaceAll("/-1", "");
+            // var descS = selectData.map((toElement) => toElement.value).join("/").replaceAll("/-1", "");
+            StudyData.instance.setStudySection(desc);
+          });
+        }, onClose: () {
+          Navigator.of(context).pop();
+        });
+      },
+    );
+  }
+
+  Future<Widget> _buildTestTreeSelect(BuildContext context) async {
+    List<ITDSelectOption> options = [];
+    var data = (await QuestionBank.getAllLoadedQuestionBanks());
+
+    for (var (i, qdb) in data.indexed) {
+      options.add(
+          ITDSelectOption(label: '${qdb.displayName}', value: i, children: []));
+
+      for (var (j, sec) in qdb.data!.indexed) {
+        options.last.children.add(ITDSelectOption(label: sec.title, value: j));
       }
     }
 
-    return TDTreeSelect(
+    return ITDTreeSelect(
       options: options,
+      multiple: true,
       // defaultValue: values3,
       onChange: (val, level) {
         print('$val, $level');
@@ -71,6 +141,7 @@ class _InnerState extends State<ModeScreen> {
                   StudyData.instance.setStudyDifficulty(
                       StudyDifficulty.values[int.parse(selectedId)]);
                 }
+                setState(() {});
               },
               cardMode: true,
               direction: Axis.horizontal,
@@ -119,9 +190,12 @@ class _InnerState extends State<ModeScreen> {
                   StudyData.instance
                       .setStudyType(StudyType.values[int.parse(selectedId)]);
                 }
+                setState(() {});
               },
               directionalTdRadios: [
                 TDRadio(
+                  enable:
+                      QuestionBank.getAllLoadedQuestionBankIds().length == 1,
                   id: '${StudyType.studyMode.index}',
                   title: StudyType.studyMode.getDisplayName(),
                   cardMode: true,
@@ -138,23 +212,108 @@ class _InnerState extends State<ModeScreen> {
                 ),
               ],
             ),
-            const Padding(
-              padding: EdgeInsets.all(15),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "选择章节",
-                    style: TextStyle(
-                        fontSize: 18,
-                        color: Colors.black,
-                        fontWeight: FontWeight.w600),
-                  ),
-                ],
-              ),
-            ),
-            _buildThirdTreeSelect(context),
+            (() {
+              if (StudyData.instance.getStudyType() == StudyType.studyMode) {
+                return FutureBuilder(
+                  future: _buildStudyTreeSelect(context),
+                  builder: (context, snapshot) {
+                    // 请求已结束
+                    if (snapshot.connectionState == ConnectionState.done) {
+                      if (snapshot.hasError) {
+                        // 请求失败，显示错误
+                        return Text("Error: ${snapshot.error}"
+                            '${snapshot.stackTrace}');
+                      } else {
+                        return Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Padding(
+                              padding: EdgeInsets.all(15),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "选择章节",
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            snapshot.data!,
+                          ],
+                        );
+                      }
+                    } else {
+                      return const Center(
+                        heightFactor: 10.0,
+                        child: TDLoading(
+                          size: TDLoadingSize.large,
+                          icon: TDLoadingIcon.circle,
+                          text: '加载中…',
+                          axis: Axis.horizontal,
+                        ),
+                      );
+                    }
+                  },
+                );
+              } else if (StudyData.instance.getStudyType() ==
+                  StudyType.testMode) {
+                return FutureBuilder(
+                  future: _buildTestTreeSelect(context),
+                  builder: (context, snapshot) {
+                    // 请求已结束
+                    if (snapshot.connectionState == ConnectionState.done) {
+                      if (snapshot.hasError) {
+                        // 请求失败，显示错误
+                        return Text("Error: ${snapshot.error}"
+                            '${snapshot.stackTrace}');
+                      } else {
+                        return Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Padding(
+                              padding: EdgeInsets.all(15),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "选择章节",
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            snapshot.data!,
+                          ],
+                        );
+                      }
+                    } else {
+                      return const Center(
+                        heightFactor: 10.0,
+                        child: TDLoading(
+                          size: TDLoadingSize.large,
+                          icon: TDLoadingIcon.circle,
+                          text: '加载中…',
+                          axis: Axis.horizontal,
+                        ),
+                      );
+                    }
+                  },
+                );
+              } else {
+                return const SizedBox();
+              }
+            })(),
           ],
         ),
       ),
