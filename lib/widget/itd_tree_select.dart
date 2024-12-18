@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 
-typedef ITDTreeSelectChangeEvent = void Function(Map<int,List<int>>, int level);
+typedef ITDTreeSelectChangeEvent = void Function(Map<String,List<int>>, int level);
 
 class ITDSelectOption {
   ITDSelectOption(
@@ -27,9 +27,11 @@ class ITDTreeSelect extends StatefulWidget {
       {super.key,
       this.options = const [],
       this.defaultValue = const [],
+      this.defaultBackValue = const {},
       this.onChange,
       this.multiple = true,
       this.style = ITDTreeSelectStyle.normal,
+
       this.height = 336});
 
   /// 展示的选项列表
@@ -37,6 +39,7 @@ class ITDTreeSelect extends StatefulWidget {
 
   /// 初始值，对应options中的value值
   final List<dynamic> defaultValue;
+  final Map<String,List<int>>? defaultBackValue;
 
   /// 选中值发生变化
   final ITDTreeSelectChangeEvent? onChange;
@@ -59,7 +62,7 @@ class _ITDTreeSelectState extends State<ITDTreeSelect> {
   ScrollController controller3 = ScrollController();
 
   List<dynamic> values = [];
-  Map<int, List<int>> backValues = {};
+  Map<String, List<int>> backValues = {};
   int get currentLevel => values.length + 1;
   int? get firstValue => values.isNotEmpty ? values[0] : null;
   dynamic get secondValue => values.length >= 2 ? values[1] : null;
@@ -87,8 +90,12 @@ class _ITDTreeSelectState extends State<ITDTreeSelect> {
     if (values.isEmpty && widget.options.isNotEmpty) {
       values.add(widget.options[0].value);
     }
+    if(widget.defaultBackValue != null && widget.defaultBackValue!.isNotEmpty){
+      backValues = widget.defaultBackValue!;
+    }else{
     for (var o in widget.options) {
-      backValues[o.value] = [];
+      backValues['${o.value}'] = [];
+    }
     }
   }
 
@@ -194,8 +201,8 @@ class _ITDTreeSelectState extends State<ITDTreeSelect> {
               if (widget.multiple) {
                 if (level == 2) {
                   if (maxLevel() == 2) {
-                    selected = backValues.containsKey(firstValue)
-                        ? backValues[firstValue]!.contains(currentValue)
+                    selected = backValues.containsKey('$firstValue')
+                        ? backValues['$firstValue']!.contains(currentValue)
                         : false;
                   } else {
                     selected = secondValue == currentValue;
@@ -222,16 +229,16 @@ class _ITDTreeSelectState extends State<ITDTreeSelect> {
                                 : currentValue);
                             break;
                           case 2:
-                            if (widget.multiple) {
+                            if (widget.multiple) {                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
                               var hasContains =
-                                  backValues[values[0]]!.contains(currentValue);
+                                  backValues['${values[0]}']!.contains(currentValue);
 
                               if (hasContains) {
                                 (values[1] as List<int>).remove(currentValue);
-                                backValues[values[0]]!.remove(currentValue);
+                                backValues['${values[0]}']!.remove(currentValue);
                               } else {
                                 (values[1] as List<int>).add(currentValue);
-                                backValues[values[0]]!.add(currentValue);
+                                backValues['${values[0]}']!.add(currentValue);
                               }
                             } else {
                               values[1] = currentValue;

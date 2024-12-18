@@ -1,8 +1,11 @@
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:extended_text/extended_text.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screen/loading.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
+import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/widget/question_text.dart';
 import 'package:path/path.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
@@ -185,12 +188,14 @@ class _InnerState extends State<QuestionScreen> {
     int currentIndex,
     CardSwiperDirection direction,
   ) {
-    questionRemain++;
-    questionRemoved[currentIndex] = false;
     if (direction == CardSwiperDirection.left) {
+      questionRemoved[currentIndex] = false;
+      questionRemain++;
       leftQuestions.removeLast();
     }
     if (direction == CardSwiperDirection.right) {
+      questionRemoved[currentIndex] = false;
+      questionRemain++;
       rightQuestions.removeLast();
     }
     return true;
@@ -234,6 +239,18 @@ class _InnerState extends State<QuestionScreen> {
                   return Text(
                       "Error: ${snapshot.error}" '${snapshot.stackTrace}');
                 } else {
+                  String? secList = StudyData.instance.getStudySection();
+                  Map<String, dynamic>? d;
+                  Map<String, List<int>>? dtype = {}; 
+                  if (secList != null) {
+                    d = json.decode(secList);
+                    for (var k in d!.entries) {
+                      dtype[k.key] = [];
+                      for (var kk in k.value) {
+                        dtype[k.key]!.add(kk);
+                      }
+                    }
+                  }
                   List<Card> cards = [];
                   for (var i = 0; i < 5; i++) {
                     var q = snapshot
@@ -310,13 +327,12 @@ class _InnerState extends State<QuestionScreen> {
                                            '''),
                                             InkWell(
                                                 onTap: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const MainScreen(title: '')));
-               
-
-
+                                                  Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                          builder: (context) =>
+                                                              const LoadingScreen(
+                                                                  title: '')));
                                                 },
                                                 child: const TDButton(
                                                   text: '继续刷题',

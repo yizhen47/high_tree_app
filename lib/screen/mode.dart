@@ -1,4 +1,4 @@
-import 'dart:ffi';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
@@ -93,16 +93,30 @@ class _InnerState extends State<ModeScreen> {
           ITDSelectOption(label: '${qdb.displayName}', value: i, children: []));
 
       for (var (j, sec) in qdb.data!.indexed) {
-        options.last.children.add(ITDSelectOption(label: sec.title, value: j));
+        options.last.children.add(
+            ITDSelectOption(label: '${sec.index}: ${sec.title}', value: j));
       }
     }
-
+    String? secList = StudyData.instance.getStudySection();
+    Map<String, dynamic>? d;
+    Map<String, List<int>>? dtype = {};
+    if (secList != null) {
+      d = json.decode(secList);
+      for (var k in d!.entries) {
+        dtype[k.key] = [];
+        for (var kk in k.value) {
+          dtype[k.key]!.add(kk);
+        }
+      }
+    }
     return ITDTreeSelect(
       options: options,
       multiple: true,
+      defaultBackValue: dtype,
       // defaultValue: values3,
       onChange: (val, level) {
-        print('$val, $level');
+        print(val);
+        StudyData.instance.setStudySection(json.encode(val));
       },
     );
   }
