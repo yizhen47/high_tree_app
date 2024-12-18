@@ -93,7 +93,7 @@ Map<String, dynamic> parseWordToJSONData(String text, String title) {
     qa[key] = '${qa[key]}$content\n';
   }
 
-  var matchf = RegExp(r'^[0-9]+ *[\.|．|、](?![0-9 ])');
+  var matchf = RegExp(r'^[0-9]+ *[\.|．|、] *(?![0-9 ])*');
   for (var line in lines) {
     // Handle examples and exercise questions only when inside exercises section
     if (RegExp(r'[一二三四五六七八九]+、.*题').hasMatch(line) && inExercises) continue;

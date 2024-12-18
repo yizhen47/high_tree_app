@@ -8,7 +8,6 @@ import 'package:flutter_application_1/screen/wrong.dart';
 import 'package:flutter_application_1/screen/question.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
-import 'package:simple_ripple_animation/simple_ripple_animation.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:flutter_application_1/screen/setting.dart';
 import 'bank.dart';
@@ -168,16 +167,13 @@ class MainHomePageState extends State<MainHomePage> {
                   Center(
                     child: InkWell(
                       onTap: () {
-                        setState(() {
-                          clickNum += 1;
-                        });
                         Navigator.push(
                           context,
                           CupertinoPageRoute(
                               builder: (context) => const QuestionScreen(
                                     title: '',
                                   )),
-                        ).then((onValue) => setState(() {}));
+                        );
                       },
                       child: Card(
                         color: Colors.blueAccent,
@@ -206,9 +202,9 @@ class MainHomePageState extends State<MainHomePage> {
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                const Text(
-                                  '一阶线性微分方程',
-                                  style: TextStyle(
+                                Text(
+                                  StudyData.instance.getStudySection() ?? "未选择",
+                                  style: const TextStyle(
                                     color: Colors.white70,
                                     fontSize: 15,
                                     fontWeight: FontWeight.w600,
@@ -239,7 +235,9 @@ class MainHomePageState extends State<MainHomePage> {
                                 MaterialPageRoute(
                                     builder: (context) => const BankScreen(
                                           title: '',
-                                        )));
+                                        ))).then((onValue) {
+                              setState(() {});
+                            });
                           },
                           child: Card(
                             color: Colors.deepPurpleAccent,
@@ -280,11 +278,15 @@ class MainHomePageState extends State<MainHomePage> {
                         child: InkWell(
                           onTap: () {
                             Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const ModeScreen(
-                                          title: '',
-                                        )));
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const ModeScreen(
+                                  title: '',
+                                ),
+                              ),
+                            ).then((onValue) {
+                              setState(() {});
+                            });
                           },
                           child: Card(
                             color: Colors.deepOrangeAccent,

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
+import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 
 class BankScreen extends StatefulWidget {
@@ -122,6 +123,12 @@ class _InnerState extends State<BankScreen> {
                         }
                       }
                       await Future.wait(futures);
+                      if (StudyData.instance.getStudyType() ==
+                              StudyType.studyMode &&
+                          selectIds.length > 1) {
+                        StudyData.instance.setStudyType(StudyType.testMode);
+                      }
+                      StudyData.instance.setStudySection(null);
                       TDToast.showSuccess('加载完毕', context: context);
                     },
                     child: const Padding(
