@@ -477,6 +477,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.1"
+  lib:
+    dependency: "direct main"
+    description:
+      name: lib
+      sha256: f179c3948ea1b48010a7154588a86df1c4970a895bb7f51c4e493a2e40bba509
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.3"
   lints:
     dependency: transitive
     description:

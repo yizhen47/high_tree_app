@@ -2,6 +2,7 @@ import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screen/achievement.dart';
 import 'package:flutter_application_1/screen/mode.dart';
 import 'package:flutter_application_1/screen/wrong.dart';
 import 'package:flutter_application_1/screen/question.dart';
@@ -593,9 +594,20 @@ class ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return 
+    Column(
+   
       children: [
-        Card(
+         InkWell(onTap: () {
+Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const AchievementScreen(title: '',)));
+
+         },
+     
+     
+      child: Card(
           color: Colors.white,
           child: Column(
             children: [
@@ -630,7 +642,7 @@ class ProfilePageState extends State<ProfilePage> {
               ),
             ],
           ),
-        ),
+        ),),
 
         Card(
           color: Colors.white,

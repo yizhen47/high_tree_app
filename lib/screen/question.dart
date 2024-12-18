@@ -247,53 +247,101 @@ class _InnerState extends State<QuestionScreen> {
                         q.question['w']));
                   }
                   return CardSwiper(
-                      controller: controller,
-                      onSwipe: (previousIndex, currentIndex, direction) {
-                        if (questionRemain > 0) {
-                          if (direction == CardSwiperDirection.right) {
-                            rightQuestions.add(allQuestions[previousIndex]);
-                            questionRemoved[previousIndex] = true;
-                            questionRemain--;
-                          } else if (direction == CardSwiperDirection.left) {
-                            leftQuestions.add(allQuestions[previousIndex]);
-                            questionRemoved[previousIndex] = true;
-                            questionRemain--;
-                          }
+                    controller: controller,
+                    onSwipe: (previousIndex, currentIndex, direction) {
+                      if (questionRemain > 0) {
+                        if (direction == CardSwiperDirection.right) {
+                          rightQuestions.add(allQuestions[previousIndex]);
+                          questionRemoved[previousIndex] = true;
+                          questionRemain--;
+                        } else if (direction == CardSwiperDirection.left) {
+                          leftQuestions.add(allQuestions[previousIndex]);
+                          questionRemoved[previousIndex] = true;
+                          questionRemain--;
                         }
-                        return true;
-                      },
-                      onUndo: _onUndo,
-                      cardsCount: cards.length,
-                      numberOfCardsDisplayed: 2,
-                      cardBuilder: (context, index, percentThresholdX,
-                          percentThresholdY) {
-                        if (questionRemain == 0) {
-                          return TDButton(
-                            text: '确认类-带标题',
-                            size: TDButtonSize.large,
-                            type: TDButtonType.outline,
-                            theme: TDButtonTheme.primary,
-                            onTap: () {
-                              showGeneralDialog(
-                                context: context,
-                                pageBuilder: (BuildContext buildContext,
-                                    Animation<double> animation,
-                                    Animation<double> secondaryAnimation) {
-                                  return const TDAlertDialog(
-                                    title: '恭喜你，完成了今天的训练！',
-                                    content: '励志的话',
-                                  );
-                                },
-                              );
-                            },
-                          );
-                        } else {
-                          while (questionRemoved[index]) {
-                            index = (index + 1) % cards.length;
-                          }
+                      }
+                      return true;
+                    },
+                    onUndo: _onUndo,
+                    cardsCount: cards.length,
+                    numberOfCardsDisplayed: 2,
+                    cardBuilder:
+                        (context, index, percentThresholdX, percentThresholdY) {
+                      if (questionRemain == 0) {
+                        return Card(
+                          color: Colors.white,
+                          elevation: 4,
+                          child: SizedBox(
+                            height: double.infinity,
+                            child: Padding(
+                              padding: const EdgeInsets.all(15),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  SizedBox(
+                                      width: double.infinity,
+                                      child: Center(
+                                        child: Column(
+                                          children: [
+                                            const Row(children: [
+                                              Icon(
+                                                Icons.emoji_flags,
+                                                size: 100,
+                                              ),
+                                              Icon(
+                                                Icons.emoji_people,
+                                                size: 60,
+                                              ),
+                                            ]),
+                                            const Text(
+                                              '''太棒啦，您已完成本次任务！
+                                          
+
+                                              ''',
+                                              style: TextStyle(fontSize: 20),
+                                            ),
+                                            const Icon(Icons.downhill_skiing,
+                                                size: 100),
+                                            const Text('''现在你可以左右滑动体验从山顶滑下去的感觉
+                                         
+                                           提示：退出or继续
+                                           
+                                           '''),
+                                            InkWell(
+                                                onTap: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const MainScreen(title: '')));
+               
+
+
+                                                },
+                                                child: const TDButton(
+                                                  text: '继续刷题',
+                                                  size: TDButtonSize.large,
+                                                  type: TDButtonType.ghost,
+                                                  shape:
+                                                      TDButtonShape.rectangle,
+                                                  theme: TDButtonTheme.primary,
+                                                ))
+                                          ],
+                                        ),
+                                      )),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      } else {
+                        while (questionRemoved[index]) {
+                          index = (index + 1) % cards.length;
                         }
-                        return cards[index];
-                      });
+                      }
+                      return cards[index];
+                    },
+                  );
                 }
               } else {
                 return const Center(

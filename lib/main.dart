@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_application_1/screen/question.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'screen/home.dart';
@@ -122,12 +123,13 @@ class _MainEnterScreenState extends State<_MainEnterScreen> {
             Expanded(
               child: Center(
                   child: InkWell(
-                onTap: () {
-                  isStarted = true;
+                onTap: () {isStarted = true;
                   Navigator.push(
                       context,
                       MaterialPageRoute(
                           builder: (context) => const HomeScreen(title: '')));
+                  isStarted = true;
+            
                 },
                 child: SizedBox(
                   width: 250.0,
