@@ -3,15 +3,15 @@ import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:file_picker/file_picker.dart';
 
-class AchievementScreen extends StatefulWidget {
-  const AchievementScreen({super.key, required this.title});
+class PersonalScreen extends StatefulWidget {
+  const PersonalScreen({super.key, required this.title});
   final String title;
   @override
-  State<AchievementScreen> createState() => _InnerState();
+  State<PersonalScreen> createState() => _InnerState();
 }
 
 //这里是在一个页面中加了PageView，PageView可以载入更多的StatefulWidget或者StatelessWidget（也就是页面中加载其他页面作为子控件）
-class _InnerState extends State<AchievementScreen> {
+class _InnerState extends State<PersonalScreen> {
   Widget buildSettingViews(final String name, final GestureTapCallback onTap,
       {final child = const SizedBox(), final text = ''}) {
     return Container(
