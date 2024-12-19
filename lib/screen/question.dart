@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
 import 'package:extended_text/extended_text.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screen/home.dart';
 import 'package:flutter_application_1/screen/loading.dart';
 import 'package:flutter_application_1/screen/mode.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
@@ -125,16 +127,42 @@ class _InnerState extends State<QuestionScreen> {
         QuestionBank.getAllLoadedQuestionBankIds().single, "assets", "images"));
 
     return Scaffold(
-      appBar: TDNavBar(title: '刷题界面', onBack: () {}),
       floatingActionButton: Padding(
-          padding: const EdgeInsets.only(bottom: 150),
-          child: FloatingActionButton(
-              backgroundColor: const Color.fromARGB(255, 237, 237, 237),
-              hoverColor: const Color.fromARGB(255, 207, 207, 207),
-              child: const Icon(Icons.reply),
-              onPressed: () {
-                controller.undo();
-              })),
+          padding: const EdgeInsets.only(top: 50),
+          child: Column(
+            children: [
+             const SizedBox(height: 200),
+           FloatingActionButton(
+                  backgroundColor: const Color.fromARGB(0, 237, 237, 237),
+                  hoverColor: const Color.fromARGB(0, 207, 207, 207),
+                  child: const Column(children: [
+Icon(Icons.exit_to_app),
+Text('退出',style:TextStyle(fontSize: 16))
+                  ],),
+                  
+                  onPressed: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) =>
+                               const HomeScreen(title: '')));
+                  }),
+              SizedBox.fromSize(size: const Size(10, 10)),
+              
+             
+              FloatingActionButton(
+                  backgroundColor: const Color.fromARGB(0, 237, 237, 237),
+                  hoverColor: const Color.fromARGB(0, 207, 207, 207),
+                  child: const Column(children: [
+ Icon(Icons.reply),
+Text('撤回',style:TextStyle(fontSize: 16))
+                  ],),
+                 
+                  onPressed: () {
+                    controller.undo();
+                  })
+            ],
+          )),
       body: Column(
         children: [
           Flexible(
@@ -244,7 +272,8 @@ class _InnerState extends State<QuestionScreen> {
                                                       MaterialPageRoute(
                                                           builder: (context) =>
                                                               const LoadingScreen(
-                                                                  title: '')));
+                                                                title: '',
+                                                              )));
                                                 },
                                                 child: TDButton(
                                                   text: '继续刷题',

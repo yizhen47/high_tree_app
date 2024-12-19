@@ -2,7 +2,7 @@ import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/screen/achievement.dart';
+import 'package:flutter_application_1/screen/personal.dart';
 import 'package:flutter_application_1/screen/mode.dart';
 import 'package:flutter_application_1/screen/wrong.dart';
 import 'package:flutter_application_1/screen/question.dart';
@@ -605,7 +605,7 @@ class ProfilePageState extends State<ProfilePage> {
 Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => const AchievementScreen(title: '',)));
+                                    builder: (context) => const PersonalScreen(title: '',)));
 
          },
      
