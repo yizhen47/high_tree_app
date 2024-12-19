@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:file_picker/file_picker.dart';
@@ -70,50 +71,59 @@ class _InnerState extends State<PersonalScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: TDNavBar(title: '用户信息', onBack: () {}),
+        appBar: TDNavBar(title: '用户信息', onBack: () {
+          setState(() {
+            
+          });
+        }),
         body: SingleChildScrollView(
           child: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
             buildSettingViews("头像", () {},
                 child: const Icon(Icons.person_add_alt)),
-            const TDDivider(),
-            buildSettingViews("姓名", () {
-              Alert(
-                  context: context,
-                  title: "LOGIN",
-                  
-                  style: const AlertStyle(
-                    backgroundColor: Colors.white
-                  ),
-                  content: const Column(
-                    children: <Widget>[
-                      TextField(
-                        decoration: InputDecoration(
-                          icon: Icon(Icons.account_circle),
-                          labelText: 'Username',
-                        ),
-                      ),
-                      TextField(
-                        obscureText: true,
-                        decoration: InputDecoration(
-                          icon: Icon(Icons.lock),
-                          labelText: 'Password',
-                        ),
-                      ),
-                    ],
-                  ),
-                  buttons: [
-                    DialogButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text(
-                        "LOGIN",
-                        style: TextStyle(color: Colors.white, fontSize: 20),
-                      ),
-                    )
-                  ]).show();
-            }, text: "张三"),
-            const TDDivider(),
-            buildSettingViews("签名", () {}, text: "11112222"),
-            const TDDivider(),
+            buildSettingViews("昵称", () {
+              var ctrl =
+                  TextEditingController(text: StudyData.instance.getUserName());
+              showGeneralDialog(
+                context: context,
+                pageBuilder: (BuildContext buildContext, Animation<double> a,
+                    Animation<double> b) {
+                  return TDInputDialog(
+                    textEditingController: ctrl,
+                    rightBtn: TDDialogButtonOptions(
+                        title: "确认",
+                        action: () {
+                          StudyData.instance.setUserName(ctrl.text);
+                          Navigator.of(context).pop();
+                          setState(() {});
+                        }),
+                    title: '昵称',
+                    hintText: '请输入昵称',
+                  );
+                },
+              );
+            }, text: StudyData.instance.getUserName()),
+            buildSettingViews("签名", () {
+              var ctrl2 =
+                  TextEditingController(text: StudyData.instance.getSign());
+              showGeneralDialog(
+                context: context,
+                pageBuilder: (BuildContext buildContext, Animation<double> a,
+                    Animation<double> b) {
+                  return TDInputDialog(
+                    textEditingController: ctrl2,
+                    rightBtn: TDDialogButtonOptions(
+                        title: "确认",
+                        action: () {
+                          StudyData.instance.setSign(ctrl2.text);
+                          Navigator.of(context).pop();
+                          setState(() {});
+                        }),
+                    title: '签名',
+                    hintText: '请输入签名',
+                  );
+                },
+              );
+            }, text: StudyData.instance.getSign()),
           ]),
         ));
   }

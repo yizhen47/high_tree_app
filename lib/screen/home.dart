@@ -202,8 +202,14 @@ class MainHomePageState extends State<MainHomePage> {
                                   ),
                                 ),
                                 Text(
-                                  StudyData.instance.getStudySection() == null ? "未选择" : StudyData.instance.getStudySection()!.startsWith("{")
-                                  ? "多个题库" : StudyData.instance.getStudySection()!,
+                                  StudyData.instance.getStudySection() == null
+                                      ? "未选择"
+                                      : StudyData.instance
+                                              .getStudySection()!
+                                              .startsWith("{")
+                                          ? "多个题库"
+                                          : StudyData.instance
+                                              .getStudySection()!,
                                   style: const TextStyle(
                                     color: Colors.white70,
                                     fontSize: 15,
@@ -596,55 +602,61 @@ class ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    return 
-    Column(
-   
+    return Column(
       children: [
-         InkWell(onTap: () {
-Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const PersonalScreen(title: '',)));
-
-         },
-     
-     
-      child: Card(
-          color: Colors.white,
-          child: Column(
-            children: [
-              Row(
+        InkWell(
+          onTap: () {
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const PersonalScreen(
+                          title: '',
+                        ))).then((e) => setState(() {}));
+          },
+          child: Card(
+            color: Colors.white,
+            child: Expanded(
+              child: Column(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.all(50),
-                    child: Container(
-                      width: 100,
-                      height: 100,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Color.fromARGB(255, 74, 126, 123),
-                      ),
-                    ),
-                  ),
-                  const Column(
+                  Row(
                     children: [
-                      Text(
-                        '姓名',
-                        textScaler: TextScaler.linear(2),
-                        style: TextStyle(),
+                      Padding(
+                        padding: const EdgeInsets.all(50),
+                        child: Container(
+                          width: 100,
+                          height: 100,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Color.fromARGB(255, 74, 126, 123),
+                          ),
+                        ),
                       ),
-                      Text(
-                        '签名',
-                        textScaler: TextScaler.linear(1.2),
-                        style: TextStyle(),
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Text(
+                              StudyData.instance.getUserName(),
+                              textScaler: const TextScaler.linear(2),
+                              style: const TextStyle(),
+                            ),
+                            Text(
+                              maxLines: 5,
+                              StudyData.instance.getSign(),
+                              textScaler: const TextScaler.linear(1.2),
+                              style: const TextStyle(),
+                              softWrap: true,
+                              overflow: TextOverflow.clip,
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),),
+        ),
 
         Card(
           color: Colors.white,
@@ -678,8 +690,6 @@ Navigator.push(
             ],
           ),
         )
-
-        //点进去可以看团队信息
       ],
     );
   }
