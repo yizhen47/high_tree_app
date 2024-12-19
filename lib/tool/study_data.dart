@@ -36,7 +36,15 @@ class StudyData {
   }
 
   String getUserName() {
-    return sharedPreferences!.getString("userName")!;
+    return sharedPreferences!.getString("userName") ?? "未命名";
+  }
+
+  setSign(String sign) {
+    sharedPreferences!.setString("sign", sign);
+  }
+
+  String getSign() {
+    return sharedPreferences!.getString("sign") ?? "这个人很懒，没有设置签名";
   }
 
   setUserName(String userName) {
@@ -93,9 +101,8 @@ class StudyData {
   int getStudyQuestionNum() {
     return sharedPreferences!.getInt("sStudyQuestionNum") ?? 5;
   }
+
   setStudyQuestionNum(int studyQuestionNum) {
     sharedPreferences!.setInt("sStudyQuestionNum", studyQuestionNum);
   }
-
-
 }
