@@ -13,22 +13,24 @@ import 'package:window_manager/window_manager.dart';
 
 //整个软件入口（测试用）
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await windowManager.ensureInitialized();
+  if (Platform.isWindows) {
+    WidgetsFlutterBinding.ensureInitialized();
+    await windowManager.ensureInitialized();
 
-  WindowOptions windowOptions = const WindowOptions(
-    size: Size(400, 700),
-    center: true,
-    backgroundColor: Colors.transparent,
-    skipTaskbar: false,
-    alwaysOnTop: true,
-    titleBarStyle: TitleBarStyle.normal,
-    windowButtonVisibility: false,
-  );
-  windowManager.waitUntilReadyToShow(windowOptions, () async {
-    await windowManager.show();
-    await windowManager.focus();
-  });
+    WindowOptions windowOptions = const WindowOptions(
+      size: Size(400, 700),
+      center: true,
+      backgroundColor: Colors.transparent,
+      skipTaskbar: false,
+      alwaysOnTop: true,
+      titleBarStyle: TitleBarStyle.normal,
+      windowButtonVisibility: false,
+    );
+    windowManager.waitUntilReadyToShow(windowOptions, () async {
+      await windowManager.show();
+      await windowManager.focus();
+    });
+  }
   runApp(const MainEnterScreen());
 }
 
@@ -78,10 +80,12 @@ class _MainEnterScreenState extends State<_MainEnterScreen> {
     Future.delayed(const Duration(milliseconds: 5000), () {
       if (!isStarted) {
         // ignore: use_build_context_synchronously
-        Navigator.push(
+        Navigator.pushAndRemoveUntil(
+            // ignore: use_build_context_synchronously
             context,
             MaterialPageRoute(
-                builder: (context) => const HomeScreen(title: '')));
+                builder: (context) => const HomeScreen(title: '')),
+            (route) => false);
       }
     });
   }
@@ -140,13 +144,14 @@ class _MainEnterScreenState extends State<_MainEnterScreen> {
             Expanded(
               child: Center(
                   child: InkWell(
-                onTap: () {isStarted = true;
-                  Navigator.push(
+                onTap: () {
+                  isStarted = true;
+                  Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => const HomeScreen(title: '')));
+                          builder: (context) => const HomeScreen(title: '')),
+                      (route) => false);
                   isStarted = true;
-            
                 },
                 child: SizedBox(
                   width: 250.0,

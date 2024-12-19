@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screen/mode.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
@@ -21,7 +22,28 @@ class _InnerState extends State<BankScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: TDNavBar(title: '题库选择', onBack: () {}),
+      appBar: TDNavBar(
+        title: '题库选择',
+        onBack: () {},
+        rightBarItems: [
+          TDNavBarItem(
+            iconWidget: InkWell(
+              onTap: () {
+                Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const ModeScreen(title: '')),
+                      (route) => route.isFirst);
+              },
+              child: const TDTag('下一项',
+                  size: TDTagSize.large,
+                  theme: TDTagTheme.primary,
+                  forceVerticalCenter: false,
+                  isOutline: false),
+            ),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Flexible(

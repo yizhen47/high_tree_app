@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screen/question.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/widget/itd_tree_select.dart';
@@ -125,7 +126,28 @@ class _InnerState extends State<ModeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: TDNavBar(title: '模式选择', onBack: () {}),
+      appBar: TDNavBar(
+        title: '模式选择',
+        onBack: () {},
+        rightBarItems: [
+          TDNavBarItem(
+            iconWidget: InkWell(
+              onTap: () {
+                Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const QuestionScreen(title: '')),
+                    (route) => route.isFirst);
+              },
+              child: const TDTag('下一项',
+                  size: TDTagSize.large,
+                  theme: TDTagTheme.primary,
+                  forceVerticalCenter: false,
+                  isOutline: false),
+            ),
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
         scrollDirection: Axis.vertical, //
         child: Column(
@@ -204,6 +226,7 @@ class _InnerState extends State<ModeScreen> {
                   StudyData.instance
                       .setStudyType(StudyType.values[int.parse(selectedId)]);
                 }
+                StudyData.instance.setStudySection(null);
                 setState(() {});
               },
               directionalTdRadios: [
@@ -225,6 +248,30 @@ class _InnerState extends State<ModeScreen> {
                   cardMode: true,
                 ),
               ],
+            ),
+            const Padding(
+              padding: EdgeInsets.all(15),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "选择题数",
+                    style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.black,
+                        fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ),
+            TDStepper(
+              size: TDStepperSize.large,
+              value: StudyData.instance.getStudyQuestionNum(),
+              max: 20,
+              onChange: (qnum) {
+                StudyData.instance.setStudyQuestionNum(qnum);
+              },
             ),
             (() {
               if (StudyData.instance.getStudyType() == StudyType.studyMode) {

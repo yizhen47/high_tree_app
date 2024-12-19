@@ -56,6 +56,31 @@ class Section {
     }..removeWhere(
         (key, value) => value == null || (value is List && value.isEmpty));
   }
+
+  SingleQuestionData? randomSectionQuestion(
+      List<String> fromKonwledgePoint, List<String> fromKonwledgeIndex) {
+    if (_random!.nextInt(3) == 1) {
+      // ignore: unnecessary_null_comparison
+      if (questions == null) {
+        return null;
+      }
+      fromKonwledgePoint.add(title);
+      fromKonwledgeIndex.add(index);
+      return SingleQuestionData(fromKonwledgePoint, fromKonwledgeIndex,
+          questions![_random!.nextInt(questions!.length)]);
+    } else {
+      // ignore: unnecessary_null_comparison
+      if (children == null) {
+        return null;
+      } else {
+        var sec = children![_random!.nextInt(children!.length)];
+        fromKonwledgePoint.add(sec.title);
+        fromKonwledgeIndex.add(sec.index);
+        return sec.randomSectionQuestion(
+            fromKonwledgePoint, fromKonwledgeIndex);
+      }
+    }
+  }
 }
 
 @JsonSerializable() // 使用泛型的注解
@@ -449,38 +474,18 @@ class QuestionBank {
     return false;
   }
 
-  SingleQuestionData _randomSectionQuestion(List<Section> sects,
-      List<String> fromKonwledgePoint, List<String> fromKonwledgeIndex) {
-    var sec = sects[_random!.nextInt(sects.length)];
-    if (_random!.nextInt(3) == 1) {
-      // ignore: unnecessary_null_comparison
-      if (sec.questions == null) {
-        return _randomSectionQuestion(data!, [], []);
-      }
-      fromKonwledgePoint.add(sec.title);
-      fromKonwledgeIndex.add(sec.index);
-      return SingleQuestionData(fromKonwledgePoint, fromKonwledgeIndex,
-          sec.questions![_random!.nextInt(sec.questions!.length)]);
-    } else {
-      // ignore: unnecessary_null_comparison
-      if (sec.children == null) {
-        return _randomSectionQuestion(data!, [], []);
-      } else {
-        fromKonwledgePoint.add(sec.title);
-        fromKonwledgeIndex.add(sec.index);
-        return _randomSectionQuestion(
-            sec.children!, fromKonwledgePoint, fromKonwledgeIndex);
-      }
-    }
-  }
-
-  List<SingleQuestionData> randomChoiceQuestion({int num = 1}) {
+  SingleQuestionData randomChoiceQuestion({Section? sec}) {
     mksureInit();
-    final List<SingleQuestionData> allQuestions = [];
-    for (int i = 0; i < num; i++) {
-      allQuestions.add(_randomSectionQuestion(data!, [], []));
+    SingleQuestionData? q;
+    while (q == null) {
+      if (sec == null) {
+        q = data![Random().nextInt(data!.length)]
+            .randomSectionQuestion([], []);
+      } else {
+        q = sec.randomSectionQuestion([], []);
+      }
     }
-    return allQuestions;
+    return q;
   }
 
   static void importQuestionBank(File file) async {

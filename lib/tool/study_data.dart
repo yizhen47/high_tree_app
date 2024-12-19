@@ -89,4 +89,13 @@ class StudyData {
       sharedPreferences!.setString("studySection", studySection);
     }
   }
+
+  int getStudyQuestionNum() {
+    return sharedPreferences!.getInt("sStudyQuestionNum") ?? 5;
+  }
+  setStudyQuestionNum(int studyQuestionNum) {
+    sharedPreferences!.setInt("sStudyQuestionNum", studyQuestionNum);
+  }
+
+
 }

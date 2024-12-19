@@ -4,13 +4,13 @@ import 'dart:math';
 import 'package:extended_text/extended_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screen/loading.dart';
+import 'package:flutter_application_1/screen/mode.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/widget/question_text.dart';
 import 'package:path/path.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
-import '../widget/question_text.dart';
 
 class QuestionScreen extends StatefulWidget {
   const QuestionScreen({super.key, required this.title});
@@ -59,97 +59,6 @@ Card buildCard(
                   color: Color.fromARGB(255, 94, 94, 94),
                 ),
               ),
-              // const Column(
-              //   mainAxisAlignment: MainAxisAlignment.start,
-              //   crossAxisAlignment: CrossAxisAlignment.start,
-              //   verticalDirection: VerticalDirection.down,
-              //   children: [
-              //     Text(
-              //       '''可以参考以下选项''',
-              //       style: TextStyle(
-              //         fontSize: 14,
-              //         // fontStyle: FontStyle.italic,
-              //         color: Colors.grey,
-              //         fontFamily: 'Times New Roman',
-              //       ),
-              //     ),
-              //     Row(
-              //       children: [
-              //         Text(
-              //           'A ',
-              //           style: TextStyle(
-              //             fontSize: 14,
-              //             fontWeight: FontWeight.bold,
-              //             color: Colors.black,
-              //             fontFamily: 'Times New Roman',
-              //           ),
-              //         ),
-              //         SizedBox(
-              //           width: 10,
-              //         ),
-              //         Text(
-              //           "不知道",
-              //           style: TextStyle(
-              //             fontSize: 14,
-              //             fontWeight: FontWeight.bold,
-              //             color: Colors.grey,
-              //             fontFamily: 'Times New Roman',
-              //           ),
-              //         ),
-              //       ],
-              //     ),
-              //     Row(
-              //       children: [
-              //         Text(
-              //           'B ',
-              //           style: TextStyle(
-              //             fontSize: 14,
-              //             fontWeight: FontWeight.bold,
-              //             color: Colors.black,
-              //             fontFamily: 'Times New Roman',
-              //           ),
-              //         ),
-              //         SizedBox(
-              //           width: 10,
-              //         ),
-              //         Text(
-              //           "TD,以后不再显示",
-              //           style: TextStyle(
-              //             fontSize: 14,
-              //             fontWeight: FontWeight.bold,
-              //             color: Colors.grey,
-              //             fontFamily: 'Times New Roman',
-              //           ),
-              //         ),
-              //       ],
-              //     ),
-              //     Row(
-              //       children: [
-              //         Text(
-              //           'C ',
-              //           style: TextStyle(
-              //             fontSize: 14,
-              //             fontWeight: FontWeight.bold,
-              //             color: Colors.black,
-              //             fontFamily: 'Times New Roman',
-              //           ),
-              //         ),
-              //         SizedBox(
-              //           width: 10,
-              //         ),
-              //         Text(
-              //           "钝角",
-              //           style: TextStyle(
-              //             fontSize: 14,
-              //             fontWeight: FontWeight.bold,
-              //             color: Colors.grey,
-              //             fontFamily: 'Times New Roman',
-              //           ),
-              //         ),
-              //       ],
-              //     ),
-              //   ],
-              // ),
               SizedBox(
                 height: 30,
                 child: Container(
@@ -241,7 +150,7 @@ class _InnerState extends State<QuestionScreen> {
                 } else {
                   String? secList = StudyData.instance.getStudySection();
                   Map<String, dynamic>? d;
-                  Map<String, List<int>>? dtype = {}; 
+                  Map<String, List<int>>? dtype = {};
                   if (secList != null) {
                     d = json.decode(secList);
                     for (var k in d!.entries) {
@@ -252,11 +161,20 @@ class _InnerState extends State<QuestionScreen> {
                     }
                   }
                   List<Card> cards = [];
-                  for (var i = 0; i < 5; i++) {
-                    var q = snapshot
-                        .data![Random().nextInt(snapshot.data!.length)]
-                        .randomChoiceQuestion()
-                        .single;
+                  for (var i = 0;
+                      i < StudyData.instance.getStudyQuestionNum();
+                      i++) {
+                    var rQdb = snapshot.data!;
+                    var k = (List<String>.from(
+                        dtype.keys))[Random().nextInt(dtype.keys.length)];
+                    var d = rQdb[int.parse(k)];
+                    var rSec = d
+                        .data![(dtype[k])![Random().nextInt(dtype[k]!.length)]];
+                    SingleQuestionData? q;
+                    while (q == null) {
+                      q = rSec.randomSectionQuestion([], []);
+                    }
+
                     allQuestions.add(q);
                     questionRemoved.add(false);
                     questionRemain++;
@@ -328,13 +246,23 @@ class _InnerState extends State<QuestionScreen> {
                                                               const LoadingScreen(
                                                                   title: '')));
                                                 },
-                                                child: const TDButton(
+                                                child: TDButton(
                                                   text: '继续刷题',
                                                   size: TDButtonSize.large,
                                                   type: TDButtonType.ghost,
                                                   shape:
                                                       TDButtonShape.rectangle,
                                                   theme: TDButtonTheme.primary,
+                                                  onTap: () {
+                                                    Navigator.pushAndRemoveUntil(
+                                                        context,
+                                                        MaterialPageRoute(
+                                                            builder: (context) =>
+                                                                const ModeScreen(
+                                                                    title: '')),
+                                                        (route) =>
+                                                            route.isFirst);
+                                                  },
                                                 ))
                                           ],
                                         ),
