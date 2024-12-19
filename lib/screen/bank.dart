@@ -28,12 +28,15 @@ class _InnerState extends State<BankScreen> {
         rightBarItems: [
           TDNavBarItem(
             iconWidget: InkWell(
-              onTap: () {
+              onTap: () async {
+                TDToast.showLoadingWithoutText(context: context);
+                await saveLoadedOption();
+                TDToast.dismissLoading();
                 Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const ModeScreen(title: '')),
-                      (route) => route.isFirst);
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const ModeScreen(title: '')),
+                    (route) => route.isFirst);
               },
               child: const TDTag('下一项',
                   size: TDTagSize.large,
@@ -129,28 +132,7 @@ class _InnerState extends State<BankScreen> {
                 Expanded(
                   child: InkWell(
                     onTap: () async {
-                      List<Future> futures = [];
-                      for (var id in lastSelectIds) {
-                        if (!selectIds.contains(id)) {
-                          futures.add(
-                              (await QuestionBank.getQuestionBankById(id))
-                                  .removeFromData());
-                        }
-                      }
-                      for (var id in selectIds) {
-                        if (!lastSelectIds.contains(id)) {
-                          futures.add(
-                              (await QuestionBank.getQuestionBankById(id))
-                                  .loadIntoData());
-                        }
-                      }
-                      await Future.wait(futures);
-                      if (StudyData.instance.getStudyType() ==
-                              StudyType.studyMode &&
-                          selectIds.length > 1) {
-                        StudyData.instance.setStudyType(StudyType.testMode);
-                      }
-                      StudyData.instance.setStudySection(null);
+                      await saveLoadedOption();
                       TDToast.showSuccess('加载完毕', context: context);
                     },
                     child: const Padding(
@@ -179,5 +161,27 @@ class _InnerState extends State<BankScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> saveLoadedOption() async {
+    List<Future> futures = [];
+    for (var id in lastSelectIds) {
+      if (!selectIds.contains(id)) {
+        futures
+            .add((await QuestionBank.getQuestionBankById(id)).removeFromData());
+      }
+    }
+    for (var id in selectIds) {
+      if (!lastSelectIds.contains(id)) {
+        futures
+            .add((await QuestionBank.getQuestionBankById(id)).loadIntoData());
+      }
+    }
+    await Future.wait(futures);
+    if (StudyData.instance.getStudyType() == StudyType.studyMode &&
+        selectIds.length > 1) {
+      StudyData.instance.setStudyType(StudyType.testMode);
+    }
+    StudyData.instance.setStudySection(null);
   }
 }

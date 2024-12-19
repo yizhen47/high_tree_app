@@ -57,7 +57,24 @@ class Section {
         (key, value) => value == null || (value is List && value.isEmpty));
   }
 
-  SingleQuestionData? randomSectionQuestion(
+  SingleQuestionData randomSectionQuestion(
+      List<String> fromKonwledgePoint, List<String> fromKonwledgeIndex,
+      {retryingTimes = 5}) {
+    SingleQuestionData? q;
+    for (var i = 0; i < retryingTimes; i++) {
+      q = _randomSectionQuestion(fromKonwledgePoint, fromKonwledgeIndex);
+      if (q != null) {
+        break;
+      }
+    }
+    if (q == null) {
+      return SingleQuestionData(fromKonwledgePoint, fromKonwledgeIndex,
+          {'q': '本章没有题目', 'w': '本章没有答案'});
+    }
+    return q;
+  }
+
+  SingleQuestionData? _randomSectionQuestion(
       List<String> fromKonwledgePoint, List<String> fromKonwledgeIndex) {
     if (_random!.nextInt(3) == 1) {
       // ignore: unnecessary_null_comparison
@@ -479,8 +496,7 @@ class QuestionBank {
     SingleQuestionData? q;
     while (q == null) {
       if (sec == null) {
-        q = data![Random().nextInt(data!.length)]
-            .randomSectionQuestion([], []);
+        q = data![Random().nextInt(data!.length)].randomSectionQuestion([], []);
       } else {
         q = sec.randomSectionQuestion([], []);
       }

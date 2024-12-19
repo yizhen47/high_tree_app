@@ -4,7 +4,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screen/personal.dart';
 import 'package:flutter_application_1/screen/mode.dart';
-import 'package:flutter_application_1/screen/wrong.dart';
 import 'package:flutter_application_1/screen/question.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:flutter_application_1/tool/study_data.dart';

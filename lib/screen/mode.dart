@@ -29,6 +29,18 @@ class _InnerState extends State<ModeScreen> {
           List<Map<dynamic, dynamic>> children = [];
           n["children"] = children;
           analyzeSeletion(section.children!, n["children"], needLayer - 1);
+          List<Map<dynamic, dynamic>> nchildren = [{"label": "确认", "value": "-1"}];
+          var child = nchildren.single;
+          children.insert(0,child);
+          var layer = needLayer;
+          while (layer - 2 > 0) {
+            List<Map<dynamic, dynamic>> nchildren = [
+              {"label": "确认", "value": "-1"}
+            ];
+            child["children"] = nchildren;
+            child = child["children"].single;
+            layer--;
+          }
         } else if (needLayer - 1 > 0) {
           var child = n;
           var layer = needLayer;

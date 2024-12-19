@@ -1,10 +1,8 @@
-import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
 import 'package:extended_text/extended_text.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/screen/home.dart';
 import 'package:flutter_application_1/screen/loading.dart';
 import 'package:flutter_application_1/screen/mode.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
@@ -21,7 +19,7 @@ class QuestionScreen extends StatefulWidget {
   State<QuestionScreen> createState() => _InnerState();
 }
 
-Card buildCard(
+Card buildQuestionCard(
     final String knowledgepoint, final String question, final String? answer) {
   return Card(
       color: Colors.white,
@@ -93,6 +91,65 @@ Card buildCard(
       ));
 }
 
+Card buildKnowledgeCard(
+    final String index, final String title, final String knowledge,
+    {final String? images}) {
+  return Card(
+      color: Colors.white,
+      elevation: 4,
+      child: SizedBox(
+        height: double.infinity,
+        child: SingleChildScrollView(
+            child: Padding(
+          padding: const EdgeInsets.all(15),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(
+                width: double.infinity,
+              ),
+              ExtendedText(
+                title,
+                specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color.fromARGB(255, 94, 94, 94),
+                ),
+              ),
+              SizedBox(
+                height: 30,
+                child: Container(
+                  alignment: Alignment.center,
+                  child: const TDDivider(
+                    color: Colors.black38,
+                  ),
+                ),
+              ),
+              // const Text(
+              //   "解析",
+              //   style: TextStyle(
+              //     fontSize: 16,
+              //     fontWeight: FontWeight.bold,
+              //     color: Colors.black,
+              //     fontFamily: 'Times New Roman',
+              //   ),
+              // ),
+              ExtendedText(
+                knowledge,
+                specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontFamily: 'Times New Roman',
+                ),
+              ),
+            ],
+          ),
+        )),
+      ));
+}
+
 class _InnerState extends State<QuestionScreen> {
   bool _onUndo(
     int? previousIndex,
@@ -127,42 +184,16 @@ class _InnerState extends State<QuestionScreen> {
         QuestionBank.getAllLoadedQuestionBankIds().single, "assets", "images"));
 
     return Scaffold(
+      appBar: TDNavBar(title: '刷题界面', onBack: () {}),
       floatingActionButton: Padding(
-          padding: const EdgeInsets.only(top: 50),
-          child: Column(
-            children: [
-             const SizedBox(height: 200),
-           FloatingActionButton(
-                  backgroundColor: const Color.fromARGB(0, 237, 237, 237),
-                  hoverColor: const Color.fromARGB(0, 207, 207, 207),
-                  child: const Column(children: [
-Icon(Icons.exit_to_app),
-Text('退出',style:TextStyle(fontSize: 16))
-                  ],),
-                  
-                  onPressed: () {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) =>
-                               const HomeScreen(title: '')));
-                  }),
-              SizedBox.fromSize(size: const Size(10, 10)),
-              
-             
-              FloatingActionButton(
-                  backgroundColor: const Color.fromARGB(0, 237, 237, 237),
-                  hoverColor: const Color.fromARGB(0, 207, 207, 207),
-                  child: const Column(children: [
- Icon(Icons.reply),
-Text('撤回',style:TextStyle(fontSize: 16))
-                  ],),
-                 
-                  onPressed: () {
-                    controller.undo();
-                  })
-            ],
-          )),
+          padding: const EdgeInsets.only(bottom: 150),
+          child: FloatingActionButton(
+              backgroundColor: const Color.fromARGB(255, 237, 237, 237),
+              hoverColor: const Color.fromARGB(255, 207, 207, 207),
+              child: const Icon(Icons.reply),
+              onPressed: () {
+                controller.undo();
+              })),
       body: Column(
         children: [
           Flexible(
@@ -176,38 +207,84 @@ Text('撤回',style:TextStyle(fontSize: 16))
                   return Text(
                       "Error: ${snapshot.error}" '${snapshot.stackTrace}');
                 } else {
-                  String? secList = StudyData.instance.getStudySection();
-                  Map<String, dynamic>? d;
-                  Map<String, List<int>>? dtype = {};
-                  if (secList != null) {
-                    d = json.decode(secList);
-                    for (var k in d!.entries) {
-                      dtype[k.key] = [];
-                      for (var kk in k.value) {
-                        dtype[k.key]!.add(kk);
+                  List<Card> cards = [];
+
+                  if (StudyData.instance.getStudyType() == StudyType.testMode) {
+                    String? secList = StudyData.instance.getStudySection();
+                    Map<String, dynamic>? d;
+                    Map<String, List<int>>? dtype = {};
+                    if (secList != null) {
+                      d = json.decode(secList);
+                      for (var k in d!.entries) {
+                        dtype[k.key] = [];
+                        for (var kk in k.value) {
+                          dtype[k.key]!.add(kk);
+                        }
                       }
                     }
-                  }
-                  List<Card> cards = [];
-                  for (var i = 0;
-                      i < StudyData.instance.getStudyQuestionNum();
-                      i++) {
-                    var rQdb = snapshot.data!;
-                    var k = (List<String>.from(
-                        dtype.keys))[Random().nextInt(dtype.keys.length)];
-                    var d = rQdb[int.parse(k)];
-                    var rSec = d
-                        .data![(dtype[k])![Random().nextInt(dtype[k]!.length)]];
-                    SingleQuestionData? q;
-                    while (q == null) {
-                      q = rSec.randomSectionQuestion([], []);
+                    for (var i = 0;
+                        i < StudyData.instance.getStudyQuestionNum();
+                        i++) {
+                      var rQdb = snapshot.data!;
+                      var k = (List<String>.from(
+                          dtype.keys))[Random().nextInt(dtype.keys.length)];
+                      var d = rQdb[int.parse(k)];
+                      var rSec = d.data![
+                          (dtype[k])![Random().nextInt(dtype[k]!.length)]];
+                      SingleQuestionData q = rSec.randomSectionQuestion([], []);
+
+                      allQuestions.add(q);
+                      questionRemoved.add(false);
+                      questionRemain++;
+                      cards.add(buildQuestionCard(q.getKonwledgePoint(),
+                          q.question['q']!, q.question['w']));
+                    }
+                  } else if (StudyData.instance.getStudyType() ==
+                      StudyType.studyMode) {
+                    String? secList = StudyData.instance.getStudySection();
+                    if (secList == null) {
+                      throw Exception("study mode but no section");
+                    }
+                    Section sec = Section("", "")
+                      ..children = snapshot.data!.single.data;
+
+                    List<String> fromKonwledgeIndex = [];
+                    List<String> fromKonwledgePoint = [];
+
+                    for (var index in secList.split("/")) {
+                      sec = sec.children!.where((e) => e.index == index).single;
+                      fromKonwledgeIndex.add(sec.index);
+                      fromKonwledgePoint.add(sec.title);
+                    }
+                    void buildSection(Section s) {
+                      cards.add(buildKnowledgeCard(
+                          s.index, s.title, s.note ?? "暂无知识点"));
+                      questionRemoved.add(false);
+                      allQuestions.add(SingleQuestionData([], [], {}));
+                      questionRemain++;
+                      if (s.children != null) {
+                        for (var i = 0; i < s.children!.length; i++) {
+                          buildSection(s.children![i]);
+                        }
+                      }
                     }
 
-                    allQuestions.add(q);
-                    questionRemoved.add(false);
-                    questionRemain++;
-                    cards.add(buildCard(q.getKonwledgePoint(), q.question['q']!,
-                        q.question['w']));
+                    buildSection(sec);
+
+                    if (sec.children != null) {}
+                    for (var i = 0;
+                        i < StudyData.instance.getStudyQuestionNum();
+                        i++) {
+                      SingleQuestionData q = sec.randomSectionQuestion(
+                          fromKonwledgePoint, fromKonwledgeIndex);
+
+                      questionRemoved.add(false);
+                      allQuestions.add(q);
+                      questionRemain++;
+
+                      cards.add(buildQuestionCard(q.getKonwledgePoint(),
+                          q.question['q']!, q.question['w']));
+                    }
                   }
                   return CardSwiper(
                     controller: controller,
@@ -222,8 +299,10 @@ Text('撤回',style:TextStyle(fontSize: 16))
                           questionRemoved[previousIndex] = true;
                           questionRemain--;
                         }
+                        return true;
+                      } else {
+                        return false;
                       }
-                      return true;
                     },
                     onUndo: _onUndo,
                     cardsCount: cards.length,
@@ -272,8 +351,7 @@ Text('撤回',style:TextStyle(fontSize: 16))
                                                       MaterialPageRoute(
                                                           builder: (context) =>
                                                               const LoadingScreen(
-                                                                title: '',
-                                                              )));
+                                                                  title: '')));
                                                 },
                                                 child: TDButton(
                                                   text: '继续刷题',
