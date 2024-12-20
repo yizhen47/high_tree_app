@@ -35,6 +35,8 @@ dependencies:
   lib: ^0.0.3
   window_manager: ^0.4.3
   fl_chart: ^0.69.2
+  image_picker: ^1.1.2
+  image_cropper: ^1.0.2
 
 dev_dependencies:
   flutter_test:
