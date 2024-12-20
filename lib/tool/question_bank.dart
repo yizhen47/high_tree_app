@@ -119,7 +119,7 @@ class QuestionBankData {
   }
 }
 
-Map<String, dynamic> parseWordToJSONData(String text, String title) {
+Map<String, dynamic> parseWordToJSONData(String text, String title,String id) {
   var lines = text.trim().split('\n');
   var root = Section('', '');
   var stack = [root];
@@ -248,13 +248,14 @@ Map<String, dynamic> parseWordToJSONData(String text, String title) {
   return {
     'data': root.children!.map((child) => child.toTrimJson()).toList(),
     "version": 1,
-    "id": const Uuid().v4(),
+    "id": id,
     "displayName": title
   };
 }
 
 Future<void> generateByDocx(File fromFile, File saveFile) async {
   mksureInit();
+  var id = const Uuid().v4();
   final bytes = await fromFile.readAsBytes();
 
   final archiveDecoder = _zipDecoder!.decodeBytes(bytes);
@@ -284,7 +285,7 @@ Future<void> generateByDocx(File fromFile, File saveFile) async {
     if (file.isFile) {
       if (file.name.startsWith("word/media/")) {
         futures.add((() async {
-          final contents = await _wmf2png!.convert(file.content);
+          final contents = await _wmf2png!.convert(file.content, dpi: 300);
           print(file.name);
           ArchiveFile archiveFile = ArchiveFile(
               'assets/images/${imageRels[(file.name)]}.png',
@@ -325,7 +326,7 @@ Future<void> generateByDocx(File fromFile, File saveFile) async {
                 if (typeUsed.name.local == "inline") {
                   for (final blip in typeUsed.findAllElements("a:blip")) {
                     final imageId = blip.getAttribute("r:embed");
-                    texts.add('[image:$imageId.png]');
+                    texts.add('[image:$id:$imageId.png]');
                   }
                 }
               }
@@ -379,7 +380,7 @@ Future<void> generateByDocx(File fromFile, File saveFile) async {
 
   try {
     final result = parseWordToJSONData(
-        list.join('\n'), path.basename(fromFile.path.split('/').first));
+        list.join('\n'), path.basename(fromFile.path.split('/').first),id);
     final jsonContent = utf8.encode(jsonEncode(result,
         toEncodable: (value) => value is Map ? value : null));
     archive.addFile(ArchiveFile('data.json', jsonContent.length, jsonContent));

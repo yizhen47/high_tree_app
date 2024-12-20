@@ -95,12 +95,15 @@ Card buildKnowledgeCard(
     final String index, final String title, final String knowledge,
     {final String? images}) {
   return Card(
-      color: Colors.white,
-      elevation: 4,
-      child: SizedBox(
-        height: double.infinity,
-        child: SingleChildScrollView(
-            child: Padding(
+    color: Colors.white,
+    elevation: 4,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: SizedBox(
+      height: double.infinity,
+      child: SingleChildScrollView(
+        child: Padding(
           padding: const EdgeInsets.all(15),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
@@ -109,33 +112,34 @@ Card buildKnowledgeCard(
               const SizedBox(
                 width: double.infinity,
               ),
-              ExtendedText(
-                title,
-                specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color.fromARGB(255, 94, 94, 94),
-                ),
-              ),
-              SizedBox(
-                height: 30,
-                child: Container(
-                  alignment: Alignment.center,
-                  child: const TDDivider(
-                    color: Colors.black38,
+              Row(
+                children: [
+                  ExtendedText(
+                    index,
+                    specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey,
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 10),
+                  ExtendedText(
+                    title,
+                    specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
               ),
-              // const Text(
-              //   "解析",
-              //   style: TextStyle(
-              //     fontSize: 16,
-              //     fontWeight: FontWeight.bold,
-              //     color: Colors.black,
-              //     fontFamily: 'Times New Roman',
-              //   ),
-              // ),
+              const SizedBox(height: 5),
+              const TDDivider(
+                color: Colors.black38,
+              ),
+              const SizedBox(height: 20),
               ExtendedText(
                 knowledge,
                 specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
@@ -144,10 +148,16 @@ Card buildKnowledgeCard(
                   fontFamily: 'Times New Roman',
                 ),
               ),
+              if (images != null) ...[
+                const SizedBox(height: 20),
+                Image.network(images),
+              ],
             ],
           ),
-        )),
-      ));
+        ),
+      ),
+    ),
+  );
 }
 
 class _InnerState extends State<QuestionScreen> {
@@ -180,8 +190,7 @@ class _InnerState extends State<QuestionScreen> {
   //这修改页面2的内容
   @override
   Widget build(BuildContext context) {
-    setCurMathImgPath(join(QuestionBank.loadedDirPath!,
-        QuestionBank.getAllLoadedQuestionBankIds().single, "assets", "images"));
+    setCurMathImgPath(QuestionBank.loadedDirPath!);
 
     return Scaffold(
       appBar: TDNavBar(title: '刷题界面', onBack: () {}),

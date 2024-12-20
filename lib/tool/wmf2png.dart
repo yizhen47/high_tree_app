@@ -8,7 +8,11 @@ class Wmf2Png {
   static final String exePath =
       path.join(Directory.systemTemp.path, 'wmf2png.exe');
 
-  Future<Uint8List> convert(Uint8List inputBytes) async {
+  Future<Uint8List> convert(Uint8List inputBytes, {
+    String? width,
+    String? height,
+    int? dpi,
+  }) async {
     if (!Platform.isWindows) {
       throw Exception('WMF conversion only works on the win32 platform');
     }
@@ -28,10 +32,22 @@ class Wmf2Png {
     try {
       await tempInputFile.writeAsBytes(inputBytes);
 
+      // Prepare arguments for wmf2png.exe
+      final args = [tempInputFile.path, tempOutputFile.path];
+      if (width != null) {
+        args.add('--width=$width');
+      }
+      if (height != null) {
+        args.add('--height=$height');
+      }
+      if (dpi != null) {
+        args.add('--dpi=$dpi');
+      }
+
       // Execute wmf2png.exe
       final result = await runExecutableArguments(
         exePath,
-        [tempInputFile.path, tempOutputFile.path],
+        args,
       );
 
       if (result.exitCode != 0) {

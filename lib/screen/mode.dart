@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screen/question.dart';
@@ -29,9 +30,11 @@ class _InnerState extends State<ModeScreen> {
           List<Map<dynamic, dynamic>> children = [];
           n["children"] = children;
           analyzeSeletion(section.children!, n["children"], needLayer - 1);
-          List<Map<dynamic, dynamic>> nchildren = [{"label": "确认", "value": "-1"}];
-          var child = nchildren.single;
-          children.insert(0,child);
+          List<Map<dynamic, dynamic>> childOptions = [
+            {"label": "确认", "value": "99"}
+          ];
+          var child = childOptions.single;
+          children.insert(0, child);
           var layer = needLayer;
           while (layer - 2 > 0) {
             List<Map<dynamic, dynamic>> nchildren = [
@@ -72,6 +75,7 @@ class _InnerState extends State<ModeScreen> {
       return maxLayer + 1;
     }
 
+    // print(jsonEncode(analyzeSeletion(data.data!, [], getMaxLayer(data.data!))));
     return TDCell(
       arrow: false,
       title: data.displayName,
@@ -86,6 +90,7 @@ class _InnerState extends State<ModeScreen> {
             desc = selectData
                 .map((toElement) => toElement.value)
                 .join("/")
+                .replaceAll("/99", '')
                 .replaceAll("/-1", "");
             // var descS = selectData.map((toElement) => toElement.value).join("/").replaceAll("/-1", "");
             StudyData.instance.setStudySection(desc);

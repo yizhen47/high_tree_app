@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
@@ -9,9 +11,21 @@ import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:flutter_application_1/screen/setting.dart';
+import 'package:fl_chart/fl_chart.dart';
+
 import 'bank.dart';
 import 'skip.dart';
 import 'note.dart';
+
+class MedicalCaseIndexVary {
+  final String referenceValueUpper;
+  final String referenceValueLower;
+
+  MedicalCaseIndexVary({
+    required this.referenceValueUpper,
+    required this.referenceValueLower,
+  });
+}
 
 //动态页面：按照下面的方法创建。特点：每一次setState都会刷新控件，比如下面的按一下加次数，文本会被重新构建。
 class HomeScreen extends StatefulWidget {
@@ -107,29 +121,211 @@ class CommunityPage extends StatefulWidget {
   @override
   State<CommunityPage> createState() => CommunityPageState();
 }
-
 class CommunityPageState extends State<CommunityPage> {
+  final medicalCaseIndexVary = MedicalCaseIndexVary(
+      referenceValueUpper: '10.0', referenceValueLower: '0.0');
+  List<String> weekDays = [];
+  bool showCircles = false;
+  int touchedValue = -1;
+  List<double> yValues = [];
+
+  @override
+  void initState() {
+    super.initState();
+    touchedValue = -1;
+    showCircles = true;
+    weekDays = [
+      "2021-02-01",
+      "2021-03-01",
+      "2021-04-01",
+      "2021-05-01",
+      "2021-06-01",
+      "2021-07-01",
+      "2021-08-01"
+    ];
+    yValues = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0];
+  }
+
   @override
   Widget build(BuildContext context) {
-    return TDButton(
-      text: '查看章节',
-      isBlock: true,
-      type: TDButtonType.outline,
-      theme: TDButtonTheme.primary,
-      size: TDButtonSize.large,
-      onTap: () {
-        TDDrawer(
-          context,
-          visible: true,
-          drawerTop: 40,
-          items: [
-            TDDrawerItem(title: "test", icon: const Icon(Icons.add_box_sharp))
-          ],
-          onItemClick: (index, item) {
-            print('drawer item被点击，index：$index，title：${item.title}');
+    final List<int> showIndexes = yValues.asMap().keys.toList();
+    final lineBarsData = [
+      LineChartBarData(
+        isCurved: true,
+        color: const Color(0xFF22A3FD),
+        barWidth: 2,
+        spots: yValues.asMap().entries.map((e) {
+          return FlSpot(e.key.toDouble(), e.value);
+        }).toList(),
+        belowBarData: BarAreaData(show: false),
+        dotData: FlDotData(
+          show: true,
+          getDotPainter: (spot, percent, barData, index) {
+            return FlDotCirclePainter(
+              radius: index != weekDays.length - 1 && showCircles ? 1 : 3,
+              color: index != weekDays.length - 1 && showCircles
+                  ? const Color(0xFF22A3FD)
+                  : Colors.white,
+              strokeWidth: 2,
+              strokeColor: const Color(0xFF22A3FD),
+            );
           },
-        );
-      },
+        ),
+      ),
+    ];
+
+    final referenceValueUpper =
+        double.parse(medicalCaseIndexVary.referenceValueUpper);
+    final referenceValueLower =
+        double.parse(medicalCaseIndexVary.referenceValueLower);
+    double numMax = [referenceValueUpper, referenceValueLower, ...yValues]
+        .reduce((a, b) => a > b ? a : b);
+    numMax *= 1.25;
+
+    return weekDays.isNotEmpty
+        ? Column(
+            mainAxisSize: MainAxisSize.max,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              _buildHeader(),
+              _buildSubHeader(),
+              const SizedBox(height: 15),
+              _buildChart(numMax, showIndexes, lineBarsData),
+            ],
+          )
+        : Center(child: Image.asset("assets/logo.png"));
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text(
+            '数据趋势',
+            style: TextStyle(color: Color(0xFF555555), fontSize: 18.0, fontWeight: FontWeight.bold),
+          ),
+          GestureDetector(
+            child: const Text(
+              '详情',
+              style: TextStyle(color: Color(0xFF8C8C8C), fontSize: 14.0),
+              textAlign: TextAlign.right,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubHeader() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            '单位：次',
+            style: TextStyle(color: Color(0xFF8C8C8C), fontSize: 12.0),
+          ),
+          Text(
+            '参考值范围：0-10',
+            style: TextStyle(color: Color(0xFF8C8C8C), fontSize: 12.0),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChart(double numMax, List<int> showIndexes,
+      List<LineChartBarData> lineBarsData) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      height: 200,
+      child: LineChart(
+        LineChartData(
+          showingTooltipIndicators: showIndexes.map((index) {
+            return ShowingTooltipIndicators([
+              LineBarSpot(lineBarsData[0], 0, lineBarsData[0].spots[index]),
+            ]);
+          }).toList(),
+          lineTouchData: LineTouchData(
+            enabled: false,
+            getTouchedSpotIndicator: (barData, spotIndexes) {
+              return spotIndexes.map((index) {
+                return const TouchedSpotIndicatorData(
+                  FlLine(color: Colors.transparent),
+                  FlDotData(show: false),
+                );
+              }).toList();
+            },
+            touchTooltipData: LineTouchTooltipData(
+              getTooltipItems: (lineBarsSpot) {
+                return lineBarsSpot.map((lineBarSpot) {
+                  return LineTooltipItem(
+                    lineBarSpot.y.toString(),
+                    const TextStyle(
+                        color: Color(0xFF22A3FD),
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold),
+                  );
+                }).toList();
+              },
+            ),
+          ),
+          extraLinesData: ExtraLinesData(horizontalLines: [
+            HorizontalLine(
+              y: 0.0,
+              color: const Color(0xFF64FFE4),
+              strokeWidth: 2,
+              dashArray: [20, 2],
+            ),
+            HorizontalLine(
+              y: 10.0,
+              color: const Color(0xFFF8A70A),
+              strokeWidth: 2,
+              dashArray: [20, 2],
+            ),
+          ]),
+          lineBarsData: lineBarsData,
+          borderData: FlBorderData(
+            show: true,
+            border: const Border(
+              bottom: BorderSide(width: 0.5, color: Color(0xFF8FFFEB)),
+            ),
+          ),
+          minY: 0,
+          maxY: numMax,
+          gridData: const FlGridData(
+            show: true,
+            drawHorizontalLine: false,
+            drawVerticalLine: false,
+          ),
+          titlesData: FlTitlesData(
+            show: true,
+            leftTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                getTitlesWidget: (value, meta) {
+                  return Text(
+                    "${weekDays[value.toInt()].substring(0, 4)}\n${weekDays[value.toInt()].substring(5, 7)}\n${weekDays[value.toInt()].substring(8, 10)}",
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: value == touchedValue
+                          ? const Color(0xFF000000)
+                          : const Color(0xFF000000).withOpacity(0.5),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -551,55 +747,6 @@ class ProfilePage extends StatefulWidget {
 }
 
 class ProfilePageState extends State<ProfilePage> {
-  Widget buildSettingViews(
-      final IconData icon, final String name, final GestureTapCallback onTap) {
-    return Container(
-      color: Colors.white,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Stack(
-            children: [
-              Row(
-                verticalDirection: VerticalDirection.down,
-                children: [
-                  Icon(
-                    icon,
-                    size: 20,
-                    color: Colors.blueAccent,
-                  ),
-                  const SizedBox(
-                    width: 15,
-                  ),
-                  Text(
-                    name,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.black,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  )
-                ],
-              ),
-              const Row(
-                verticalDirection: VerticalDirection.up,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Icon(
-                    Icons.chevron_right,
-                    color: Colors.grey,
-                    size: 22,
-                  )
-                ],
-              )
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -615,78 +762,82 @@ class ProfilePageState extends State<ProfilePage> {
           },
           child: Card(
             color: Colors.white,
-            child: Expanded(
-              child: Column(
-                children: [
-                  Row(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(25),
+                  child: Image(
+                    image: StudyData.instance.getAvatar() == null
+                        ? const AssetImage("assets/logo.png")
+                        : FileImage(File(StudyData.instance.getAvatar()!))
+                            as ImageProvider,
+                    width: 50,
+                    height: 50,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.all(50),
-                        child: Container(
-                          width: 100,
-                          height: 100,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Color.fromARGB(255, 74, 126, 123),
-                          ),
+                      Text(
+                        StudyData.instance.getUserName(),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Expanded(
-                        child: Column(
-                          children: [
-                            Text(
-                              StudyData.instance.getUserName(),
-                              textScaler: const TextScaler.linear(2),
-                              style: const TextStyle(),
-                            ),
-                            Text(
-                              maxLines: 5,
-                              StudyData.instance.getSign(),
-                              textScaler: const TextScaler.linear(1.2),
-                              style: const TextStyle(),
-                              softWrap: true,
-                              overflow: TextOverflow.clip,
-                            ),
-                          ],
+                      const SizedBox(height: 5),
+                      Text(
+                        StudyData.instance.getSign(),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
-                ],
-              ),
+                ),
+              ]),
             ),
           ),
         ),
-
         Card(
           color: Colors.white,
-          child: Column(
-            children: [
-              buildSettingViews(Icons.import_contacts_sharp, "设置", () {
-                Navigator.push(
-                  context,
-                  CupertinoPageRoute(
-                    builder: (context) => const SettingScreen(
-                      title: '',
-                    ),
-                  ),
-                );
-              }),
-              const TDDivider(),
-              buildSettingViews(Icons.import_contacts_sharp, "设置题库", () async {
-                var fromFilePath = await FilePicker.platform.pickFiles(
-                    allowMultiple: false, allowedExtensions: ["docx"]);
-                if (fromFilePath == null) return;
-                var saveFilePath = await FilePicker.platform.saveFile(
-                  dialogTitle: "请选择保存路径",
-                  fileName: "custom.qset",
-                );
+          child: TDCellGroup(
+            cells: [
+              TDCell(
+                  leftIcon: Icons.settings,
+                  title: "应用设置",
+                  onClick: (_) {
+                    Navigator.push(
+                      context,
+                      CupertinoPageRoute(
+                        builder: (context) => const SettingScreen(
+                          title: '',
+                        ),
+                      ),
+                    );
+                  }),
+              TDCell(
+                  leftIcon: Icons.library_books,
+                  title: "题库管理",
+                  onClick: (_) async {
+                    var fromFilePath = await FilePicker.platform.pickFiles(
+                        allowMultiple: false, allowedExtensions: ["docx"]);
+                    if (fromFilePath == null) return;
+                    var saveFilePath = await FilePicker.platform.saveFile(
+                      dialogTitle: "请选择保存路径",
+                      fileName: "custom.qset",
+                    );
 
-                if (saveFilePath == null) return;
-                QuestionBank.create(
-                    fromFilePath.files.single.path!, saveFilePath);
-              }),
-              const TDDivider(),
+                    if (saveFilePath == null) return;
+                    QuestionBank.create(
+                        fromFilePath.files.single.path!, saveFilePath);
+                  }),
             ],
           ),
         )

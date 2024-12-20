@@ -1,4 +1,8 @@
+import 'dart:io';
+
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path/path.dart' as path;
 
 enum StudyDifficulty {
   easy(displayName: "简单模式"),
@@ -28,11 +32,17 @@ enum StudyType {
 
 class StudyData {
   SharedPreferences? sharedPreferences;
+  String? dataDir;
   static StudyData instance = StudyData();
 
   StudyData();
   init() async {
     sharedPreferences = await SharedPreferences.getInstance();
+    dataDir =
+        path.join((await getApplicationSupportDirectory()).path, "userData");
+    if (!Directory(dataDir!).existsSync()) {
+      Directory(dataDir!).createSync();
+    }
   }
 
   String getUserName() {
@@ -104,5 +114,16 @@ class StudyData {
 
   setStudyQuestionNum(int studyQuestionNum) {
     sharedPreferences!.setInt("sStudyQuestionNum", studyQuestionNum);
+  }
+
+  String? getAvatar() {
+    return sharedPreferences!.getString("avatar") == null
+        ? null
+        : path.join(dataDir!, "avatar");
+  }
+
+  setAvatar(String avatar) async {
+    await sharedPreferences!.setString("avatar", avatar);
+    await File(avatar).copy(path.join(dataDir!, "avatar"));
   }
 }

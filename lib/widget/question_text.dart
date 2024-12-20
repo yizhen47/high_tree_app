@@ -33,8 +33,10 @@ class MathIncludeText extends SpecialText {
     var fpath = toString();
     fpath = fpath.substring(MathIncludeText.flag.length,
         fpath.length - MathIncludeText.flagEnd.length);
+    var pack = fpath.split(":");
 
-    var img = FileImage(File(path.join(_nowSingleUsedMathImagePath, fpath)));
+    var img = FileImage(File(path.join(
+        _nowSingleUsedMathImagePath, pack[0], "assets", "images", pack[1])));
     return MyImageSpan(
       img,
       actualText: fpath,
