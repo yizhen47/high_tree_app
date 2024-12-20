@@ -15,6 +15,7 @@ import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 class QuestionScreen extends StatefulWidget {
   const QuestionScreen({super.key, required this.title});
   final String title;
+  
   @override
   State<QuestionScreen> createState() => _InnerState();
 }

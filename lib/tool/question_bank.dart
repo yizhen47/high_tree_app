@@ -119,7 +119,7 @@ class QuestionBankData {
   }
 }
 
-Map<String, dynamic> parseWordToJSONData(String text, String title,String id) {
+Map<String, dynamic> parseWordToJSONData(String text, String title, String id) {
   var lines = text.trim().split('\n');
   var root = Section('', '');
   var stack = [root];
@@ -380,7 +380,7 @@ Future<void> generateByDocx(File fromFile, File saveFile) async {
 
   try {
     final result = parseWordToJSONData(
-        list.join('\n'), path.basename(fromFile.path.split('/').first),id);
+        list.join('\n'), path.basename(fromFile.path.split('/').first), id);
     final jsonContent = utf8.encode(jsonEncode(result,
         toEncodable: (value) => value is Map ? value : null));
     archive.addFile(ArchiveFile('data.json', jsonContent.length, jsonContent));
@@ -450,7 +450,7 @@ class QuestionBank {
   Future<void> removeFromData() async {
     mksureInit();
     print(path.join(cacheDir!, '$id.qset'));
-    await _deleteIfExists(Directory(cacheDir!));
+    await _removeDirectoryIfExists(Directory(cacheDir!));
   }
 
   Future<QuestionBank> getQuestionBankInf() async {
@@ -472,6 +472,12 @@ class QuestionBank {
     return this;
   }
 
+  static deleteQuestionBank(String id) async {
+    mksureInit();
+    await _removeDirectoryIfExists(Directory(path.join(loadedDirPath!, id)));
+    await _removeFileIfExists(File(path.join(importedDirPath!, "$id.qset")));
+  }
+
   void close() {
     if (cacheDir != null) Directory(cacheDir!).delete();
   }
@@ -484,7 +490,15 @@ class QuestionBank {
     });
   }
 
-  static Future<bool> _deleteIfExists(Directory file) async {
+  static Future<bool> _removeDirectoryIfExists(Directory file) async {
+    if (await file.exists()) {
+      await file.delete(recursive: true);
+      return true;
+    }
+    return false;
+  }
+
+  static Future<bool> _removeFileIfExists(File file) async {
     if (await file.exists()) {
       await file.delete(recursive: true);
       return true;
@@ -505,7 +519,7 @@ class QuestionBank {
     return q;
   }
 
-  static void importQuestionBank(File file) async {
+  static Future<void> importQuestionBank(File file) async {
     mksureInit();
     if (!file.existsSync()) {
       throw Exception("文件不存在");

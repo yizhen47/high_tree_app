@@ -4,6 +4,7 @@ import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screen/bank_manager.dart';
 import 'package:flutter_application_1/screen/personal.dart';
 import 'package:flutter_application_1/screen/mode.dart';
 import 'package:flutter_application_1/screen/question.dart';
@@ -13,7 +14,7 @@ import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:flutter_application_1/screen/setting.dart';
 import 'package:fl_chart/fl_chart.dart';
 
-import 'bank.dart';
+import 'bank_choose.dart';
 import 'skip.dart';
 import 'note.dart';
 
@@ -121,6 +122,7 @@ class CommunityPage extends StatefulWidget {
   @override
   State<CommunityPage> createState() => CommunityPageState();
 }
+
 class CommunityPageState extends State<CommunityPage> {
   final medicalCaseIndexVary = MedicalCaseIndexVary(
       referenceValueUpper: '10.0', referenceValueLower: '0.0');
@@ -204,7 +206,10 @@ class CommunityPageState extends State<CommunityPage> {
         children: [
           const Text(
             '数据趋势',
-            style: TextStyle(color: Color(0xFF555555), fontSize: 18.0, fontWeight: FontWeight.bold),
+            style: TextStyle(
+                color: Color(0xFF555555),
+                fontSize: 18.0,
+                fontWeight: FontWeight.bold),
           ),
           GestureDetector(
             child: const Text(
@@ -435,7 +440,7 @@ class MainHomePageState extends State<MainHomePage> {
                             Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => const BankScreen(
+                                    builder: (context) => const BankChooseScreen(
                                           title: '',
                                         ))).then((onValue) {
                               setState(() {});
@@ -463,7 +468,7 @@ class MainHomePageState extends State<MainHomePage> {
                                     SizedBox(
                                       width: 10,
                                     ),
-                                    Text('题库设置',
+                                    Text('题库选择',
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontSize: 20,
@@ -588,7 +593,7 @@ class MainHomePageState extends State<MainHomePage> {
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => const BankScreen(
+                                builder: (context) => const BankChooseScreen(
                                       title: '',
                                     )));
                       },
@@ -826,17 +831,12 @@ class ProfilePageState extends State<ProfilePage> {
                   leftIcon: Icons.library_books,
                   title: "题库管理",
                   onClick: (_) async {
-                    var fromFilePath = await FilePicker.platform.pickFiles(
-                        allowMultiple: false, allowedExtensions: ["docx"]);
-                    if (fromFilePath == null) return;
-                    var saveFilePath = await FilePicker.platform.saveFile(
-                      dialogTitle: "请选择保存路径",
-                      fileName: "custom.qset",
-                    );
-
-                    if (saveFilePath == null) return;
-                    QuestionBank.create(
-                        fromFilePath.files.single.path!, saveFilePath);
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const BankManagerScreen(
+                                  title: '',
+                                ))).then((e) => setState(() {}));
                   }),
             ],
           ),

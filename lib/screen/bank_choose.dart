@@ -7,17 +7,16 @@ import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 
-class BankScreen extends StatefulWidget {
-  const BankScreen({super.key, required this.title});
+class BankChooseScreen extends StatefulWidget {
+  const BankChooseScreen({super.key, required this.title});
   final String title;
   @override
-  State<BankScreen> createState() => _InnerState();
+  State<BankChooseScreen> createState() => _InnerState();
 }
 
 //这里是在一个页面中加了PageView，PageView可以载入更多的StatefulWidget或者StatelessWidget（也就是页面中加载其他页面作为子控件）
-class _InnerState extends State<BankScreen> {
+class _InnerState extends State<BankChooseScreen> {
   List<String> selectIds = QuestionBank.getAllLoadedQuestionBankIds();
-  List<String> lastSelectIds = QuestionBank.getAllLoadedQuestionBankIds();
   //这修改页面2的内容
   @override
   Widget build(BuildContext context) {
@@ -29,18 +28,25 @@ class _InnerState extends State<BankScreen> {
           TDNavBarItem(
             iconWidget: InkWell(
               onTap: () async {
-                TDToast.showLoadingWithoutText(context: context);
-                await saveLoadedOption();
-                TDToast.dismissLoading();
-                Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const ModeScreen(title: '')),
-                    (route) => route.isFirst);
+                if (selectIds.isNotEmpty) {
+                  TDToast.showLoadingWithoutText(context: context);
+                  await saveLoadedOption();
+                  TDToast.dismissLoading();
+                  Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const ModeScreen(title: '')),
+                      (route) => route.isFirst);
+                } else {
+                  TDToast.showWarning('题库未选择',
+                      direction: IconTextDirection.vertical, context: context);
+                }
               },
-              child: const TDTag('下一项',
+              child: TDTag('下一项',
                   size: TDTagSize.large,
-                  theme: TDTagTheme.primary,
+                  theme: selectIds.isNotEmpty
+                      ? TDTagTheme.primary
+                      : TDTagTheme.defaultTheme,
                   forceVerticalCenter: false,
                   isOutline: false),
             ),
@@ -84,6 +90,9 @@ class _InnerState extends State<BankScreen> {
                           }))),
                           onCheckBoxGroupChange: (List<String> selectIds) {
                             this.selectIds = selectIds;
+                            setState(() {
+                              
+                            });
                           },
                         ),
                       ],
@@ -115,7 +124,7 @@ class _InnerState extends State<BankScreen> {
                           type: FileType.custom,
                           allowedExtensions: ["qset", "zip", "rar", "7z"]);
                       if (fromFilePath == null) return;
-                      QuestionBank.importQuestionBank(
+                      await QuestionBank.importQuestionBank(
                           File(fromFilePath.files.single.path!));
                       TDToast.showSuccess('导入完毕', context: context);
                       setState(() {});
@@ -134,6 +143,7 @@ class _InnerState extends State<BankScreen> {
                     onTap: () async {
                       await saveLoadedOption();
                       TDToast.showSuccess('加载完毕', context: context);
+                      setState(() {});
                     },
                     child: const Padding(
                       padding: EdgeInsets.only(bottom: 15, top: 15),
@@ -144,9 +154,23 @@ class _InnerState extends State<BankScreen> {
                     ),
                   ),
                 ),
-                const Expanded(
+                Expanded(
                   child: InkWell(
-                    child: Padding(
+                    onTap: () {
+                      showGeneralDialog(
+                        context: context,
+                        pageBuilder: (BuildContext buildContext,
+                            Animation<double> animation,
+                            Animation<double> secondaryAnimation) {
+                          return const TDConfirmDialog(
+                            title: "帮助",
+                            content:
+                                '''左边第一个按钮用于导入题库qset文件，第二个按钮用于保存已导入的题库，直接点击下一步也会进行保存操作''',
+                          );
+                        },
+                      );
+                    },
+                    child: const Padding(
                       padding: EdgeInsets.only(bottom: 15, top: 15),
                       child: Icon(
                         Icons.quiz_outlined,
@@ -165,6 +189,7 @@ class _InnerState extends State<BankScreen> {
 
   Future<void> saveLoadedOption() async {
     List<Future> futures = [];
+    var lastSelectIds = QuestionBank.getAllLoadedQuestionBankIds();
     for (var id in lastSelectIds) {
       if (!selectIds.contains(id)) {
         futures

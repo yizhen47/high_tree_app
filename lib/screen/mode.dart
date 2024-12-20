@@ -16,6 +16,7 @@ class ModeScreen extends StatefulWidget {
 }
 
 class _InnerState extends State<ModeScreen> {
+  final ValueNotifier<int> counter = ValueNotifier<int>(0);
   var desc = StudyData.instance.getStudySection() ?? "未选择";
   Future<Widget> _buildStudyTreeSelect(BuildContext context) async {
     var data = (await QuestionBank.getAllLoadedQuestionBanks()).single;
@@ -133,10 +134,23 @@ class _InnerState extends State<ModeScreen> {
       defaultBackValue: dtype,
       // defaultValue: values3,
       onChange: (val, level) {
-        print(val);
         StudyData.instance.setStudySection(json.encode(val));
+        counter.value++;
       },
     );
+  }
+
+  bool sectionIsEmpty() {
+    var sec = StudyData.instance.getStudySection();
+    if(sec == null){
+      return true;
+    }
+    for(var e in (jsonDecode(sec) as Map).entries){
+      if(e.value.length > 0){
+        return false;
+      }
+    }
+      return true;
   }
 
   //这修改页面4的内容
@@ -148,19 +162,33 @@ class _InnerState extends State<ModeScreen> {
         onBack: () {},
         rightBarItems: [
           TDNavBarItem(
-            iconWidget: InkWell(
-              onTap: () {
-                Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const QuestionScreen(title: '')),
-                    (route) => route.isFirst);
+            iconWidget: ValueListenableBuilder<int>(
+              valueListenable: counter,
+              builder: (context, value, child) {
+                return InkWell(
+                  onTap: () {
+                    if (sectionIsEmpty()) {
+                      TDToast.showWarning('章节未选择',
+                          direction: IconTextDirection.vertical,
+                          context: context);
+                    } else {
+                      Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) =>
+                                  const QuestionScreen(title: '')),
+                          (route) => route.isFirst);
+                    }
+                  },
+                  child: TDTag('下一项',
+                      size: TDTagSize.large,
+                      theme: (sectionIsEmpty())
+                          ? TDTagTheme.defaultTheme
+                          : TDTagTheme.primary,
+                      forceVerticalCenter: false,
+                      isOutline: false),
+                );
               },
-              child: const TDTag('下一项',
-                  size: TDTagSize.large,
-                  theme: TDTagTheme.primary,
-                  forceVerticalCenter: false,
-                  isOutline: false),
             ),
           ),
         ],
@@ -286,6 +314,7 @@ class _InnerState extends State<ModeScreen> {
               size: TDStepperSize.large,
               value: StudyData.instance.getStudyQuestionNum(),
               max: 20,
+              min: 2,
               onChange: (qnum) {
                 StudyData.instance.setStudyQuestionNum(qnum);
               },
