@@ -550,19 +550,22 @@ class MainHomePageState extends State<MainHomePage> {
                   )
                 ],
               ),
+              const SizedBox(
+                height: 15,
+              ),
               Row(
                 children: [
                   Expanded(
-                    child: Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: InkWell(
-                          onTap: () {
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => SkipScreen()));
-                          },
-                          child: const Column(
+                    child: InkWell(
+                        onTap: () {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => SkipScreen()));
+                        },
+                        child: const Padding(
+                          padding: EdgeInsets.all(10),
+                          child: Column(
                             children: [
                               Icon(
                                 Icons.playlist_add_check,
@@ -655,6 +658,9 @@ class MainHomePageState extends State<MainHomePage> {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(
+                height: 15,
               ),
               const Padding(
                 padding: EdgeInsets.fromLTRB(10, 5, 5, 5),

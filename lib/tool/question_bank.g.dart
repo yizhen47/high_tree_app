@@ -6,6 +6,28 @@ part of 'question_bank.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
+SingleQuestionData _$SingleQuestionDataFromJson(Map<String, dynamic> json) =>
+    SingleQuestionData(
+      (json['fromKonwledgePoint'] as List<dynamic>)
+          .map((e) => e as String)
+          .toList(),
+      (json['fromKonwledgeIndex'] as List<dynamic>)
+          .map((e) => e as String)
+          .toList(),
+      Map<String, String>.from(json['question'] as Map),
+      json['fromId'] as String,
+      json['fromDisplayName'] as String,
+    );
+
+Map<String, dynamic> _$SingleQuestionDataToJson(SingleQuestionData instance) =>
+    <String, dynamic>{
+      'fromKonwledgePoint': instance.fromKonwledgePoint,
+      'fromKonwledgeIndex': instance.fromKonwledgeIndex,
+      'question': instance.question,
+      'fromId': instance.fromId,
+      'fromDisplayName': instance.fromDisplayName,
+    };
+
 Section _$SectionFromJson(Map<String, dynamic> json) => Section(
       json['index'] as String,
       json['title'] as String,

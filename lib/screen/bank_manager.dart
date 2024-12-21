@@ -2,11 +2,11 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/screen/mode.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_isolate/flutter_isolate.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 class BankManagerScreen extends StatefulWidget {
   const BankManagerScreen({super.key, required this.title});
@@ -30,118 +30,160 @@ class _InnerState extends State<BankManagerScreen> {
       body: Column(
         children: [
           Flexible(
-            fit: FlexFit.tight,
-            child: FutureBuilder(
-              future: QuestionBank.getAllImportedQuestionBanks(),
-              builder: (context, snapshot) {
-                // 请求已结束
-                if (snapshot.connectionState == ConnectionState.done) {
-                  if (snapshot.hasError) {
-                    // 请求失败，显示错误
-                    return Text(
-                        "Error: ${snapshot.error}" '${snapshot.stackTrace}');
-                  } else {
-                    // 屏幕宽度
-                    var screenWidth = MediaQuery.of(context).size.width;
-                    var list = List.from(snapshot.data!.map((action) {
-                      return {
-                        'id': action.id,
-                        'title': action.displayName,
-                        "note": action.version,
-                        'description': action.id,
-                      };
-                    }));
-
-                    final cellLength = ValueNotifier<int>(list.length);
-                    return ValueListenableBuilder(
-                      valueListenable: cellLength,
-                      builder: (BuildContext context, value, Widget? child) {
-                        return TDCellGroup(
-                          cells: list
-                              .map((e) => TDCell(
-                                  title: e['title'],
-                                  note: '题库版本${(e['note'])}',
-                                  description: e['description']))
-                              .toList(),
-                          builder: (context, cell, index) {
-                            return TDSwipeCell(
-                              slidableKey: ValueKey(list[index]['id']),
-                              groupTag: 'test',
-                              onChange: (direction, open) {},
-                              left: TDSwipeCellPanel(
-                                extentRatio: 60 / screenWidth,
-                                // dragDismissible: true,
-                                onDismissed: (context) {
-                                  list.removeAt(index);
-                                  cellLength.value = list.length;
-                                },
-                                children: [
-                                  TDSwipeCellAction(
-                                    flex: 60,
-                                    backgroundColor:
-                                        TDTheme.of(context).warningColor4,
-                                    label: '编辑',
-                                    onPressed: (context) {},
-                                  ),
-                                ],
-                              ),
-                              right: TDSwipeCellPanel(
-                                extentRatio: 60 / screenWidth,
-                                // dragDismissible: true,
-                                onDismissed: (context) {
-                                  list.removeAt(index);
-                                  cellLength.value = list.length;
-                                },
-                                children: [
-                                  TDSwipeCellAction(
-                                    backgroundColor:
-                                        TDTheme.of(context).errorColor6,
-                                    label: '删除',
-                                    onPressed: (_) {
-                                      showGeneralDialog(
-                                        context: context,
-                                        pageBuilder: (BuildContext buildContext,
-                                            Animation<double> animation,
-                                            Animation<double>
-                                                secondaryAnimation) {
-                                          return TDAlertDialog(
-                                              title: "删除题库",
-                                              content: "确定删除题库吗？删除的题库将无法恢复！",
-                                              rightBtnAction: () async {
-                                                cellLength.value = list.length;
-                                                await QuestionBank
-                                                    .deleteQuestionBank(
-                                                        list[index]['id']);
-                                                list.removeAt(index);
-                                                Navigator.of(context).pop();
-                                                setState(() {});
-                                              });
-                                        },
-                                      );
-                                    },
-                                  ),
-                                ],
-                              ),
-                              cell: cell,
-                            );
-                          },
-                        );
-                      },
-                    );
-                  }
-                } else {
-                  return const Center(
-                    child: TDLoading(
-                      size: TDLoadingSize.large,
-                      icon: TDLoadingIcon.circle,
-                      text: '加载中…',
-                      axis: Axis.horizontal,
+              fit: FlexFit.tight,
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.all(15),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "当前状态",
+                            style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.black,
+                                fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
                     ),
-                  );
-                }
-              },
-            ),
-          ),
+                    TDCell(title: '我的错题集', note: '错题存放', description: Uuid().v1()),
+                    const Padding(
+                      padding: EdgeInsets.all(15),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "题库管理",
+                            style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.black,
+                                fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ),
+                    FutureBuilder(
+                      future: QuestionBank.getAllImportedQuestionBanks(),
+                      builder: (context, snapshot) {
+                        // 请求已结束
+                        if (snapshot.connectionState == ConnectionState.done) {
+                          if (snapshot.hasError) {
+                            // 请求失败，显示错误
+                            return Text("Error: ${snapshot.error}"
+                                '${snapshot.stackTrace}');
+                          } else {
+                            // 屏幕宽度
+                            var screenWidth = MediaQuery.of(context).size.width;
+                            var list = List.from(snapshot.data!.map((action) {
+                              return {
+                                'id': action.id,
+                                'title': action.displayName,
+                                "note": action.version,
+                                'description': action.id,
+                              };
+                            }));
+
+                            final cellLength = ValueNotifier<int>(list.length);
+                            return ValueListenableBuilder(
+                              valueListenable: cellLength,
+                              builder:
+                                  (BuildContext context, value, Widget? child) {
+                                return TDCellGroup(
+                                  cells: list
+                                      .map((e) => TDCell(
+                                          title: e['title'],
+                                          note: '题库版本${(e['note'])}',
+                                          description: e['description']))
+                                      .toList(),
+                                  builder: (context, cell, index) {
+                                    return TDSwipeCell(
+                                      slidableKey: ValueKey(list[index]['id']),
+                                      groupTag: 'test',
+                                      onChange: (direction, open) {},
+                                      left: TDSwipeCellPanel(
+                                        extentRatio: 60 / screenWidth,
+                                        // dragDismissible: true,
+                                        onDismissed: (context) {
+                                          list.removeAt(index);
+                                          cellLength.value = list.length;
+                                        },
+                                        children: [
+                                          TDSwipeCellAction(
+                                            flex: 60,
+                                            backgroundColor: TDTheme.of(context)
+                                                .warningColor4,
+                                            label: '编辑',
+                                            onPressed: (context) {},
+                                          ),
+                                        ],
+                                      ),
+                                      right: TDSwipeCellPanel(
+                                        extentRatio: 60 / screenWidth,
+                                        // dragDismissible: true,
+                                        onDismissed: (context) {
+                                          list.removeAt(index);
+                                          cellLength.value = list.length;
+                                        },
+                                        children: [
+                                          TDSwipeCellAction(
+                                            backgroundColor:
+                                                TDTheme.of(context).errorColor6,
+                                            label: '删除',
+                                            onPressed: (_) {
+                                              showGeneralDialog(
+                                                context: context,
+                                                pageBuilder: (BuildContext
+                                                        buildContext,
+                                                    Animation<double> animation,
+                                                    Animation<double>
+                                                        secondaryAnimation) {
+                                                  return TDAlertDialog(
+                                                      title: "删除题库",
+                                                      content:
+                                                          "确定删除题库吗？删除的题库将无法恢复！",
+                                                      rightBtnAction: () async {
+                                                        cellLength.value =
+                                                            list.length;
+                                                        await QuestionBank
+                                                            .deleteQuestionBank(
+                                                                list[index]
+                                                                    ['id']);
+                                                        list.removeAt(index);
+                                                        Navigator.of(context)
+                                                            .pop();
+                                                        setState(() {});
+                                                      });
+                                                },
+                                              );
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                      cell: cell,
+                                    );
+                                  },
+                                );
+                              },
+                            );
+                          }
+                        } else {
+                          return const Center(
+                            child: TDLoading(
+                              size: TDLoadingSize.large,
+                              icon: TDLoadingIcon.circle,
+                              text: '加载中…',
+                              axis: Axis.horizontal,
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                  ])),
           Container(
             color: Colors.white,
             child: Row(

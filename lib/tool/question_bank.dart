@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:math';
+import 'dart:typed_data';
 import 'package:archive/archive.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
@@ -22,6 +23,39 @@ void mksureInit() {
   _zipEncoder ??= ZipEncoder();
   _wmf2png ??= Wmf2Png();
   _random ??= Random();
+}
+
+@JsonSerializable()
+class SingleQuestionData {
+  List<String> fromKonwledgePoint;
+  List<String> fromKonwledgeIndex;
+  Map<String, String> question;
+  String fromId;
+  String fromDisplayName;
+
+  factory SingleQuestionData.fromJson(Map<String, dynamic> json) =>
+      _$SingleQuestionDataFromJson(json);
+
+  Map<String, dynamic> toJson() => _$SingleQuestionDataToJson(this);
+  SingleQuestionData(this.fromKonwledgePoint, this.fromKonwledgeIndex,
+      this.question, this.fromId, this.fromDisplayName);
+
+  getKonwledgePoint() {
+    return fromKonwledgePoint.join('/');
+  }
+
+  getKonwledgeIndex() {
+    return fromKonwledgeIndex.join('/');
+  }
+
+  SingleQuestionData clone() {
+    return SingleQuestionData(
+        List.from(fromKonwledgePoint),
+        List.from(fromKonwledgeIndex),
+        Map.from(question),
+        fromId,
+        fromDisplayName);
+  }
 }
 
 @JsonSerializable()
@@ -57,25 +91,26 @@ class Section {
         (key, value) => value == null || (value is List && value.isEmpty));
   }
 
-  SingleQuestionData randomSectionQuestion(
-      List<String> fromKonwledgePoint, List<String> fromKonwledgeIndex,
+  SingleQuestionData randomSectionQuestion(List<String> fromKonwledgePoint,
+      List<String> fromKonwledgeIndex, String fromId, String fromName,
       {retryingTimes = 5}) {
     SingleQuestionData? q;
     for (var i = 0; i < retryingTimes; i++) {
-      q = _randomSectionQuestion(fromKonwledgePoint, fromKonwledgeIndex);
+      q = _randomSectionQuestion(
+          fromKonwledgePoint, fromKonwledgeIndex, fromId, fromName);
       if (q != null) {
         break;
       }
     }
     if (q == null) {
       return SingleQuestionData(fromKonwledgePoint, fromKonwledgeIndex,
-          {'q': '本章没有题目', 'w': '本章没有答案'});
+          {'q': '本章没有题目', 'w': '本章没有答案'}, fromId, fromName);
     }
     return q;
   }
 
-  SingleQuestionData? _randomSectionQuestion(
-      List<String> fromKonwledgePoint, List<String> fromKonwledgeIndex) {
+  SingleQuestionData? _randomSectionQuestion(List<String> fromKonwledgePoint,
+      List<String> fromKonwledgeIndex, String fromId, String fromName) {
     if (_random!.nextInt(3) == 1) {
       // ignore: unnecessary_null_comparison
       if (questions == null) {
@@ -84,7 +119,7 @@ class Section {
       fromKonwledgePoint.add(title);
       fromKonwledgeIndex.add(index);
       return SingleQuestionData(fromKonwledgePoint, fromKonwledgeIndex,
-          questions![_random!.nextInt(questions!.length)]);
+          questions![_random!.nextInt(questions!.length)], fromId, fromName);
     } else {
       // ignore: unnecessary_null_comparison
       if (children == null) {
@@ -94,7 +129,7 @@ class Section {
         fromKonwledgePoint.add(sec.title);
         fromKonwledgeIndex.add(sec.index);
         return sec.randomSectionQuestion(
-            fromKonwledgePoint, fromKonwledgeIndex);
+            fromKonwledgePoint, fromKonwledgeIndex, fromId, fromName);
       }
     }
   }
@@ -119,140 +154,6 @@ class QuestionBankData {
   }
 }
 
-Map<String, dynamic> parseWordToJSONData(String text, String title, String id) {
-  var lines = text.trim().split('\n');
-  var root = Section('', '');
-  var stack = [root];
-  bool inExercises = false;
-  bool inSummerize = false;
-  var inState = 0;
-
-  void appendQuestionOrAnswer(
-      Map<String, String> qa, String key, String content) {
-    if (!qa.containsKey(key) || qa[key] == null) {
-      qa[key] = '';
-    }
-    qa[key] = '${qa[key]}$content\n';
-  }
-
-  var matchf = RegExp(r'^[0-9]+ *[\.|．|、] *(?![0-9 ])');
-  for (var line in lines) {
-    // Handle examples and exercise questions only when inside exercises section
-    if (RegExp(r'[一二三四五六七八九]+、.*题').hasMatch(line) && inExercises) continue;
-
-    if ((line.startsWith('例') || (inExercises && matchf.hasMatch(line)))) {
-      stack.last.questions!.add({'q': '', 'w': ''});
-      inState = 1;
-      if (!inExercises && line.startsWith('例')) {
-        appendQuestionOrAnswer(
-            stack.last.questions!.last, 'q', line.substring(2).trim());
-      } else if (inExercises) {
-        // Inside exercises section, treat numbered lines as questions
-        appendQuestionOrAnswer(stack.last.questions!.last, 'q',
-            line.substring(matchf.firstMatch(line)?.end ?? 0 + 1).trim());
-      }
-    } else if (line.startsWith('解')) {
-      // Handle solutions
-      inState = 2;
-      if (stack.last.questions!.isNotEmpty) {
-        appendQuestionOrAnswer(
-            stack.last.questions!.last, 'w', line.substring(1).trim());
-      }
-    } else if (line.startsWith('习题')) {
-      // Start of exercises section
-      inExercises = true;
-      // Ensure exercises are added to the correct parent section
-      // Extract the section number from "习题" line, e.g., "习题 1.1"
-      var match = RegExp(r'^习题 *([0-9]+ *(\.[0-9]+)*)').firstMatch(line);
-      if (match != null) {
-        var targetIndex = match.group(1)!.replaceAll(' ', '');
-        // Pop the stack until we find the correct parent section or reach the root
-        while (stack.length > 1 && stack.last.index != (targetIndex)) {
-          stack.removeLast();
-        }
-      }
-    } else {
-      // Parse sections and subsections or add to the current section's note
-      // Match top-level chapters like "第一章"
-      var matchTop = RegExp(r'^(第[一二三四五六七八九]+章) *(.+)$').firstMatch(line);
-      var matchSub =
-          RegExp(r'^([0-9]+ *(?:\. *[0-9]+)*) *．?(.+)$').firstMatch(line);
-      var matchNum = RegExp(r'^([0-9]+)$');
-      if (line.startsWith("本章内容小结")) {
-        inExercises = false;
-        inSummerize = true;
-        inState = 0;
-        while (stack.length > 1 &&
-            !RegExp(r'^第[一二三四五六七八九]+章$').hasMatch(stack.last.index)) {
-          stack.removeLast();
-        }
-      } else if (RegExp(r'^(复习题[一二三四五六七八九]+)$').hasMatch(line)) {
-        inExercises = true;
-        inSummerize = false;
-        inState = 0;
-        while (stack.length > 1 &&
-            !RegExp(r'^第[一二三四五六七八九]+章$').hasMatch(stack.last.index)) {
-          stack.removeLast();
-        }
-      } else if (matchTop != null) {
-        // Top-level chapter found
-        var newIndex = matchTop.group(1)!.replaceAll(' ', '');
-        var newTitle = matchTop.group(2)!.replaceAll(' ', '');
-
-        // Reset exercise flag when a new chapter starts
-        inExercises = false;
-        inSummerize = false;
-        inState = 0;
-        var newSection = Section(newIndex, newTitle);
-        while (stack.length > 1) {
-          stack.removeLast();
-        }
-        stack.last.children!.add(newSection);
-        stack.add(newSection);
-      } else if (inSummerize) {
-        stack.last.note = '${stack.last.note!}$line\n';
-      } else if (matchSub != null) {
-        // Reset exercise flag when a new section starts
-        inExercises = false;
-        inState = 0;
-        var newIndex = matchSub.group(1)!.replaceAll(' ', '');
-        var newTitle = matchSub.group(2)!.replaceAll(' ', '');
-
-        // Find the correct parent section based on newIndex
-        while (stack.length > 2 &&
-            (!newIndex.startsWith(stack.last.index) &&
-                    !matchNum.hasMatch(newIndex) ||
-                (matchNum.hasMatch(newIndex) &&
-                    matchNum.hasMatch(stack.last.index)) ||
-                (!matchNum.hasMatch(newIndex) &&
-                    matchNum.hasMatch(stack.last.index)))) {
-          stack.removeLast();
-        }
-
-        var newSection = Section(newIndex, newTitle);
-        stack.last.children!.add(newSection);
-        stack.add(newSection);
-      } else {
-        if (inState == 1) {
-          appendQuestionOrAnswer(stack.last.questions!.last, 'q', line);
-        } else if (inState == 2) {
-          appendQuestionOrAnswer(stack.last.questions!.last, 'w', line);
-        } else {
-          stack.last.note = '${stack.last.note!}$line\n';
-        }
-      }
-    }
-  }
-
-  // Ensure we're returning the top-level children as data
-  return {
-    'data': root.children!.map((child) => child.toTrimJson()).toList(),
-    "version": 1,
-    "id": id,
-    "displayName": title
-  };
-}
-
 Future<void> generateByDocx(File fromFile, File saveFile) async {
   mksureInit();
   var id = const Uuid().v4();
@@ -264,7 +165,6 @@ Future<void> generateByDocx(File fromFile, File saveFile) async {
 
   // Find relationships for images
   Map<String, String> imageRels = {};
-  Archive archive = Archive();
   for (final file in archiveDecoder) {
     if (file.isFile) {
       if (file.name == 'word/_rels/document.xml.rels') {
@@ -280,24 +180,6 @@ Future<void> generateByDocx(File fromFile, File saveFile) async {
       }
     }
   }
-  List<Future> futures = [];
-  for (final file in archiveDecoder) {
-    if (file.isFile) {
-      if (file.name.startsWith("word/media/")) {
-        futures.add((() async {
-          final contents = await _wmf2png!.convert(file.content, dpi: 300);
-          print(file.name);
-          ArchiveFile archiveFile = ArchiveFile(
-              'assets/images/${imageRels[(file.name)]}.png',
-              contents.length,
-              contents);
-          archive.addFile(archiveFile);
-        })());
-      }
-    }
-  }
-  await Future.wait(futures);
-  _wmf2png!.cleanup();
 
   for (final file in archiveDecoder) {
     if (file.isFile && file.name == 'word/document.xml') {
@@ -373,50 +255,32 @@ Future<void> generateByDocx(File fromFile, File saveFile) async {
     }
   }
 
-  final textTester = list.join('\n');
-  final jsonContentTester = utf8.encode(textTester);
-  archive.addFile(
-      ArchiveFile('data.txt', jsonContentTester.length, jsonContentTester));
+  var builder = QuestionBankBuilder.parseWordToJSONData(
+      list.join('\n'), path.basename(fromFile.path.split('/').first), id);
 
-  try {
-    final result = parseWordToJSONData(
-        list.join('\n'), path.basename(fromFile.path.split('/').first), id);
-    final jsonContent = utf8.encode(jsonEncode(result,
-        toEncodable: (value) => value is Map ? value : null));
-    archive.addFile(ArchiveFile('data.json', jsonContent.length, jsonContent));
-  } catch (e) {
-    print(e);
+  List<Future> futures = [];
+  for (final file in archiveDecoder) {
+    if (file.isFile) {
+      if (file.name.startsWith("word/media/")) {
+        futures.add((() async {
+          final contents = await _wmf2png!.convert(file.content, dpi: 300);
+          print(file.name);
+          builder.addImageFile(contents, '${imageRels[(file.name)]}.png');
+        })());
+      }
+    }
   }
-  List<int>? outputData = _zipEncoder!.encode(archive);
-  if (outputData == null) {
-    return;
-  }
-  saveFile.writeAsBytesSync(outputData);
 
-  print('Saved to ${saveFile.path}');
+  await Future.wait(futures);
+  _wmf2png!.cleanup();
+  builder.addTestFile(list.join('\n'));
+  builder.build(saveFile.path);
 }
 
 // Dummy function to convert math XML to LaTeX
 String mathToLatex(xml.XmlElement mathElement) {
   // Implement actual conversion logic here
   return '[LaTeX representation]';
-}
-
-class SingleQuestionData {
-  List<String> fromKonwledgePoint;
-  List<String> fromKonwledgeIndex;
-  Map<String, String> question;
-
-  SingleQuestionData(
-      this.fromKonwledgePoint, this.fromKonwledgeIndex, this.question);
-
-  getKonwledgePoint() {
-    return fromKonwledgePoint.join('/');
-  }
-
-  getKonwledgeIndex() {
-    return fromKonwledgeIndex.join('/');
-  }
 }
 
 class QuestionBank {
@@ -427,8 +291,8 @@ class QuestionBank {
   String? id;
   String? cacheDir;
 
-  static String? importedDirPath;
-  static String? loadedDirPath;
+  static late String importedDirPath;
+  static late String loadedDirPath;
 
   QuestionBank(this.filePath);
   Future<void> loadIntoData() async {
@@ -456,7 +320,7 @@ class QuestionBank {
   Future<QuestionBank> getQuestionBankInf() async {
     mksureInit();
     var iid = path.basenameWithoutExtension(filePath);
-    var dir = path.join(QuestionBank.loadedDirPath!, iid);
+    var dir = path.join(QuestionBank.loadedDirPath, iid);
     if (Directory(dir).existsSync()) {
       _getQuestionBankInf(
           utf8.decode(await File(path.join(dir, "data.json")).readAsBytes()));
@@ -480,13 +344,13 @@ class QuestionBank {
     displayName = json.displayName;
     id = json.id;
     version = json.version;
-    cacheDir = path.join(loadedDirPath!, id);
+    cacheDir = path.join(loadedDirPath, id);
   }
 
   static deleteQuestionBank(String id) async {
     mksureInit();
-    await _removeDirectoryIfExists(Directory(path.join(loadedDirPath!, id)));
-    await _removeFileIfExists(File(path.join(importedDirPath!, "$id.qset")));
+    await _removeDirectoryIfExists(Directory(path.join(loadedDirPath, id)));
+    await _removeFileIfExists(File(path.join(importedDirPath, "$id.qset")));
   }
 
   void close() {
@@ -494,7 +358,7 @@ class QuestionBank {
   }
 
   static clean() async {
-    return Directory(QuestionBank.loadedDirPath!).list().forEach((e) async {
+    return Directory(QuestionBank.loadedDirPath).list().forEach((e) async {
       if ((await e.stat()).type == FileSystemEntityType.directory) {
         e.delete();
       }
@@ -522,9 +386,10 @@ class QuestionBank {
     SingleQuestionData? q;
     while (q == null) {
       if (sec == null) {
-        q = data![Random().nextInt(data!.length)].randomSectionQuestion([], []);
+        q = data![Random().nextInt(data!.length)]
+            .randomSectionQuestion([], [], id!, displayName!);
       } else {
-        q = sec.randomSectionQuestion([], []);
+        q = sec.randomSectionQuestion([], [], id!, displayName!);
       }
     }
     return q;
@@ -547,13 +412,13 @@ class QuestionBank {
     if (id == null) {
       throw Exception("文件格式不正确");
     }
-    var npath = path.join(QuestionBank.importedDirPath!, "$id.qset");
+    var npath = path.join(QuestionBank.importedDirPath, "$id.qset");
     await file.copy(npath);
   }
 
   static Future<List<QuestionBank>> getAllImportedQuestionBanks() async {
     mksureInit();
-    var dir = Directory(QuestionBank.importedDirPath!);
+    var dir = Directory(QuestionBank.importedDirPath);
     if (!dir.existsSync()) {
       return [];
     }
@@ -563,6 +428,22 @@ class QuestionBank {
         .where((element) => element.path.endsWith(".qset"))
         .map((e) => (e.path)))) {
       res.add(await QuestionBank(action).getQuestionBankInf());
+    }
+    return res;
+  }
+
+  static List<QuestionBank> getAllImportedQuestionBanksWithId() {
+    mksureInit();
+    var dir = Directory(QuestionBank.importedDirPath);
+    if (!dir.existsSync()) {
+      return [];
+    }
+    final List<QuestionBank> res = [];
+    for (var action in List.from(dir
+        .listSync()
+        .where((element) => element.path.endsWith(".qset"))
+        .map((e) => (e.path)))) {
+      res.add(QuestionBank(action)..id = path.basenameWithoutExtension(action));
     }
     return res;
   }
@@ -579,7 +460,7 @@ class QuestionBank {
 
   static List<String> getAllLoadedQuestionBankIds() {
     mksureInit();
-    var dir = Directory(QuestionBank.loadedDirPath!);
+    var dir = Directory(QuestionBank.loadedDirPath);
     if (!dir.existsSync()) {
       return [];
     }
@@ -588,12 +469,12 @@ class QuestionBank {
   }
 
   bool isLoaded() {
-    return Directory(path.join(QuestionBank.loadedDirPath!, id)).existsSync();
+    return Directory(path.join(QuestionBank.loadedDirPath, id)).existsSync();
   }
 
   static Future<QuestionBank> getQuestionBankById(String id) async {
     mksureInit();
-    var p = path.join(QuestionBank.importedDirPath!, '$id.qset');
+    var p = path.join(QuestionBank.importedDirPath, '$id.qset');
     var q = QuestionBank(p);
     await q.getQuestionBankInf();
     return q;
@@ -605,12 +486,278 @@ class QuestionBank {
         (await getApplicationSupportDirectory()).path, "questionBank");
     QuestionBank.loadedDirPath = path.join(
         (await getApplicationCacheDirectory()).path, "questionBankLoaded");
-    await Directory(QuestionBank.importedDirPath!).create();
-    await Directory(QuestionBank.loadedDirPath!).create();
+    await Directory(QuestionBank.importedDirPath).create();
+    await Directory(QuestionBank.loadedDirPath).create();
     // await clean();
   }
 
   static create(String path, String outputFile) async {
     generateByDocx(File(path), File(outputFile));
+  }
+}
+
+class QuestionBankBuilder {
+  static late String cacheDir;
+  String id;
+  List<Section> data;
+  String displayName;
+  int version;
+  Archive archive = Archive();
+
+  static init() async {
+    QuestionBankBuilder.cacheDir = path.join(
+        (await getApplicationCacheDirectory()).path, "questionBankBuilder");
+    mksureInit();
+  }
+
+  QuestionBankBuilder(
+      {List<Section>? data,
+      String? id,
+      required this.displayName,
+      required this.version})
+      : data = data ?? <Section>[],
+        id = id ?? const Uuid().v4();
+  List<Map<String, dynamic>> getDataFileJson() {
+    return ((Section("", "")..children = data).toTrimJson())['children'];
+  }
+
+  String getDataFileContent() {
+    return jsonEncode(getDataFileJson());
+  }
+
+  int imageIndex = 0;
+  void addImageFile(Uint8List contents, String name) {
+    ArchiveFile archiveFile = ArchiveFile(
+        //rId1.png
+        'assets/images/$name',
+        contents.length,
+        contents);
+    archive.addFile(archiveFile);
+  }
+
+  Future<void> addNeedImageForBuilder() async {
+    for (var bank in QuestionBank.getAllImportedQuestionBanksWithId()) {
+      var achieve =
+          _zipDecoder!.decodeBytes(await File(bank.filePath).readAsBytes());
+      for (var aFile in achieve) {
+        if (aFile.isFile && aFile.name.startsWith("assets/images/")) {
+          var key = '${bank.id}/${path.basename(aFile.name)}';
+          if (customMap.containsKey(key)) {
+            addImageByOld(aFile.content, customMap[key]!);
+          }
+        }
+      }
+    }
+  }
+
+  var customMap = <String, int>{};
+  void addQuestionByOld(SingleQuestionData oldQuestion) {
+    oldQuestion = oldQuestion.clone();
+    var imgMatcher = RegExp(
+        r'\[image:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}:(rId[0-9]*.png)\]');
+    void handleKey(String key) {
+      if (oldQuestion.question[key] == null) return;
+      for (var m in imgMatcher.allMatches(oldQuestion.question[key]!)) {
+        String imgName = m.group(1)!;
+        if (!customMap.containsKey('${oldQuestion.fromId}/$imgName')) {
+          customMap['${oldQuestion.fromId}/$imgName'] = imageIndex;
+          imageIndex++;
+        }
+        oldQuestion.question[key] = oldQuestion.question[key]!.replaceAll(
+            imgMatcher, '[image:$id:rId${customMap[imgName]!}.png]');
+      }
+    }
+
+    handleKey('q');
+    handleKey('w');
+    var quedtionBankName = oldQuestion.fromDisplayName;
+
+    //根据Section和index新建对应层级
+    Section target = data.firstWhere(
+      (e) => e.title == quedtionBankName,
+      orElse: () {
+        var target = Section('${data.length}', quedtionBankName);
+        data.add(target);
+        return target;
+      },
+    );
+
+    while (oldQuestion.fromKonwledgePoint.isNotEmpty) {
+      var targetIndex = oldQuestion.fromKonwledgeIndex.removeLast();
+      var targetTitle = oldQuestion.fromKonwledgePoint.removeLast();
+      target = data.firstWhere(
+        (e) => e.index == targetIndex,
+        orElse: () {
+          var target = Section(targetIndex, targetTitle);
+          data.add(target);
+          return target;
+        },
+      );
+    }
+    target.questions ??= [];
+    target.questions!.add(oldQuestion.question);
+  }
+
+  void addImageByOld(Uint8List contents, int oldName) {
+    ArchiveFile archiveFile = ArchiveFile(
+        //rId1.png
+        'assets/images/$id:rId${customMap[oldName]!}.png]',
+        contents.length,
+        contents);
+    archive.addFile(archiveFile);
+  }
+
+  void addTestFile(String textTester) {
+    final jsonContentTester = utf8.encode(textTester);
+    archive.addFile(
+        ArchiveFile('data.txt', jsonContentTester.length, jsonContentTester));
+  }
+
+  Future<void> build(String outputPath) async {
+    File saveFile = File(outputPath);
+    try {
+      final jsonContent = utf8.encode(jsonEncode(getDataFileContent(),
+          toEncodable: (value) => value is Map ? value : null));
+      archive
+          .addFile(ArchiveFile('data.json', jsonContent.length, jsonContent));
+    } catch (e) {
+      print(e);
+    }
+    List<int>? outputData = _zipEncoder!.encode(archive);
+    if (outputData == null) {
+      return;
+    }
+    saveFile.writeAsBytesSync(outputData);
+
+    print('Saved to ${saveFile.path}');
+  }
+
+  static QuestionBankBuilder parseWordToJSONData(
+      String text, String title, String id) {
+    var lines = text.trim().split('\n');
+    var root = Section('', '');
+    var stack = [root];
+    bool inExercises = false;
+    bool inSummerize = false;
+    var inState = 0;
+
+    void appendQuestionOrAnswer(
+        Map<String, String> qa, String key, String content) {
+      if (!qa.containsKey(key) || qa[key] == null) {
+        qa[key] = '';
+      }
+      qa[key] = '${qa[key]}$content\n';
+    }
+
+    var matchf = RegExp(r'^[0-9]+ *[\.|．|、] *(?![0-9 ])');
+    for (var line in lines) {
+      // Handle examples and exercise questions only when inside exercises section
+      if (RegExp(r'[一二三四五六七八九]+、.*题').hasMatch(line) && inExercises) continue;
+
+      if ((line.startsWith('例') || (inExercises && matchf.hasMatch(line)))) {
+        stack.last.questions!.add({'q': '', 'w': ''});
+        inState = 1;
+        if (!inExercises && line.startsWith('例')) {
+          appendQuestionOrAnswer(
+              stack.last.questions!.last, 'q', line.substring(2).trim());
+        } else if (inExercises) {
+          // Inside exercises section, treat numbered lines as questions
+          appendQuestionOrAnswer(stack.last.questions!.last, 'q',
+              line.substring(matchf.firstMatch(line)?.end ?? 0 + 1).trim());
+        }
+      } else if (line.startsWith('解')) {
+        // Handle solutions
+        inState = 2;
+        if (stack.last.questions!.isNotEmpty) {
+          appendQuestionOrAnswer(
+              stack.last.questions!.last, 'w', line.substring(1).trim());
+        }
+      } else if (line.startsWith('习题')) {
+        // Start of exercises section
+        inExercises = true;
+        // Ensure exercises are added to the correct parent section
+        // Extract the section number from "习题" line, e.g., "习题 1.1"
+        var match = RegExp(r'^习题 *([0-9]+ *(\.[0-9]+)*)').firstMatch(line);
+        if (match != null) {
+          var targetIndex = match.group(1)!.replaceAll(' ', '');
+          // Pop the stack until we find the correct parent section or reach the root
+          while (stack.length > 1 && stack.last.index != (targetIndex)) {
+            stack.removeLast();
+          }
+        }
+      } else {
+        // Parse sections and subsections or add to the current section's note
+        // Match top-level chapters like "第一章"
+        var matchTop = RegExp(r'^(第[一二三四五六七八九]+章) *(.+)$').firstMatch(line);
+        var matchSub =
+            RegExp(r'^([0-9]+ *(?:\. *[0-9]+)*) *．?(.+)$').firstMatch(line);
+        var matchNum = RegExp(r'^([0-9]+)$');
+        if (line.startsWith("本章内容小结")) {
+          inExercises = false;
+          inSummerize = true;
+          inState = 0;
+          while (stack.length > 1 &&
+              !RegExp(r'^第[一二三四五六七八九]+章$').hasMatch(stack.last.index)) {
+            stack.removeLast();
+          }
+        } else if (RegExp(r'^(复习题[一二三四五六七八九]+)$').hasMatch(line)) {
+          inExercises = true;
+          inSummerize = false;
+          inState = 0;
+          while (stack.length > 1 &&
+              !RegExp(r'^第[一二三四五六七八九]+章$').hasMatch(stack.last.index)) {
+            stack.removeLast();
+          }
+        } else if (matchTop != null) {
+          // Top-level chapter found
+          var newIndex = matchTop.group(1)!.replaceAll(' ', '');
+          var newTitle = matchTop.group(2)!.replaceAll(' ', '');
+
+          // Reset exercise flag when a new chapter starts
+          inExercises = false;
+          inSummerize = false;
+          inState = 0;
+          var newSection = Section(newIndex, newTitle);
+          while (stack.length > 1) {
+            stack.removeLast();
+          }
+          stack.last.children!.add(newSection);
+          stack.add(newSection);
+        } else if (inSummerize) {
+          stack.last.note = '${stack.last.note!}$line\n';
+        } else if (matchSub != null) {
+          // Reset exercise flag when a new section starts
+          inExercises = false;
+          inState = 0;
+          var newIndex = matchSub.group(1)!.replaceAll(' ', '');
+          var newTitle = matchSub.group(2)!.replaceAll(' ', '');
+
+          // Find the correct parent section based on newIndex
+          while (stack.length > 2 &&
+              (!newIndex.startsWith(stack.last.index) &&
+                      !matchNum.hasMatch(newIndex) ||
+                  (matchNum.hasMatch(newIndex) &&
+                      matchNum.hasMatch(stack.last.index)) ||
+                  (!matchNum.hasMatch(newIndex) &&
+                      matchNum.hasMatch(stack.last.index)))) {
+            stack.removeLast();
+          }
+
+          var newSection = Section(newIndex, newTitle);
+          stack.last.children!.add(newSection);
+          stack.add(newSection);
+        } else {
+          if (inState == 1) {
+            appendQuestionOrAnswer(stack.last.questions!.last, 'q', line);
+          } else if (inState == 2) {
+            appendQuestionOrAnswer(stack.last.questions!.last, 'w', line);
+          } else {
+            stack.last.note = '${stack.last.note!}$line\n';
+          }
+        }
+      }
+    }
+    return QuestionBankBuilder(
+        data: root.children!, id: id, displayName: title, version: 2);
   }
 }

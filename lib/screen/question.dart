@@ -15,7 +15,7 @@ import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 class QuestionScreen extends StatefulWidget {
   const QuestionScreen({super.key, required this.title});
   final String title;
-  
+
   @override
   State<QuestionScreen> createState() => _InnerState();
 }
@@ -241,7 +241,8 @@ class _InnerState extends State<QuestionScreen> {
                       var d = rQdb[int.parse(k)];
                       var rSec = d.data![
                           (dtype[k])![Random().nextInt(dtype[k]!.length)]];
-                      SingleQuestionData q = rSec.randomSectionQuestion([], []);
+                      SingleQuestionData q = rSec
+                          .randomSectionQuestion([], [], d.id!, d.displayName!);
 
                       allQuestions.add(q);
                       questionRemoved.add(false);
@@ -270,7 +271,7 @@ class _InnerState extends State<QuestionScreen> {
                       cards.add(buildKnowledgeCard(
                           s.index, s.title, s.note ?? "暂无知识点"));
                       questionRemoved.add(false);
-                      allQuestions.add(SingleQuestionData([], [], {}));
+                      allQuestions.add(SingleQuestionData([], [], {}, "", ""));
                       questionRemain++;
                       if (s.children != null) {
                         for (var i = 0; i < s.children!.length; i++) {
@@ -286,7 +287,7 @@ class _InnerState extends State<QuestionScreen> {
                         i < StudyData.instance.getStudyQuestionNum();
                         i++) {
                       SingleQuestionData q = sec.randomSectionQuestion(
-                          fromKonwledgePoint, fromKonwledgeIndex);
+                          fromKonwledgePoint, fromKonwledgeIndex,snapshot.data!.single.id!,snapshot.data!.single.displayName!);
 
                       questionRemoved.add(false);
                       allQuestions.add(q);
