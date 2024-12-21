@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screen/mode.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
+import 'package:flutter_isolate/flutter_isolate.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 
 class BankManagerScreen extends StatefulWidget {
@@ -193,8 +194,11 @@ class _InnerState extends State<BankManagerScreen> {
                         );
 
                         if (saveFilePath == null) return;
-                        QuestionBank.create(
-                            fromFilePath.files.single.path!, saveFilePath);
+
+                        createQuestionBank(
+                            [fromFilePath.files.single.path!, saveFilePath]);
+                        // await FlutterIsolate.spawn(createQuestionBank,
+                        //     [fromFilePath.files.single.path!, saveFilePath]);
                       }
                     },
                     child: const Padding(
@@ -260,4 +264,9 @@ class _InnerState extends State<BankManagerScreen> {
     }
     StudyData.instance.setStudySection(null);
   }
+}
+
+@pragma('vm:entry-point')
+void createQuestionBank(List<String> paths) {
+  QuestionBank.create(paths[0], paths[1]);
 }

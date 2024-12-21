@@ -135,7 +135,7 @@ Map<String, dynamic> parseWordToJSONData(String text, String title, String id) {
     qa[key] = '${qa[key]}$content\n';
   }
 
-  var matchf = RegExp(r'^[0-9]+ *[\.|．|、] *(?![0-9 ])*');
+  var matchf = RegExp(r'^[0-9]+ *[\.|．|、] *(?![0-9 ])');
   for (var line in lines) {
     // Handle examples and exercise questions only when inside exercises section
     if (RegExp(r'[一二三四五六七八九]+、.*题').hasMatch(line) && inExercises) continue;
@@ -455,21 +455,32 @@ class QuestionBank {
 
   Future<QuestionBank> getQuestionBankInf() async {
     mksureInit();
-    File fromFile = File(filePath);
-    final achieve = _zipDecoder!.decodeBytes(await fromFile.readAsBytes());
-    for (final file in achieve) {
-      if (file.name == "data.json") {
-        Map<String, dynamic> jsonO = jsonDecode(utf8.decode(file.content));
-        var json = QuestionBankData.fromJson(jsonO);
-        data = json.data;
-        displayName = json.displayName;
-        id = json.id;
-        version = json.version;
-        cacheDir = path.join(loadedDirPath!, id);
-        break;
+    var iid = path.basenameWithoutExtension(filePath);
+    var dir = path.join(QuestionBank.loadedDirPath!, iid);
+    if (Directory(dir).existsSync()) {
+      _getQuestionBankInf(
+          utf8.decode(await File(path.join(dir, "data.json")).readAsBytes()));
+    } else {
+      File fromFile = File(filePath);
+      final achieve = _zipDecoder!.decodeBytes(await fromFile.readAsBytes());
+      for (final file in achieve) {
+        if (file.name == "data.json") {
+          _getQuestionBankInf(utf8.decode(file.content));
+          break;
+        }
       }
     }
     return this;
+  }
+
+  _getQuestionBankInf(String d) {
+    Map<String, dynamic> jsonO = jsonDecode(d);
+    var json = QuestionBankData.fromJson(jsonO);
+    data = json.data;
+    displayName = json.displayName;
+    id = json.id;
+    version = json.version;
+    cacheDir = path.join(loadedDirPath!, id);
   }
 
   static deleteQuestionBank(String id) async {

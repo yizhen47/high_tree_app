@@ -140,19 +140,6 @@ class _InnerState extends State<ModeScreen> {
     );
   }
 
-  bool sectionIsEmpty() {
-    var sec = StudyData.instance.getStudySection();
-    if(sec == null){
-      return true;
-    }
-    for(var e in (jsonDecode(sec) as Map).entries){
-      if(e.value.length > 0){
-        return false;
-      }
-    }
-      return true;
-  }
-
   //这修改页面4的内容
   @override
   Widget build(BuildContext context) {
@@ -425,5 +412,22 @@ class _InnerState extends State<ModeScreen> {
         ),
       ),
     );
+  }
+}
+
+bool sectionIsEmpty() {
+  var sec = StudyData.instance.getStudySection();
+  if (sec == null) {
+    return true;
+  }
+  if (sec.startsWith("{")) {
+    for (var e in (jsonDecode(sec) as Map).entries) {
+      if (e.value.length > 0) {
+        return false;
+      }
+    }
+    return true;
+  } else {
+    return false;
   }
 }

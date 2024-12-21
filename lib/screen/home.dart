@@ -367,13 +367,21 @@ class MainHomePageState extends State<MainHomePage> {
                   Center(
                     child: InkWell(
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          CupertinoPageRoute(
-                              builder: (context) => const QuestionScreen(
-                                    title: '',
-                                  )),
-                        );
+                        if (sectionIsEmpty() ||
+                            QuestionBank.getAllLoadedQuestionBankIds()
+                                .isEmpty) {
+                          TDToast.showWarning('章节未选择',
+                              direction: IconTextDirection.vertical,
+                              context: context);
+                        } else {
+                          Navigator.push(
+                            context,
+                            CupertinoPageRoute(
+                                builder: (context) => const QuestionScreen(
+                                      title: '',
+                                    )),
+                          );
+                        }
                       },
                       child: Card(
                         color: Colors.blueAccent,
@@ -440,7 +448,8 @@ class MainHomePageState extends State<MainHomePage> {
                             Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => const BankChooseScreen(
+                                    builder: (context) =>
+                                        const BankChooseScreen(
                                           title: '',
                                         ))).then((onValue) {
                               setState(() {});
@@ -484,16 +493,23 @@ class MainHomePageState extends State<MainHomePage> {
                       Expanded(
                         child: InkWell(
                           onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const ModeScreen(
-                                  title: '',
+                            if (QuestionBank.getAllLoadedQuestionBankIds()
+                                .isEmpty) {
+                              TDToast.showWarning('题库未选择',
+                                  direction: IconTextDirection.vertical,
+                                  context: context);
+                            } else {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const ModeScreen(
+                                    title: '',
+                                  ),
                                 ),
-                              ),
-                            ).then((onValue) {
-                              setState(() {});
-                            });
+                              ).then((onValue) {
+                                setState(() {});
+                              });
+                            }
                           },
                           child: Card(
                             color: Colors.deepOrangeAccent,

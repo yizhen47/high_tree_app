@@ -35,13 +35,13 @@ class Wmf2Png {
       // Prepare arguments for wmf2png.exe
       final args = [tempInputFile.path, tempOutputFile.path];
       if (width != null) {
-        args.add('--width=$width');
+        args.add('--width $width');
       }
       if (height != null) {
-        args.add('--height=$height');
+        args.add('--height $height');
       }
       if (dpi != null) {
-        args.add('--dpi=$dpi');
+        args.add('--dpi $dpi');
       }
 
       // Execute wmf2png.exe
