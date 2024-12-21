@@ -4,6 +4,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_application_1/screen/question.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
+import 'package:flutter_application_1/tool/wrong_question_book.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'screen/home.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
@@ -77,6 +78,7 @@ class _MainEnterScreenState extends State<_MainEnterScreen> {
 
     QuestionBank.init();
     QuestionBankBuilder.init();
+    WrongWuestionBook.init();
     StudyData.instance.init();
     Future.delayed(const Duration(milliseconds: 5000), () {
       if (!isStarted) {

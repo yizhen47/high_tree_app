@@ -7,10 +7,12 @@ import 'package:flutter_application_1/screen/loading.dart';
 import 'package:flutter_application_1/screen/mode.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
+import 'package:flutter_application_1/tool/wrong_question_book.dart';
 import 'package:flutter_application_1/widget/question_text.dart';
 import 'package:path/path.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
+import 'package:uuid/uuid.dart';
 
 class QuestionScreen extends StatefulWidget {
   const QuestionScreen({super.key, required this.title});
@@ -176,9 +178,12 @@ class _InnerState extends State<QuestionScreen> {
       questionRemoved[currentIndex] = false;
       questionRemain++;
       rightQuestions.removeLast();
+      //你还要在右滑监听把id放进去
+      WrongWuestionBook.instance.removeWrongQuestion(idList.removeLast());
     }
     return true;
   }
+  List<String> idList = [];
 
   final CardSwiperController controller = CardSwiperController();
 
@@ -287,7 +292,10 @@ class _InnerState extends State<QuestionScreen> {
                         i < StudyData.instance.getStudyQuestionNum();
                         i++) {
                       SingleQuestionData q = sec.randomSectionQuestion(
-                          fromKonwledgePoint, fromKonwledgeIndex,snapshot.data!.single.id!,snapshot.data!.single.displayName!);
+                          fromKonwledgePoint,
+                          fromKonwledgeIndex,
+                          snapshot.data!.single.id!,
+                          snapshot.data!.single.displayName!);
 
                       questionRemoved.add(false);
                       allQuestions.add(q);
@@ -297,11 +305,29 @@ class _InnerState extends State<QuestionScreen> {
                           q.question['q']!, q.question['w']));
                     }
                   }
+//这是在onswipe外面
                   return CardSwiper(
                     controller: controller,
+                    //这是在构造函数调用参数里面了，不能写表达式
                     onSwipe: (previousIndex, currentIndex, direction) {
+                     String idWrong= Uuid().v1();
                       if (questionRemain > 0) {
                         if (direction == CardSwiperDirection.right) {
+                          //const Uuid().v1() 整体返回一个随机字符串，在这里被用来当作id生成
+
+                          //add () 函数，为列表添加一个元素
+                          //addWrongQuestion 没有返回值，所以不能用add
+                          //你可以写一个变量，存放id，然后填入两个位置
+                          //idlist已经是列表类型，不能重复定义
+                          //变量定义要在使用之前
+                          //onswipe监听范围只有这么大
+                          idList.add(idWrong);
+                          //你还要保证idlist里面的那个id和下面的这个id是一样的
+                          //下面的不管了？
+                          WrongWuestionBook.instance.addWrongQuestion(
+                            
+                              idWrong, allQuestions[previousIndex]);
+
                           rightQuestions.add(allQuestions[previousIndex]);
                           questionRemoved[previousIndex] = true;
                           questionRemain--;
@@ -316,6 +342,7 @@ class _InnerState extends State<QuestionScreen> {
                       }
                     },
                     onUndo: _onUndo,
+
                     cardsCount: cards.length,
                     numberOfCardsDisplayed: 2,
                     cardBuilder:

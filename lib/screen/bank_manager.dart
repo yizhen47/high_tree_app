@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
+import 'package:flutter_application_1/tool/wrong_question_book.dart';
 import 'package:flutter_isolate/flutter_isolate.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -50,7 +51,47 @@ class _InnerState extends State<BankManagerScreen> {
                         ],
                       ),
                     ),
-                    TDCell(title: '我的错题集', note: '错题存放', description: Uuid().v1()),
+                    TDSwipeCell(
+                      groupTag: 'test',
+                      left: TDSwipeCellPanel(
+                        children: [
+                          TDSwipeCellAction(
+                            flex: 60,
+                            backgroundColor: TDTheme.of(context).warningColor4,
+                            label: '导出',
+                            onPressed: (context) async {
+                              var saveFilePath =
+                                  await FilePicker.platform.saveFile(
+                                dialogTitle: "请选择保存路径",
+                                fileName: "custom.qset",
+                              );
+
+                              if (saveFilePath == null) return;
+                              WrongWuestionBook.instance
+                                  .exportWrongQuestion(saveFilePath);
+                            },
+                          ),
+                        ],
+                      ),
+                      right: TDSwipeCellPanel(
+                        children: [
+                          TDSwipeCellAction(
+                            flex: 60,
+                            backgroundColor: TDTheme.of(context).errorColor6,
+                            label: '清空',
+                            onPressed: (context) {
+                              WrongWuestionBook.instance.clearWrongQuestion();
+                            },
+                          ),
+                        ],
+                      ),
+                      cell: const TDCell(
+                        title: '左右滑操作',
+                        note: '辅助信息',
+                      ),
+                    ),
+                    TDCell(
+                        title: '我的错题集', note: '错题存放', description: Uuid().v1()),
                     const Padding(
                       padding: EdgeInsets.all(15),
                       child: Column(

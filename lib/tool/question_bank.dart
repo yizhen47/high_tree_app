@@ -517,8 +517,13 @@ class QuestionBankBuilder {
       required this.version})
       : data = data ?? <Section>[],
         id = id ?? const Uuid().v4();
-  List<Map<String, dynamic>> getDataFileJson() {
-    return ((Section("", "")..children = data).toTrimJson())['children'];
+  Map<String, dynamic> getDataFileJson() {
+    return {
+      'displayName': displayName,
+      'data': ((Section("", "")..children = data).toTrimJson())['children'],
+      'id': id,
+      'version': version
+    };
   }
 
   String getDataFileContent() {
@@ -564,7 +569,8 @@ class QuestionBankBuilder {
           imageIndex++;
         }
         oldQuestion.question[key] = oldQuestion.question[key]!.replaceAll(
-            imgMatcher, '[image:$id:rId${customMap[imgName]!}.png]');
+            imgMatcher,
+            '[image:$id:rId${customMap['${oldQuestion.fromId}/$imgName']!}.png]');
       }
     }
 
@@ -598,10 +604,10 @@ class QuestionBankBuilder {
     target.questions!.add(oldQuestion.question);
   }
 
-  void addImageByOld(Uint8List contents, int oldName) {
+  void addImageByOld(Uint8List contents, int index) {
     ArchiveFile archiveFile = ArchiveFile(
         //rId1.png
-        'assets/images/$id:rId${customMap[oldName]!}.png]',
+        'assets/images/rId$index.png]',
         contents.length,
         contents);
     archive.addFile(archiveFile);
@@ -616,8 +622,7 @@ class QuestionBankBuilder {
   Future<void> build(String outputPath) async {
     File saveFile = File(outputPath);
     try {
-      final jsonContent = utf8.encode(jsonEncode(getDataFileContent(),
-          toEncodable: (value) => value is Map ? value : null));
+      final jsonContent = utf8.encode(getDataFileContent());
       archive
           .addFile(ArchiveFile('data.json', jsonContent.length, jsonContent));
     } catch (e) {

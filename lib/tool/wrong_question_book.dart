@@ -2,10 +2,19 @@ import 'dart:convert';
 
 import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:hive/hive.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
 
 class WrongWuestionBook {
-  var box = Hive.box<String>('wrong_question_book');
-  WrongWuestionBook();
+  late Box<String> box;
+  WrongWuestionBook() {
+    box = Hive.box<String>("wrong_question_book");
+  }
+  static init() async {
+    Hive.init(
+        path.join((await getApplicationDocumentsDirectory()).path, "hive"));
+    await Hive.openBox<String>("wrong_question_book");
+  }
 
   static WrongWuestionBook instance = WrongWuestionBook();
 
@@ -41,7 +50,7 @@ class WrongWuestionBook {
     }
     builder.addTestFile("build by wrong question book");
     await builder.addNeedImageForBuilder();
-    builder.getDataFileContent();
+    // builder.getDataFileContent();
 
     builder.build(outputPath);
   }
