@@ -33,86 +33,77 @@ class _InnerState extends State<WrongQuestionScreen> {
         appBar: TDNavBar(title: '错题查看', onBack: () {}),
         body: Column(
           children: [
-            ValueListenableBuilder(
-              valueListenable: cellLength,
-              builder: (BuildContext context, value, Widget? child) {
-                return TDCellGroup(
-                  cells: list
-                      .map((e) => TDCell(
-                            note: '${(e['note'])}',
-                            description: e['description'],
-                            titleWidget: ExtendedText(e['title'],
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                softWrap: true,
-                                specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: TDTheme.of(context).fontGyColor1,
-                                )),
-                          ))
-                      .toList(),
-                  builder: (context, cell, index) {
-                    return TDSwipeCell(
-                      slidableKey: ValueKey(list[index]['id']),
-                      groupTag: 'test',
-                      onChange: (direction, open) {},
-                      left: TDSwipeCellPanel(
-                        extentRatio: 60 / screenWidth,
-                        // dragDismissible: true,
-                        onDismissed: (context) {
-                          list.removeAt(index);
-                          cellLength.value = list.length;
-                        },
-                        children: [
-                          TDSwipeCellAction(
-                            flex: 60,
-                            backgroundColor: TDTheme.of(context).warningColor4,
-                            label: '编辑',
-                            onPressed: (context) {},
-                          ),
-                        ],
-                      ),
-                      right: TDSwipeCellPanel(
-                        extentRatio: 60 / screenWidth,
-                        // dragDismissible: true,
-                        onDismissed: (context) {
-                          list.removeAt(index);
-                          cellLength.value = list.length;
-                        },
-                        children: [
-                          TDSwipeCellAction(
-                            backgroundColor: TDTheme.of(context).errorColor6,
-                            label: '删除',
-                            onPressed: (_) {
-                              showGeneralDialog(
-                                context: context,
-                                pageBuilder: (BuildContext buildContext,
-                                    Animation<double> animation,
-                                    Animation<double> secondaryAnimation) {
-                                  return TDAlertDialog(
-                                      title: "删除题库",
-                                      content: "确定删除题库吗？删除的题库将无法恢复！",
-                                      rightBtnAction: () async {
-                                        cellLength.value = list.length;
-                                        await QuestionBank.deleteQuestionBank(
-                                            list[index]['id']);
-                                        list.removeAt(index);
-                                        Navigator.of(context).pop();
-                                        setState(() {});
-                                      });
-                                },
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                      cell: cell,
-                    );
-                  },
-                );
-              },
-            ),
+            Expanded(
+              child: ValueListenableBuilder(
+                valueListenable: cellLength,
+                builder: (BuildContext context, value, Widget? child) {
+                  return TDCellGroup(
+                    cells: list
+                        .map((e) => TDCell(
+                              note: '${(e['note'])}',
+                              description: e['description'],
+                              titleWidget: ExtendedText(e['title'],
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  softWrap: true,
+                                  specialTextSpanBuilder:
+                                      MathIncludeTextSpanBuilder(),
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: TDTheme.of(context).fontGyColor1,
+                                  )),
+                            ))
+                        .toList(),
+                    scrollable: true,
+                    builder: (context, cell, index) {
+                      return TDSwipeCell(
+                        slidableKey: ValueKey(list[index]['id']),
+                        groupTag: 'test',
+                        onChange: (direction, open) {},
+                        left: TDSwipeCellPanel(
+                          extentRatio: 60 / screenWidth,
+                          // dragDismissible: true,
+                          onDismissed: (context) {
+                            list.removeAt(index);
+                            cellLength.value = list.length;
+                          },
+                          children: [
+                            TDSwipeCellAction(
+                              flex: 60,
+                              backgroundColor:
+                                  TDTheme.of(context).warningColor4,
+                              label: '编辑',
+                              onPressed: (context) {},
+                            ),
+                          ],
+                        ),
+                        right: TDSwipeCellPanel(
+                          extentRatio: 60 / screenWidth,
+                          // dragDismissible: true,
+                          onDismissed: (context) {
+                            list.removeAt(index);
+                            cellLength.value = list.length;
+                          },
+                          children: [
+                            TDSwipeCellAction(
+                              backgroundColor: TDTheme.of(context).errorColor6,
+                              label: '删除',
+                              onPressed: (_) {
+                                WrongQuestionBook.instance
+                                    .removeWrongQuestion(list[index]['id']);
+                                list.removeAt(index);
+                                cellLength.value = list.length;
+                              },
+                            ),
+                          ],
+                        ),
+                        cell: cell,
+                      );
+                    },
+                  );
+                },
+              ),
+            )
           ],
         ));
   }

@@ -178,11 +178,11 @@ class _InnerState extends State<QuestionScreen> {
       questionRemoved[currentIndex] = false;
       questionRemain++;
       rightQuestions.removeLast();
-      //你还要在右滑监听把id放进去
       WrongQuestionBook.instance.removeWrongQuestion(idList.removeLast());
     }
     return true;
   }
+
   List<String> idList = [];
 
   final CardSwiperController controller = CardSwiperController();
@@ -196,7 +196,7 @@ class _InnerState extends State<QuestionScreen> {
   //这修改页面2的内容
   @override
   Widget build(BuildContext context) {
-    setCurMathImgPath(QuestionBank.loadedDirPath!);
+    setCurMathImgPath(QuestionBank.loadedDirPath);
 
     return Scaffold(
       appBar: TDNavBar(title: '刷题界面', onBack: () {}),
@@ -308,14 +308,16 @@ class _InnerState extends State<QuestionScreen> {
                   return CardSwiper(
                     controller: controller,
                     onSwipe: (previousIndex, currentIndex, direction) {
-                     String idWrong= Uuid().v1();
+                      String idWrong = const Uuid().v1();
                       if (questionRemain > 0) {
                         if (direction == CardSwiperDirection.right) {
                           idList.add(idWrong);
-                          WrongQuestionBook.instance.addWrongQuestion(
-                            
-                              idWrong, allQuestions[previousIndex]);
-
+                          if (allQuestions[previousIndex]
+                              .fromKonwledgeIndex
+                              .isNotEmpty) {
+                            WrongQuestionBook.instance.addWrongQuestion(
+                                idWrong, allQuestions[previousIndex]);
+                          }
                           rightQuestions.add(allQuestions[previousIndex]);
                           questionRemoved[previousIndex] = true;
                           questionRemain--;
@@ -330,7 +332,6 @@ class _InnerState extends State<QuestionScreen> {
                       }
                     },
                     onUndo: _onUndo,
-
                     cardsCount: cards.length,
                     numberOfCardsDisplayed: 2,
                     cardBuilder:

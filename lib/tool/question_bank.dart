@@ -93,18 +93,18 @@ class Section {
 
   SingleQuestionData randomSectionQuestion(List<String> fromKonwledgePoint,
       List<String> fromKonwledgeIndex, String fromId, String fromName,
-      {retryingTimes = 5}) {
+      {retryingTimes = 10}) {
     SingleQuestionData? q;
     for (var i = 0; i < retryingTimes; i++) {
-      q = _randomSectionQuestion(
-          fromKonwledgePoint, fromKonwledgeIndex, fromId, fromName);
+      q = _randomSectionQuestion(List.from(fromKonwledgePoint),
+          List.from(fromKonwledgeIndex), fromId, fromName);
       if (q != null) {
         break;
       }
     }
     if (q == null) {
-      return SingleQuestionData(fromKonwledgePoint, fromKonwledgeIndex,
-          {'q': '本章没有题目', 'w': '本章没有答案'}, fromId, fromName);
+      return SingleQuestionData(
+          [], [], {'q': '本章没有题目', 'w': '本章没有答案'}, fromId, fromName);
     }
     return q;
   }
@@ -116,10 +116,17 @@ class Section {
       if (questions == null) {
         return null;
       }
-      fromKonwledgePoint.add(title);
-      fromKonwledgeIndex.add(index);
-      return SingleQuestionData(fromKonwledgePoint, fromKonwledgeIndex,
-          questions![_random!.nextInt(questions!.length)], fromId, fromName);
+      if (fromKonwledgePoint.isEmpty || fromKonwledgePoint.last != title) {
+        fromKonwledgePoint.add(title);
+        fromKonwledgeIndex.add(index);
+      } else {}
+
+      return SingleQuestionData(
+          List.from(fromKonwledgePoint),
+          List.from(fromKonwledgeIndex),
+          questions![_random!.nextInt(questions!.length)],
+          fromId,
+          fromName);
     } else {
       // ignore: unnecessary_null_comparison
       if (children == null) {
@@ -128,8 +135,8 @@ class Section {
         var sec = children![_random!.nextInt(children!.length)];
         fromKonwledgePoint.add(sec.title);
         fromKonwledgeIndex.add(sec.index);
-        return sec.randomSectionQuestion(
-            fromKonwledgePoint, fromKonwledgeIndex, fromId, fromName);
+        return sec.randomSectionQuestion(List.from(fromKonwledgePoint),
+            List.from(fromKonwledgeIndex), fromId, fromName);
       }
     }
   }
@@ -607,7 +614,7 @@ class QuestionBankBuilder {
   void addImageByOld(Uint8List contents, int index) {
     ArchiveFile archiveFile = ArchiveFile(
         //rId1.png
-        'assets/images/rId$index.png]',
+        'assets/images/rId$index.png',
         contents.length,
         contents);
     archive.addFile(archiveFile);
