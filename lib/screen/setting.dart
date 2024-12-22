@@ -11,7 +11,7 @@ class SettingScreen extends StatefulWidget {
 
 //这里是在一个页面中加了PageView，PageView可以载入更多的StatefulWidget或者StatelessWidget（也就是页面中加载其他页面作为子控件）
 class _InnerState extends State<SettingScreen> {
-  @override
+  @override 
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: TDNavBar(title: '设置', onBack: () {}),

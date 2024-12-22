@@ -15,7 +15,7 @@ import 'package:flutter_application_1/screen/setting.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 import 'bank_choose.dart';
-import 'skip.dart';
+import 'wrong_question.dart';
 import 'note.dart';
 
 class MedicalCaseIndexVary {
@@ -449,9 +449,7 @@ class MainHomePageState extends State<MainHomePage> {
                                 context,
                                 MaterialPageRoute(
                                     builder: (context) =>
-                                        const BankChooseScreen(
-                                          title: '',
-                                        ))).then((onValue) {
+                                        const BankChooseScreen())).then((onValue) {
                               setState(() {});
                             });
                           },
@@ -561,19 +559,19 @@ class MainHomePageState extends State<MainHomePage> {
                           Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => SkipScreen()));
+                                  builder: (context) => WrongQuestionScreen()));
                         },
                         child: const Padding(
                           padding: EdgeInsets.all(10),
                           child: Column(
                             children: [
                               Icon(
-                                Icons.playlist_add_check,
-                                size: 45,
+                                Icons.class_outlined,
+                                size: 40,
                                 color: Colors.blueAccent,
                               ),
                               Text(
-                                "跳过的题",
+                                "错题查看",
                                 style: TextStyle(
                                     fontSize: 12, color: Colors.black),
                               )
@@ -612,9 +610,7 @@ class MainHomePageState extends State<MainHomePage> {
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => const BankChooseScreen(
-                                      title: '',
-                                    )));
+                                builder: (context) => const BankChooseScreen()));
                       },
                       child: const Padding(
                         padding: EdgeInsets.all(10),

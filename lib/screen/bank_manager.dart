@@ -60,14 +60,20 @@ class _InnerState extends State<BankManagerScreen> {
                             backgroundColor: TDTheme.of(context).warningColor4,
                             label: '导出',
                             onPressed: (context) async {
+                              if (WrongQuestionBook.instance
+                                      .getWrongQuestionIds()
+                                      .length <=
+                                  10) {
+                                TDToast.showWarning('错题数量太少', context: context);
+                                return;
+                              }
                               var saveFilePath =
                                   await FilePicker.platform.saveFile(
                                 dialogTitle: "请选择保存路径",
                                 fileName: "custom.qset",
                               );
-
                               if (saveFilePath == null) return;
-                              WrongWuestionBook.instance
+                              WrongQuestionBook.instance
                                   .exportWrongQuestion(saveFilePath);
                             },
                           ),
@@ -79,19 +85,33 @@ class _InnerState extends State<BankManagerScreen> {
                             flex: 60,
                             backgroundColor: TDTheme.of(context).errorColor6,
                             label: '清空',
-                            onPressed: (context) {
-                              WrongWuestionBook.instance.clearWrongQuestion();
+                            onPressed: (_) {
+                              showGeneralDialog(
+                                context: context,
+                                pageBuilder: (BuildContext buildContext,
+                                    Animation<double> animation,
+                                    Animation<double> secondaryAnimation) {
+                                  return TDAlertDialog(
+                                      title: "清空错题本",
+                                      content: "确定清空错题本吗？清空的错题将无法恢复！",
+                                      rightBtnAction: () {
+                                        WrongQuestionBook.instance
+                                            .clearWrongQuestion();
+                                        Navigator.of(context).pop();
+                                        setState(() {});
+                                      });
+                                },
+                              );
                             },
                           ),
                         ],
                       ),
-                      cell: const TDCell(
-                        title: '左右滑操作',
-                        note: '辅助信息',
-                      ),
+                      cell: TDCell(
+                          title: '我的错题本',
+                          note: '错题存放',
+                          description:
+                              '错题数量: ${WrongQuestionBook.instance.getWrongQuestionIds().length}'),
                     ),
-                    TDCell(
-                        title: '我的错题集', note: '错题存放', description: Uuid().v1()),
                     const Padding(
                       padding: EdgeInsets.all(15),
                       child: Column(

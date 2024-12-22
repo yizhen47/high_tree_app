@@ -5,9 +5,9 @@ import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 
-class WrongWuestionBook {
+class WrongQuestionBook {
   late Box<String> box;
-  WrongWuestionBook() {
+  WrongQuestionBook() {
     box = Hive.box<String>("wrong_question_book");
   }
   static init() async {
@@ -16,7 +16,7 @@ class WrongWuestionBook {
     await Hive.openBox<String>("wrong_question_book");
   }
 
-  static WrongWuestionBook instance = WrongWuestionBook();
+  static WrongQuestionBook instance = WrongQuestionBook();
 
   void addWrongQuestion(String questionId, SingleQuestionData question) {
     box.put(questionId, json.encode(question.toJson()));

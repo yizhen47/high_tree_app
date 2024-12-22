@@ -34,16 +34,27 @@ class MathIncludeText extends SpecialText {
     fpath = fpath.substring(MathIncludeText.flag.length,
         fpath.length - MathIncludeText.flagEnd.length);
     var pack = fpath.split(":");
+    var f = File(path.join(
+        _nowSingleUsedMathImagePath, pack[0], "assets", "images", pack[1]));
 
-    var img = FileImage(File(path.join(
-        _nowSingleUsedMathImagePath, pack[0], "assets", "images", pack[1])));
-    return MyImageSpan(
-      img,
-      actualText: fpath,
-      start: start,
-      fit: BoxFit.fitHeight,
-      filterQuality: FilterQuality.medium,
-    );
+    if (f.existsSync()) {
+      var img = FileImage(f);
+
+      return MyImageSpan(
+        img,
+        actualText: fpath,
+        start: start,
+        fit: BoxFit.fitHeight,
+        filterQuality: FilterQuality.medium,
+      );
+    } else {
+      return TextSpan(
+        text: pack[1],
+        style: const TextStyle(
+          color: Colors.red,
+        ),
+      );
+    }
   }
 }
 

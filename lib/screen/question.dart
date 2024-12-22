@@ -179,7 +179,7 @@ class _InnerState extends State<QuestionScreen> {
       questionRemain++;
       rightQuestions.removeLast();
       //你还要在右滑监听把id放进去
-      WrongWuestionBook.instance.removeWrongQuestion(idList.removeLast());
+      WrongQuestionBook.instance.removeWrongQuestion(idList.removeLast());
     }
     return true;
   }
@@ -305,26 +305,14 @@ class _InnerState extends State<QuestionScreen> {
                           q.question['q']!, q.question['w']));
                     }
                   }
-//这是在onswipe外面
                   return CardSwiper(
                     controller: controller,
-                    //这是在构造函数调用参数里面了，不能写表达式
                     onSwipe: (previousIndex, currentIndex, direction) {
                      String idWrong= Uuid().v1();
                       if (questionRemain > 0) {
                         if (direction == CardSwiperDirection.right) {
-                          //const Uuid().v1() 整体返回一个随机字符串，在这里被用来当作id生成
-
-                          //add () 函数，为列表添加一个元素
-                          //addWrongQuestion 没有返回值，所以不能用add
-                          //你可以写一个变量，存放id，然后填入两个位置
-                          //idlist已经是列表类型，不能重复定义
-                          //变量定义要在使用之前
-                          //onswipe监听范围只有这么大
                           idList.add(idWrong);
-                          //你还要保证idlist里面的那个id和下面的这个id是一样的
-                          //下面的不管了？
-                          WrongWuestionBook.instance.addWrongQuestion(
+                          WrongQuestionBook.instance.addWrongQuestion(
                             
                               idWrong, allQuestions[previousIndex]);
 

@@ -40,11 +40,11 @@ class SingleQuestionData {
   SingleQuestionData(this.fromKonwledgePoint, this.fromKonwledgeIndex,
       this.question, this.fromId, this.fromDisplayName);
 
-  getKonwledgePoint() {
+  String getKonwledgePoint() {
     return fromKonwledgePoint.join('/');
   }
 
-  getKonwledgeIndex() {
+  String getKonwledgeIndex() {
     return fromKonwledgeIndex.join('/');
   }
 

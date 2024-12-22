@@ -8,8 +8,7 @@ import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 
 class BankChooseScreen extends StatefulWidget {
-  const BankChooseScreen({super.key, required this.title});
-  final String title;
+  const BankChooseScreen({super.key});
   @override
   State<BankChooseScreen> createState() => _InnerState();
 }
