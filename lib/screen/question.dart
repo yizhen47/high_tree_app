@@ -165,25 +165,6 @@ Card buildKnowledgeCard(
 }
 
 class _InnerState extends State<QuestionScreen> {
-  bool _onUndo(
-    int? previousIndex,
-    int currentIndex,
-    CardSwiperDirection direction,
-  ) {
-    if (direction == CardSwiperDirection.left) {
-      questionRemoved[currentIndex] = false;
-      questionRemain++;
-      leftQuestions.removeLast();
-    }
-    if (direction == CardSwiperDirection.right) {
-      questionRemoved[currentIndex] = false;
-      questionRemain++;
-      rightQuestions.removeLast();
-      WrongQuestionBook.instance.removeWrongQuestion(idList.removeLast());
-    }
-    return true;
-  }
-
   List<String> idList = [];
 
   final CardSwiperController controller = CardSwiperController();
@@ -322,17 +303,38 @@ class _InnerState extends State<QuestionScreen> {
                           rightQuestions.add(allQuestions[previousIndex]);
                           questionRemoved[previousIndex] = true;
                           questionRemain--;
+
+                          TDToast.showSuccess("已加入错题本", context: context);
                         } else if (direction == CardSwiperDirection.left) {
                           leftQuestions.add(allQuestions[previousIndex]);
                           questionRemoved[previousIndex] = true;
                           questionRemain--;
+                     
                         }
                         return true;
                       } else {
                         return false;
                       }
                     },
-                    onUndo: _onUndo,
+                    onUndo: (
+                      int? previousIndex,
+                      int currentIndex,
+                      CardSwiperDirection direction,
+                    ) {
+                      if (direction == CardSwiperDirection.left) {
+                        questionRemoved[currentIndex] = false;
+                        questionRemain++;
+                        leftQuestions.removeLast();
+                      }
+                      if (direction == CardSwiperDirection.right) {
+                        questionRemoved[currentIndex] = false;
+                        questionRemain++;
+                        rightQuestions.removeLast();
+                        WrongQuestionBook.instance
+                            .removeWrongQuestion(idList.removeLast());
+                      }
+                      return true;
+                    },
                     cardsCount: cards.length,
                     numberOfCardsDisplayed: 2,
                     cardBuilder:
@@ -341,68 +343,75 @@ class _InnerState extends State<QuestionScreen> {
                         return Card(
                           color: Colors.white,
                           elevation: 4,
-                          child: SizedBox(
-                            height: double.infinity,
-                            child: Padding(
-                              padding: const EdgeInsets.all(15),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  SizedBox(
-                                      width: double.infinity,
-                                      child: Center(
-                                        child: Column(
-                                          children: [
-                                            const Row(children: [
-                                              Icon(
-                                                Icons.emoji_flags,
-                                                size: 100,
+                          child: SingleChildScrollView(
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: Padding(
+                                padding: const EdgeInsets.all(15),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    SizedBox(
+                                        width: double.infinity,
+                                        child: Center(
+                                          child: Column(
+                                            children: [
+                                              const Row(children: [
+                                                Icon(
+                                                  Icons.emoji_flags,
+                                                  size: 100,
+                                                ),
+                                                Icon(
+                                                  Icons.emoji_people,
+                                                  size: 60,
+                                                ),
+                                              ]),
+                                              const Text(
+                                                '''太棒啦，您已完成本次任务！  ''',
+                                                style: TextStyle(fontSize: 20),
                                               ),
-                                              Icon(
-                                                Icons.emoji_people,
-                                                size: 60,
+                                              Image.asset(
+                                                'assets/come_on.jpg',
+                                                height: 150,
                                               ),
-                                            ]),
-                                            const Text(
-                                              '''太棒啦，您已完成本次任务！  ''',
-                                              style: TextStyle(fontSize: 20),
-                                            ),
-                                            const Icon(Icons.downhill_skiing,
-                                                size: 100),
-                                            const Text('''现在你可以左右滑动体验从山顶滑下去的感觉
+                                              const Text('''
                                            提示：退出or继续'''),
-                                            InkWell(
-                                                onTap: () {
-                                                  Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                          builder: (context) =>
-                                                              const LoadingScreen(
-                                                                  title: '')));
-                                                },
-                                                child: TDButton(
-                                                  text: '继续刷题',
-                                                  size: TDButtonSize.large,
-                                                  type: TDButtonType.ghost,
-                                                  shape:
-                                                      TDButtonShape.rectangle,
-                                                  theme: TDButtonTheme.primary,
+                                              InkWell(
                                                   onTap: () {
-                                                    Navigator.pushAndRemoveUntil(
+                                                    Navigator.push(
                                                         context,
                                                         MaterialPageRoute(
                                                             builder: (context) =>
-                                                                const ModeScreen(
-                                                                    title: '')),
-                                                        (route) =>
-                                                            route.isFirst);
+                                                                const LoadingScreen(
+                                                                    title:
+                                                                        '')));
                                                   },
-                                                ))
-                                          ],
-                                        ),
-                                      )),
-                                ],
+                                                  child: TDButton(
+                                                    text: '继续刷题',
+                                                    size: TDButtonSize.large,
+                                                    type: TDButtonType.ghost,
+                                                    shape:
+                                                        TDButtonShape.rectangle,
+                                                    theme:
+                                                        TDButtonTheme.primary,
+                                                    onTap: () {
+                                                      Navigator.pushAndRemoveUntil(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                              builder: (context) =>
+                                                                  const ModeScreen(
+                                                                      title:
+                                                                          '')),
+                                                          (route) =>
+                                                              route.isFirst);
+                                                    },
+                                                  ))
+                                            ],
+                                          ),
+                                        )),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
