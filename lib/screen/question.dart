@@ -10,7 +10,6 @@ import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/tool/wrong_question_book.dart';
 import 'package:flutter_application_1/widget/question_text.dart';
-import 'package:path/path.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:uuid/uuid.dart';
@@ -42,7 +41,7 @@ Card buildQuestionCard(
               ),
               Card(
                 color: Colors.blueAccent,
-                margin: const EdgeInsets.fromLTRB(0, 4, 4, 4),
+                margin: const EdgeInsets.fromLTRB(0, 4, 18, 4),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8)),
                 child: Padding(
@@ -448,10 +447,12 @@ class _InnerState extends State<QuestionScreen> {
                               child: const SizedBox(
                                 height: 400,
                                 width: double.infinity,
-                                child: Column(
-                                  children: [
-                                    Expanded(child: WrongQuestionWidth()),
-                                  ],
+                                child: Scaffold(
+                                  body: Column(
+                                    children: [
+                                      Expanded(child: WrongQuestionWidth()),
+                                    ],
+                                  ),
                                 ),
                               ),
                             );
