@@ -5,6 +5,7 @@ import 'package:extended_text/extended_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screen/loading.dart';
 import 'package:flutter_application_1/screen/mode.dart';
+import 'package:flutter_application_1/screen/wrong_question.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/tool/wrong_question_book.dart';
@@ -435,7 +436,8 @@ class _InnerState extends State<QuestionScreen> {
                 Expanded(
                   child: InkWell(
                     onTap: () {
-                      Navigator.of(context).push(TDSlidePopupRoute(
+                      Navigator.of(context).push(
+                        TDSlidePopupRoute(
                           modalBarrierColor: TDTheme.of(context).fontGyColor2,
                           slideTransitionFrom: SlideTransitionFrom.bottom,
                           builder: (context) {
@@ -443,11 +445,19 @@ class _InnerState extends State<QuestionScreen> {
                               closeClick: () {
                                 Navigator.maybePop(context);
                               },
-                              child: Container(
+                              child: const SizedBox(
                                 height: 400,
+                                width: double.infinity,
+                                child: Column(
+                                  children: [
+                                    Expanded(child: WrongQuestionWidth()),
+                                  ],
+                                ),
                               ),
                             );
-                          }));
+                          },
+                        ),
+                      );
                     },
                     child: const Padding(
                       padding: EdgeInsets.only(bottom: 15, top: 15),

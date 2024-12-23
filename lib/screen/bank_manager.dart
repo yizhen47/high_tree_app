@@ -168,11 +168,6 @@ class _InnerState extends State<BankManagerScreen> {
                                       onChange: (direction, open) {},
                                       left: TDSwipeCellPanel(
                                         extentRatio: 60 / screenWidth,
-                                        // dragDismissible: true,
-                                        onDismissed: (context) {
-                                          list.removeAt(index);
-                                          cellLength.value = list.length;
-                                        },
                                         children: [
                                           TDSwipeCellAction(
                                             flex: 60,
@@ -185,11 +180,6 @@ class _InnerState extends State<BankManagerScreen> {
                                       ),
                                       right: TDSwipeCellPanel(
                                         extentRatio: 60 / screenWidth,
-                                        // dragDismissible: true,
-                                        onDismissed: (context) {
-                                          list.removeAt(index);
-                                          cellLength.value = list.length;
-                                        },
                                         children: [
                                           TDSwipeCellAction(
                                             backgroundColor:
