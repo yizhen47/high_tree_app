@@ -36,7 +36,6 @@ class MathIncludeText extends SpecialText {
     var pack = fpath.split(":");
     var f = File(path.join(
         _nowSingleUsedMathImagePath, pack[0], "assets", "images", pack[1]));
-
     if (f.existsSync()) {
       var img = FileImage(f);
 

@@ -22,7 +22,7 @@ class _InnerState extends State<WrongQuestionScreen> {
       var q = WrongQuestionBook.instance.getWrongQuestion(action);
       return {
         'id': action,
-        'title': q.question["w"],
+        'title': q.question["q"],
         "note": q.fromKonwledgePoint.last,
         'description': q.fromDisplayName,
       };

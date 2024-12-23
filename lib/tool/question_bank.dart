@@ -133,8 +133,8 @@ class Section {
         return null;
       } else {
         var sec = children![_random!.nextInt(children!.length)];
-        fromKonwledgePoint.add(sec.title);
-        fromKonwledgeIndex.add(sec.index);
+        fromKonwledgePoint.add(title);
+        fromKonwledgeIndex.add(index);
         return sec.randomSectionQuestion(List.from(fromKonwledgePoint),
             List.from(fromKonwledgeIndex), fromId, fromName);
       }
@@ -586,29 +586,30 @@ class QuestionBankBuilder {
     var quedtionBankName = oldQuestion.fromDisplayName;
 
     //根据Section和index新建对应层级
-    Section target = data.firstWhere(
+    Section current = data.firstWhere(
       (e) => e.title == quedtionBankName,
       orElse: () {
-        var target = Section('${data.length}', quedtionBankName);
+        var target = Section('错题集${data.length}', quedtionBankName);
         data.add(target);
         return target;
       },
     );
 
     while (oldQuestion.fromKonwledgePoint.isNotEmpty) {
-      var targetIndex = oldQuestion.fromKonwledgeIndex.removeLast();
-      var targetTitle = oldQuestion.fromKonwledgePoint.removeLast();
-      target = data.firstWhere(
+      var targetIndex = oldQuestion.fromKonwledgeIndex.removeAt(0);
+      var targetTitle = oldQuestion.fromKonwledgePoint.removeAt(0);
+      current.children ??= [];
+      current = current.children!.firstWhere(
         (e) => e.index == targetIndex,
         orElse: () {
           var target = Section(targetIndex, targetTitle);
-          data.add(target);
+          current.children!.add(target);
           return target;
         },
       );
     }
-    target.questions ??= [];
-    target.questions!.add(oldQuestion.question);
+    current.questions ??= [];
+    current.questions!.add(oldQuestion.question);
   }
 
   void addImageByOld(Uint8List contents, int index) {

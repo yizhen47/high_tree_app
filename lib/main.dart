@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_application_1/screen/question.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/tool/wrong_question_book.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -116,11 +115,9 @@ class _MainEnterScreenState extends State<_MainEnterScreen> {
     return Scaffold(
       body: Center(
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           verticalDirection: VerticalDirection.up,
           children: <Widget>[
-            Container(
-              height: 80,
-            ),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -129,7 +126,9 @@ class _MainEnterScreenState extends State<_MainEnterScreen> {
                   width: 60,
                   height: 60,
                 ),
+                const SizedBox(width: 10),
                 const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       '长安大学高数练习软件',
@@ -143,33 +142,30 @@ class _MainEnterScreenState extends State<_MainEnterScreen> {
                 )
               ],
             ),
-            Expanded(
-              child: Center(
-                  child: InkWell(
-                onTap: () {
-                  isStarted = true;
-                  Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const HomeScreen(title: '')),
-                      (route) => false);
-                  isStarted = true;
-                },
-                child: SizedBox(
-                  width: 250.0,
-                  child: TextLiquidFill(
-                    text: 'CHU',
-                    waveColor: Colors.blueAccent,
-                    boxBackgroundColor: Colors.redAccent,
-                    textStyle: const TextStyle(
-                      fontSize: 80.0,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    boxHeight: 250.0,
+            const SizedBox(height: 50),
+            InkWell(
+              onTap: () {
+                isStarted = true;
+                Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const HomeScreen(title: '')),
+                    (route) => false);
+              },
+              child: SizedBox(
+                width: 250.0,
+                child: TextLiquidFill(
+                  text: 'CHU',
+                  waveColor: Colors.blueAccent,
+                  boxBackgroundColor: Colors.redAccent,
+                  textStyle: const TextStyle(
+                    fontSize: 80.0,
+                    fontWeight: FontWeight.bold,
                   ),
+                  boxHeight: 250.0,
                 ),
-              )),
-            )
+              ),
+            ),
           ],
         ),
       ),

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screen/question.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
+import 'package:flutter_application_1/tool/text_string_handle.dart';
 import 'package:flutter_application_1/widget/itd_tree_select.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 
@@ -25,7 +26,7 @@ class _InnerState extends State<ModeScreen> {
       for (var i = 0; i < sections.length; i++) {
         var section = sections[i];
         var n = {};
-        n["label"] = section.title;
+        n["label"] = hideText(section.title);
         n["value"] = section.index;
         if (section.children != null && section.children!.isNotEmpty) {
           List<Map<dynamic, dynamic>> children = [];
@@ -113,7 +114,7 @@ class _InnerState extends State<ModeScreen> {
 
       for (var (j, sec) in qdb.data!.indexed) {
         options.last.children.add(
-            ITDSelectOption(label: '${sec.index}: ${sec.title}', value: j));
+            ITDSelectOption(label: hideText('${sec.index}: ${sec.title}'), value: j));
       }
     }
     String? secList = StudyData.instance.getStudySection();
