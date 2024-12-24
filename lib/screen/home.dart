@@ -58,7 +58,7 @@ class _MyHomePageState extends State<HomeScreen> {
         title: ' ',
         height: 45,
         useDefaultBack: false,
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         leftBarItems: [
           TDNavBarItem(
               iconColor: Theme.of(context).primaryColor, icon: Icons.people, action: () {})
@@ -87,7 +87,7 @@ class _MyHomePageState extends State<HomeScreen> {
       ),
 
       bottomNavigationBar: CurvedNavigationBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         index: _currentIndex,
         animationDuration: const Duration(milliseconds: 300),
         height: 56,
@@ -669,7 +669,7 @@ class MainHomePageState extends State<MainHomePage> {
                     width: double.infinity,
                   ),
                   Card(
-                    color: Colors.white,
+                    color: Theme.of(context).cardColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(2),
                     ),
@@ -708,7 +708,7 @@ class MainHomePageState extends State<MainHomePage> {
                         )),
                   ),
                   Card(
-                      color: Colors.white,
+                      color: Theme.of(context).cardColor,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(2),
                       ),
@@ -779,7 +779,7 @@ class ProfilePageState extends State<ProfilePage> {
                         ))).then((e) => setState(() {}));
           },
           child: Card(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(children: [
@@ -824,7 +824,7 @@ class ProfilePageState extends State<ProfilePage> {
           ),
         ),
         Card(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           child: TDCellGroup(
             cells: [
               TDCell(

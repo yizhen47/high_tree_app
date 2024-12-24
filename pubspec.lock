@@ -813,6 +813,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.3.0"
+  rebirth:
+    dependency: "direct main"
+    description:
+      name: rebirth
+      sha256: "20979adb1a40da41d620f1cefb51ee90d53bfcec8a5284ea2b8ab97a673853b8"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.2"
   screen_retriever:
     dependency: transitive
     description:

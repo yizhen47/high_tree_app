@@ -127,11 +127,31 @@ class StudyData {
     await sharedPreferences!.setString("avatar", avatar);
     await File(avatar).copy(path.join(dataDir!, "avatar"));
   }
+
   Color getThemeColor() {
-    return Color(sharedPreferences!.getInt("themeColor") ?? Colors.blueAccent.value);
+    return Color(
+        sharedPreferences!.getInt("themeColor") ?? Colors.blueAccent.value);
   }
+
   setThemeColor(Color color) async {
     await sharedPreferences!.setInt("themeColor", color.value);
   }
-  
+
+  bool getNightModeFollowSystem() {
+    return sharedPreferences!.getBool("nightModeFollowSystem") ?? true;
+  }
+
+  setNightModeFollowSystem(bool followSystem) async {
+    await sharedPreferences!.setBool("nightModeFollowSystem", followSystem);
+  }
+
+  bool getNightMode() {
+    return getNightModeFollowSystem()
+        ? true
+        : sharedPreferences!.getBool("nightMode") ?? false;
+  }
+
+  setNightMode(bool nightMode) async {
+    await sharedPreferences!.setBool("nightMode", nightMode);
+  }
 }

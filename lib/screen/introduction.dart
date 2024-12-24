@@ -63,7 +63,7 @@ class _WithBuilder extends State<WithBuilder> {
       width: 25.0,
       child: new Center(
         child: new Material(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           type: MaterialType.circle,
           child: new Container(
             width: 8.0 * zoom,

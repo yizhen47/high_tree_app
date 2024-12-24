@@ -236,7 +236,7 @@ class _InnerState extends State<BankManagerScreen> {
                     ),
                   ])),
           Container(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
