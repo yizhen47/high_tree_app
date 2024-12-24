@@ -16,7 +16,6 @@ import 'package:fl_chart/fl_chart.dart';
 
 import 'bank_choose.dart';
 import 'wrong_question.dart';
-import 'note.dart';
 
 class MedicalCaseIndexVary {
   final String referenceValueUpper;
@@ -62,7 +61,7 @@ class _MyHomePageState extends State<HomeScreen> {
         backgroundColor: Colors.white,
         leftBarItems: [
           TDNavBarItem(
-              iconColor: Colors.blueAccent, icon: Icons.people, action: () {})
+              iconColor: Theme.of(context).primaryColor, icon: Icons.people, action: () {})
         ],
       ),
       resizeToAvoidBottomInset: false, // 设置为 false 避免底部溢出
@@ -92,7 +91,7 @@ class _MyHomePageState extends State<HomeScreen> {
         index: _currentIndex,
         animationDuration: const Duration(milliseconds: 300),
         height: 56,
-        color: Colors.blueAccent,
+        color: Theme.of(context).primaryColor,
         items: const <Widget>[
           Icon(
             CupertinoIcons.text_justify,
@@ -384,7 +383,7 @@ class MainHomePageState extends State<MainHomePage> {
                         }
                       },
                       child: Card(
-                        color: Colors.blueAccent,
+                        color: Theme.of(context).primaryColor,
                         elevation: 2,
                         margin: const EdgeInsets.all(20),
                         shape: RoundedRectangleBorder(
@@ -559,18 +558,18 @@ class MainHomePageState extends State<MainHomePage> {
                           Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => WrongQuestionScreen()));
+                                  builder: (context) => const WrongQuestionScreen()));
                         },
-                        child: const Padding(
-                          padding: EdgeInsets.all(10),
+                        child: Padding(
+                          padding: const EdgeInsets.all(10),
                           child: Column(
                             children: [
                               Icon(
                                 Icons.class_outlined,
                                 size: 40,
-                                color: Colors.blueAccent,
+                                color: Theme.of(context).primaryColor,
                               ),
-                              Text(
+                              const Text(
                                 "错题查看",
                                 style: TextStyle(
                                     fontSize: 12, color: Colors.black),
@@ -582,21 +581,17 @@ class MainHomePageState extends State<MainHomePage> {
                   Expanded(
                       child: InkWell(
                     onTap: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => NoteScreen()));
                     },
-                    child: const Padding(
-                      padding: EdgeInsets.all(10),
+                    child: Padding(
+                      padding: const EdgeInsets.all(10),
                       child: Column(
                         children: [
                           Icon(
                             Icons.mode_outlined,
                             size: 40,
-                            color: Colors.blueAccent,
+                            color: Theme.of(context).primaryColor,
                           ),
-                          Text(
+                          const Text(
                             "添加笔记",
                             style: TextStyle(fontSize: 12, color: Colors.black),
                           )
@@ -612,16 +607,16 @@ class MainHomePageState extends State<MainHomePage> {
                             MaterialPageRoute(
                                 builder: (context) => const BankChooseScreen()));
                       },
-                      child: const Padding(
-                        padding: EdgeInsets.all(10),
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
                         child: Column(
                           children: [
                             Icon(
                               Icons.notes,
                               size: 40,
-                              color: Colors.blueAccent,
+                              color: Theme.of(context).primaryColor,
                             ),
-                            Text(
+                            const Text(
                               "题库选择",
                               style:
                                   TextStyle(fontSize: 12, color: Colors.black),
@@ -634,16 +629,16 @@ class MainHomePageState extends State<MainHomePage> {
                   Expanded(
                     child: InkWell(
                       onTap: () {},
-                      child: const Padding(
-                        padding: EdgeInsets.all(10),
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
                         child: Column(
                           children: [
                             Icon(
                               Icons.quiz_outlined,
                               size: 35,
-                              color: Colors.blueAccent,
+                              color: Theme.of(context).primaryColor,
                             ),
-                            Text(
+                            const Text(
                               "疑难题集",
                               style:
                                   TextStyle(fontSize: 12, color: Colors.black),
@@ -839,9 +834,7 @@ class ProfilePageState extends State<ProfilePage> {
                     Navigator.push(
                       context,
                       CupertinoPageRoute(
-                        builder: (context) => const SettingScreen(
-                          title: '',
-                        ),
+                        builder: (context) => const SettingScreen(),
                       ),
                     );
                   }),

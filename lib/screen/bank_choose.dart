@@ -128,11 +128,11 @@ class _InnerState extends State<BankChooseScreen> {
                       TDToast.showSuccess('导入完毕', context: context);
                       setState(() {});
                     },
-                    child: const Padding(
+                    child: Padding(
                       padding: EdgeInsets.only(bottom: 15, top: 15),
                       child: Icon(
                         Icons.add_box_outlined,
-                        color: Colors.blueAccent,
+                        color: Theme.of(context).primaryColor,
                       ),
                     ),
                   ),
@@ -144,11 +144,11 @@ class _InnerState extends State<BankChooseScreen> {
                       TDToast.showSuccess('加载完毕', context: context);
                       setState(() {});
                     },
-                    child: const Padding(
+                    child: Padding(
                       padding: EdgeInsets.only(bottom: 15, top: 15),
                       child: Icon(
                         Icons.save_as_outlined,
-                        color: Colors.blueAccent,
+                        color: Theme.of(context).primaryColor,
                       ),
                     ),
                   ),
@@ -169,11 +169,11 @@ class _InnerState extends State<BankChooseScreen> {
                         },
                       );
                     },
-                    child: const Padding(
+                    child: Padding(
                       padding: EdgeInsets.only(bottom: 15, top: 15),
                       child: Icon(
                         Icons.quiz_outlined,
-                        color: Colors.blueAccent,
+                        color: Theme.of(context).primaryColor,
                       ),
                     ),
                   ),

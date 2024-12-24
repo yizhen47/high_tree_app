@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as path;
@@ -126,4 +127,11 @@ class StudyData {
     await sharedPreferences!.setString("avatar", avatar);
     await File(avatar).copy(path.join(dataDir!, "avatar"));
   }
+  Color getThemeColor() {
+    return Color(sharedPreferences!.getInt("themeColor") ?? Colors.blueAccent.value);
+  }
+  setThemeColor(Color color) async {
+    await sharedPreferences!.setInt("themeColor", color.value);
+  }
+  
 }

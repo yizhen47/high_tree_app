@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:archive/archive.dart';
+import 'package:flutter_application_1/widget/question_text.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:xml/xml.dart' as xml;
@@ -84,7 +85,12 @@ class Section {
       'note': note!.isNotEmpty ? note!.trim() : null,
       'questions': questions!.isNotEmpty
           ? questions!
-              .map((q) => {'q': q['q']?.trim(), 'w': q['w']?.trim()})
+              .map((q) => {
+                    'q': q['q']?.trim(),
+                    'w': q['w']?.trim(),
+                    'id': q['id'] ?? const Uuid().v4(),
+                    if (q['note'] != null) 'note': q['note']?.trim()
+                  })
               .toList()
           : null,
     }..removeWhere(
@@ -205,7 +211,7 @@ Future<void> generateByDocx(File fromFile, File saveFile) async {
                   if (data.name.local == "imagedata") {
                     final imageId = data.getAttribute("r:id");
                     // final imagePath = imageRels[imageId];
-                    texts.add('[image:$imageId.png]');
+                    texts.add('[image:$id:$imageId.png]');
                   }
                 }
               }
@@ -495,6 +501,8 @@ class QuestionBank {
         (await getApplicationCacheDirectory()).path, "questionBankLoaded");
     await Directory(QuestionBank.importedDirPath).create();
     await Directory(QuestionBank.loadedDirPath).create();
+
+    setCurMathImgPath(QuestionBank.loadedDirPath);
     // await clean();
   }
 
@@ -771,6 +779,6 @@ class QuestionBankBuilder {
       }
     }
     return QuestionBankBuilder(
-        data: root.children!, id: id, displayName: title, version: 2);
+        data: root.children!, id: id, displayName: title, version: 3);
   }
 }

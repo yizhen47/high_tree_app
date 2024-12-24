@@ -5,6 +5,7 @@ import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:flutter_application_1/tool/text_string_handle.dart';
 import 'package:flutter_application_1/tool/wrong_question_book.dart';
 import 'package:flutter_application_1/widget/question_text.dart';
+import 'package:latext/latext.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 
 class WrongQuestionScreen extends StatefulWidget {
@@ -33,6 +34,18 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidth> {
   Widget build(BuildContext context) {
     var screenWidth = MediaQuery.of(context).size.width;
     var screenHeight = MediaQuery.of(context).size.height;
+
+    final TextEditingController laTeXInputController = TextEditingController(
+      text: r'What do you think about $L'
+          '\''
+          r' = {L}{\sqrt{1-\frac{v^2}{c^2}}}$ ?'
+          r'\n'
+          r'And some display $\LaTeX$: $$\boxed{\rm{A function: } f(x) = \frac{5}{3} \cdot x}$$'
+          r'\n'
+          r'$\KaTeX$-Flutter provides easy processing of $LaTeX$ embedded into any text.'
+          r'\n'
+          r'$$\left\{\begin{array}{l}3 x-4 y=1 \\ -3 x+7 y=5\end{array}\right.$$',
+    );
 
     List<Map<String, dynamic>> list;
     List<Map<String, dynamic>> reFreshData() {
@@ -103,10 +116,11 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidth> {
                                       width: screenWidth - 80,
                                       height: screenHeight - 150,
                                       child: buildQuestionCard(
-                                                  q.getKonwledgePoint(),
-                                                  q.question['q']!,
-                                                  q.question['w']!)
-                                              ,
+                                          context,
+                                          q.getKonwledgePoint(),
+                                          q.question['q']!,
+                                          q.question['w'],
+                                          q.question['note']),
                                     ),
                                   );
                                 },
@@ -138,7 +152,59 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidth> {
                           flex: 60,
                           backgroundColor: TDTheme.of(context).warningColor4,
                           label: '编辑',
-                          onPressed: (context) {},
+                          onPressed: (_) {
+                            Navigator.of(context).push(
+                              TDSlidePopupRoute(
+                                // modalBarrierColor:
+                                //     TDTheme.of(context).fontGyColor2,
+                                slideTransitionFrom: SlideTransitionFrom.center,
+                                builder: (_) {
+                                  return TDPopupCenterPanel(
+                                      radius: 15,
+                                      // backgroundColor: Colors.transparent,
+                                      closeClick: () {
+                                        Navigator.maybePop(context);
+                                      },
+                                      child: SizedBox(
+                                        width: screenWidth - 80,
+                                        height: screenHeight - 150,
+                                        child: Scaffold(
+                                            body: Column(
+                                          children: [
+                                            TextField(
+                                              keyboardType:
+                                                  TextInputType.multiline,
+                                              maxLines: null,
+                                              decoration: const InputDecoration(
+                                                  labelText:
+                                                      'Your LaTeX code here',
+                                                  helperText:
+                                                      'Use \$ as delimiter. Use \$\$ for display LaTeX.'),
+                                              controller: laTeXInputController,
+                                            ),
+                                            Builder(
+                                              builder: (context) => LaTexT(
+                                                laTeXCode: Text(
+                                                  laTeXInputController.text,
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyMedium,
+                                                ),
+                                              ),
+                                            )
+                                          ],
+                                        )
+                                            //   child: buildQuestionCard(
+                                            //       q.getKonwledgePoint(),
+                                            //       q.question['q']!,
+                                            //       q.question['w'],
+                                            //       q.question['note']),
+                                            ),
+                                      ));
+                                },
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),

@@ -253,11 +253,11 @@ class _InnerState extends State<BankManagerScreen> {
                       TDToast.showSuccess('导入完毕', context: context);
                       setState(() {});
                     },
-                    child: const Padding(
+                    child: Padding(
                       padding: EdgeInsets.only(bottom: 15, top: 15),
                       child: Icon(
                         Icons.add_box_outlined,
-                        color: Colors.blueAccent,
+                        color: Theme.of(context).primaryColor,
                       ),
                     ),
                   ),
@@ -294,11 +294,11 @@ class _InnerState extends State<BankManagerScreen> {
                         //     [fromFilePath.files.single.path!, saveFilePath]);
                       }
                     },
-                    child: const Padding(
+                    child: Padding(
                       padding: EdgeInsets.only(bottom: 15, top: 15),
                       child: Icon(
                         Icons.create_outlined,
-                        color: Colors.blueAccent,
+                        color: Theme.of(context).primaryColor,
                       ),
                     ),
                   ),
@@ -319,11 +319,11 @@ class _InnerState extends State<BankManagerScreen> {
                         },
                       );
                     },
-                    child: const Padding(
+                    child: Padding(
                       padding: EdgeInsets.only(bottom: 15, top: 15),
                       child: Icon(
                         Icons.quiz_outlined,
-                        color: Colors.blueAccent,
+                        color: Theme.of(context).primaryColor,
                       ),
                     ),
                   ),

@@ -23,7 +23,7 @@ class QuestionScreen extends StatefulWidget {
 }
 
 Card buildQuestionCard(
-    final String knowledgepoint, final String question, final String? answer) {
+    BuildContext context,final String knowledgepoint, final String question, final String? answer,final String? note) {
   return Card(
       color: Colors.white,
       elevation: 4,
@@ -40,7 +40,7 @@ Card buildQuestionCard(
                 width: double.infinity,
               ),
               Card(
-                color: Colors.blueAccent,
+                color: Theme.of(context).primaryColor,
                 margin: const EdgeInsets.fromLTRB(0, 4, 18, 4),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8)),
@@ -177,8 +177,6 @@ class _InnerState extends State<QuestionScreen> {
   //这修改页面2的内容
   @override
   Widget build(BuildContext context) {
-    setCurMathImgPath(QuestionBank.loadedDirPath);
-
     return Scaffold(
       appBar: TDNavBar(title: '刷题界面', onBack: () {}),
       floatingActionButton: Padding(
@@ -233,8 +231,8 @@ class _InnerState extends State<QuestionScreen> {
                       allQuestions.add(q);
                       questionRemoved.add(false);
                       questionRemain++;
-                      cards.add(buildQuestionCard(q.getKonwledgePoint(),
-                          q.question['q']!, q.question['w']));
+                      cards.add(buildQuestionCard(context,q.getKonwledgePoint(),
+                          q.question['q']!, q.question['w'],q.question['note']));
                     }
                   } else if (StudyData.instance.getStudyType() ==
                       StudyType.studyMode) {
@@ -282,8 +280,8 @@ class _InnerState extends State<QuestionScreen> {
                       allQuestions.add(q);
                       questionRemain++;
 
-                      cards.add(buildQuestionCard(q.getKonwledgePoint(),
-                          q.question['q']!, q.question['w']));
+                      cards.add(buildQuestionCard(context,q.getKonwledgePoint(),
+                          q.question['q']!, q.question['w'],q.question['note']));
                     }
                   }
                   return CardSwiper(
@@ -471,7 +469,7 @@ class _InnerState extends State<QuestionScreen> {
                     },
                     child: const Padding(
                       padding: EdgeInsets.only(bottom: 15, top: 15),
-                      child: Icon(Icons.playlist_add_check),
+                      child: Icon(Icons.class_outlined),
                     ),
                   ),
                 ),

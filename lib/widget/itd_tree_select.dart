@@ -298,7 +298,7 @@ class _ITDTreeSelectState extends State<ITDTreeSelect> {
                           child: TDText(
                             displayOptions[index].label,
                             textColor: (!lastColumn && selected)
-                                ? const Color.fromRGBO(0, 82, 217, 1)
+                                ? TDTheme.of(context).brandColor7
                                 : const Color.fromRGBO(0, 0, 0, 0.9),
                             style: TextStyle(
                                 fontSize: 16,
@@ -309,14 +309,14 @@ class _ITDTreeSelectState extends State<ITDTreeSelect> {
                         ),
                         Visibility(
                             visible: lastColumn && selected,
-                            child: const SizedBox(
+                            child: SizedBox(
                               width: 56,
                               height: 56,
                               child: Padding(
-                                padding: EdgeInsets.all(16),
+                                padding: const EdgeInsets.all(16),
                                 child: Icon(
                                   TDIcons.check,
-                                  color: Color.fromRGBO(0, 82, 217, 1),
+                                  color: TDTheme.of(context).brandColor7,
                                 ),
                               ),
                             ))

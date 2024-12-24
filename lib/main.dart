@@ -4,7 +4,9 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/tool/wrong_question_book.dart';
+import 'package:flutter_application_1/widget/question_text.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'screen/home.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
@@ -31,6 +33,10 @@ Future<void> main() async {
       await windowManager.focus();
     });
   }
+  await QuestionBank.init();
+  await QuestionBankBuilder.init();
+  await WrongQuestionBook.init();
+  await StudyData.instance.init();
   runApp(const MainEnterScreen());
 }
 
@@ -45,7 +51,12 @@ class MainEnterScreen extends StatelessWidget {
     return MaterialApp(
       title: '高数',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        // colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        primaryColor: StudyData.instance.getThemeColor(),
+        extensions: [
+          TDTheme.defaultData()
+            ..colorMap['brandColor7'] = StudyData.instance.getThemeColor()
+        ],
         scaffoldBackgroundColor: const Color.fromRGBO(250, 250, 250, 1),
         useMaterial3: true,
       ),
@@ -75,10 +86,6 @@ class _MainEnterScreenState extends State<_MainEnterScreen> {
     });
     //future.delay xxxxx格式：延时执行一串代码
 
-    QuestionBank.init();
-    QuestionBankBuilder.init();
-    WrongQuestionBook.init();
-    StudyData.instance.init();
     Future.delayed(const Duration(milliseconds: 5000), () {
       if (!isStarted) {
         Navigator.pushAndRemoveUntil(
@@ -156,7 +163,7 @@ class _MainEnterScreenState extends State<_MainEnterScreen> {
                 width: 250.0,
                 child: TextLiquidFill(
                   text: 'CHU',
-                  waveColor: Colors.blueAccent,
+                  waveColor: Theme.of(context).primaryColor,
                   boxBackgroundColor: Colors.redAccent,
                   textStyle: const TextStyle(
                     fontSize: 80.0,
