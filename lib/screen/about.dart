@@ -28,7 +28,7 @@ class _InnerState extends State<AboutScreen> {
                       gradient: LinearGradient(
                         colors: [
                           Theme.of(context).primaryColor,
-                          Colors.white,
+                          Theme.of(context).cardColor,
                         ],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,

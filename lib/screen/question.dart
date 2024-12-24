@@ -10,6 +10,7 @@ import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/tool/wrong_question_book.dart';
 import 'package:flutter_application_1/widget/question_text.dart';
+import 'package:path/path.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:uuid/uuid.dart';
@@ -25,7 +26,7 @@ class QuestionScreen extends StatefulWidget {
 Card buildQuestionCard(
     BuildContext context,final String knowledgepoint, final String question, final String? answer,final String? note) {
   return Card(
-      color: Colors.white,
+      color: Theme.of(context).cardColor,
       elevation: 4,
       child: SizedBox(
         height: double.infinity,
@@ -94,11 +95,11 @@ Card buildQuestionCard(
       ));
 }
 
-Card buildKnowledgeCard(
+Card buildKnowledgeCard(BuildContext context,
     final String index, final String title, final String knowledge,
     {final String? images}) {
   return Card(
-    color: Colors.white,
+    color: Theme.of(context).cardColor,
     elevation: 4,
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(12),
@@ -178,7 +179,7 @@ class _InnerState extends State<QuestionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: TDNavBar(title: '刷题界面', onBack: () {}),
+      appBar: TDNavBar(title: '刷题界面', onBack: () {},backgroundColor: Theme.of(context).cardColor,),
       floatingActionButton: Padding(
           padding: const EdgeInsets.only(bottom: 150),
           child: FloatingActionButton(
@@ -252,7 +253,7 @@ class _InnerState extends State<QuestionScreen> {
                       fromKonwledgePoint.add(sec.title);
                     }
                     void buildSection(Section s) {
-                      cards.add(buildKnowledgeCard(
+                      cards.add(buildKnowledgeCard(context,
                           s.index, s.title, s.note ?? "暂无知识点"));
                       questionRemoved.add(false);
                       allQuestions.add(SingleQuestionData([], [], {}, "", ""));
@@ -338,7 +339,7 @@ class _InnerState extends State<QuestionScreen> {
                         (context, index, percentThresholdX, percentThresholdY) {
                       if (questionRemain == 0) {
                         return Card(
-                          color: Colors.white,
+                          color: Theme.of(context).cardColor,
                           elevation: 4,
                           child: SingleChildScrollView(
                             child: SizedBox(
@@ -435,7 +436,7 @@ class _InnerState extends State<QuestionScreen> {
             },
           )),
           Container(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [

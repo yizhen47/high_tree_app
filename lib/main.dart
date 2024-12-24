@@ -6,13 +6,13 @@ import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/tool/wrong_question_book.dart';
 import 'package:flutter_application_1/widget/question_text.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:rebirth/rebirth.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'screen/home.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'tool/question_bank.dart';
 import 'package:window_manager/window_manager.dart';
-
 
 //整个软件入口（测试用）
 Future<void> main() async {
@@ -38,7 +38,7 @@ Future<void> main() async {
   await QuestionBankBuilder.init();
   await WrongQuestionBook.init();
   await StudyData.instance.init();
-  runApp(const MainEnterScreen());
+  runApp(const WidgetRebirth(materialApp: MainEnterScreen()));
 }
 
 //这里是入口代码，不用改
@@ -51,6 +51,22 @@ class MainEnterScreen extends StatelessWidget {
     //入口，一般不用改
     return MaterialApp(
       title: '高数',
+      themeMode: StudyData.instance.getNightModeFollowSystem()
+          ? ThemeMode.system
+          : StudyData.instance.getNightMode()
+              ? ThemeMode.dark
+              : ThemeMode.light,
+      darkTheme: ThemeData(
+        // colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        primaryColor: StudyData.instance.getThemeColor(),
+        extensions: [
+          TDTheme.defaultData()
+            ..colorMap['brandColor7'] = StudyData.instance.getThemeColor()
+        ],
+        scaffoldBackgroundColor: const Color.fromARGB(255, 24, 24, 24),
+        cardColor: const Color.fromRGBO(50, 50, 50, 1),
+        useMaterial3: true,
+      ),
       theme: ThemeData(
         // colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         primaryColor: StudyData.instance.getThemeColor(),
@@ -59,6 +75,7 @@ class MainEnterScreen extends StatelessWidget {
             ..colorMap['brandColor7'] = StudyData.instance.getThemeColor()
         ],
         scaffoldBackgroundColor: const Color.fromRGBO(250, 250, 250, 1),
+        cardColor: Colors.white,
         useMaterial3: true,
       ),
       home: const _MainEnterScreen(title: ' '),
