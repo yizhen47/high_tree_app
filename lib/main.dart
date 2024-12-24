@@ -13,6 +13,7 @@ import 'package:animated_text_kit/animated_text_kit.dart';
 import 'tool/question_bank.dart';
 import 'package:window_manager/window_manager.dart';
 
+
 //整个软件入口（测试用）
 Future<void> main() async {
   if (Platform.isWindows) {
