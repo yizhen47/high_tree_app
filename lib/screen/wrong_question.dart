@@ -186,6 +186,7 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidth> {
                                             padding: const EdgeInsets.fromLTRB(
                                                 10, 30, 10, 10),
                                             child: Scaffold(
+                                              resizeToAvoidBottomInset: false,
                                                 body: Column(
                                               children: [
                                                 Flexible(
