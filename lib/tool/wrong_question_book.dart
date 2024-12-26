@@ -81,12 +81,19 @@ class WrongQuestionBook {
   QuestionUserData getQuestion(String questionId) {
     return questionBox.get(questionId) ?? QuestionUserData(0);
   }
+  mksureQuestion(String questionId) {
+    if (!questionBox.containsKey(questionId)) {
+      questionBox.put(questionId, QuestionUserData(0));
+    }
+  }
 }
 
 @HiveType(typeId: 1)
 class QuestionUserData {
   @HiveField(0)
   int happenedTimes = 0;
+  @HiveField(1)
+  String note = "";
 
   QuestionUserData(this.happenedTimes);
 }

@@ -10,6 +10,7 @@ import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/tool/wrong_question_book.dart';
 import 'package:flutter_application_1/widget/question_text.dart';
+import 'package:latext/latext.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:uuid/uuid.dart';
@@ -88,6 +89,44 @@ Card buildQuestionCard(BuildContext context, final String knowledgepoint,
                   fontFamily: 'Times New Roman',
                 ),
               ),
+              ...(() {
+                if (note != null && note.isNotEmpty) {
+                  return [
+                    SizedBox(
+                      height: 30,
+                      child: Container(
+                        alignment: Alignment.center,
+                        child: const TDDivider(
+                          color: Colors.black38,
+                        ),
+                      ),
+                    ),
+                    const Text(
+                      "笔记",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                        fontFamily: 'Times New Roman',
+                      ),
+                    ),
+                    Builder(
+                      builder: (context) => LaTexT(
+                        laTeXCode: ExtendedText(
+                          note,
+                          specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontFamily: 'Times New Roman',
+                          ),
+                        ),
+                      ),
+                    ),
+                  ];
+                } else {
+                  return [];
+                }
+              })()
             ],
           ),
         )),
@@ -240,7 +279,7 @@ class _InnerState extends State<QuestionScreen> {
                           q.getKonwledgePoint(),
                           q.question['q']!,
                           q.question['w'],
-                          q.question['note']));
+                          WrongQuestionBook.instance.getQuestion(q.question['id']!).note));
                     }
                   } else if (StudyData.instance.getStudyType() ==
                       StudyType.studyMode) {
@@ -289,7 +328,7 @@ class _InnerState extends State<QuestionScreen> {
                           q.getKonwledgePoint(),
                           q.question['q']!,
                           q.question['w'],
-                          q.question['note']));
+                          WrongQuestionBook.instance.getQuestion(q.question['id']!).note));
                     }
                   }
                   return CardSwiper(
@@ -324,9 +363,7 @@ class _InnerState extends State<QuestionScreen> {
                                   .addQuestion(questionId, QuestionUserData(1));
                             }
 
-                            print(WrongQuestionBook.instance
-                                .getQuestion(questionId)
-                                .happenedTimes);
+                            
                           }
                           rightQuestions.add(allQuestions[previousIndex]);
                           questionRemoved[previousIndex] = true;
@@ -622,8 +659,7 @@ class _InnerState extends State<QuestionScreen> {
                             Animation<double> secondaryAnimation) {
                           return const TDConfirmDialog(
                             title: "帮助",
-                            content:
-                                '''右滑加入错题本，左滑表示已掌握。上下滑稍后再看''',
+                            content: '''右滑加入错题本，左滑表示已掌握。上下滑稍后再看''',
                           );
                         },
                       );

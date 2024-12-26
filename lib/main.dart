@@ -180,7 +180,7 @@ class _MainEnterScreenState extends State<_MainEnterScreen> {
                 width: 250.0,
                 child: TextLiquidFill(
                   text: 'CHU',
-                  waveColor: Theme.of(context).primaryColor,
+                  waveColor: Colors.blueAccent,
                   boxBackgroundColor: Colors.redAccent,
                   textStyle: const TextStyle(
                     fontSize: 80.0,

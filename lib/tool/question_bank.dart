@@ -100,7 +100,7 @@ class Section {
 
   SingleQuestionData randomSectionQuestion(List<String> fromKonwledgePoint,
       List<String> fromKonwledgeIndex, String fromId, String fromName,
-      {retryingTimes = 10}) {
+      {retryingTimes = 20}) {
     SingleQuestionData? q;
     for (var i = 0; i < retryingTimes; i++) {
       q = _randomSectionQuestion(List.from(fromKonwledgePoint),
@@ -111,7 +111,7 @@ class Section {
     }
     if (q == null) {
       return SingleQuestionData(
-          [], [], {'q': '本章没有题目', 'w': '本章没有答案'}, fromId, fromName);
+          [], [], {'q': '本章没有题目', 'w': '本章没有答案','id':const Uuid().v4()}, fromId, fromName);
     }
     return q;
   }
@@ -152,6 +152,21 @@ class Section {
       List<String> fromKonwledgeIndex, String fromId, String fromName,
       {List<SingleQuestionData>? questionsList}) {
     questionsList ??= [];
+    questionsList.addAll(sectionQuestionOnly(fromKonwledgePoint, fromKonwledgeIndex, fromId, fromName));
+    if (children != null) {
+      for (var c in children!) {
+        c.sectionQuestion(List.from(fromKonwledgePoint),
+            List.from(fromKonwledgeIndex), fromId, fromName,
+            questionsList: questionsList);
+      }
+    }
+    return questionsList;
+  }
+
+  List<SingleQuestionData> sectionQuestionOnly(List<String> fromKonwledgePoint,
+      List<String> fromKonwledgeIndex, String fromId, String fromName,
+      {List<SingleQuestionData>? questionsList}) {
+    questionsList ??= [];
     if (fromKonwledgeIndex.isNotEmpty && fromKonwledgeIndex.last == index) {
     } else {
       fromKonwledgePoint.add(title);
@@ -162,13 +177,6 @@ class Section {
       for (var q in questions!) {
         questionsList.add(SingleQuestionData(
             fromKonwledgePoint, fromKonwledgeIndex, q, fromId, fromName));
-      }
-    }
-    if (children != null) {
-      for (var c in children!) {
-        c.sectionQuestion(List.from(fromKonwledgePoint),
-            List.from(fromKonwledgeIndex), fromId, fromName,
-            questionsList: questionsList);
       }
     }
     return questionsList;
@@ -435,7 +443,7 @@ class QuestionBank {
     return q;
   }
 
-  List<SingleQuestionData> sectionQuestion(){
+  List<SingleQuestionData> sectionQuestion() {
     mksureInit();
     List<SingleQuestionData> qList = [];
     for (var sec in data!) {

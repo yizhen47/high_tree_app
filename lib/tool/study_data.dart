@@ -138,7 +138,7 @@ class StudyData {
   }
 
   bool getNightModeFollowSystem() {
-    return sharedPreferences!.getBool("nightModeFollowSystem") ?? true;
+    return sharedPreferences!.getBool("nightModeFollowSystem") ?? false;
   }
 
   setNightModeFollowSystem(bool followSystem) async {
