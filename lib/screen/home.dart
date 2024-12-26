@@ -62,7 +62,9 @@ class _MyHomePageState extends State<HomeScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         leftBarItems: [
           TDNavBarItem(
-              iconColor: Theme.of(context).primaryColor, icon: Icons.people, action: () {})
+              iconColor: Theme.of(context).primaryColor,
+              icon: Icons.people,
+              action: () {})
         ],
       ),
       resizeToAvoidBottomInset: false, // 设置为 false 避免底部溢出
@@ -446,10 +448,11 @@ class MainHomePageState extends State<MainHomePage> {
                         child: InkWell(
                           onTap: () {
                             Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) =>
-                                        const BankChooseScreen())).then((onValue) {
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            const BankChooseScreen()))
+                                .then((onValue) {
                               setState(() {});
                             });
                           },
@@ -559,7 +562,8 @@ class MainHomePageState extends State<MainHomePage> {
                           Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => const WrongQuestionScreen()));
+                                  builder: (context) =>
+                                      const WrongQuestionScreen()));
                         },
                         child: Padding(
                           padding: const EdgeInsets.all(10),
@@ -581,8 +585,7 @@ class MainHomePageState extends State<MainHomePage> {
                   ),
                   Expanded(
                       child: InkWell(
-                    onTap: () {
-                    },
+                    onTap: () {},
                     child: Padding(
                       padding: const EdgeInsets.all(10),
                       child: Column(
@@ -593,7 +596,7 @@ class MainHomePageState extends State<MainHomePage> {
                             color: Theme.of(context).primaryColor,
                           ),
                           const Text(
-                            "添加笔记",
+                            "查看笔记",
                             style: TextStyle(fontSize: 12, color: Colors.black),
                           )
                         ],
@@ -640,7 +643,7 @@ class MainHomePageState extends State<MainHomePage> {
                               color: Theme.of(context).primaryColor,
                             ),
                             const Text(
-                              "疑难题集",
+                              "使用手册",
                               style:
                                   TextStyle(fontSize: 12, color: Colors.black),
                             )
@@ -784,17 +787,19 @@ class ProfilePageState extends State<ProfilePage> {
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(25),
-                  child: Image(
-                    image: StudyData.instance.getAvatar() == null
-                        ? const AssetImage("assets/logo.png")
-                        : FileImage(File(StudyData.instance.getAvatar()!))
-                            as ImageProvider,
-                    width: 50,
-                    height: 50,
-                  ),
-                ),
+                Builder(builder: (context) {
+                  return ClipRRect(
+                    borderRadius: BorderRadius.circular(25),
+                    child: Image(
+                      image: StudyData.instance.getAvatar() == null
+                          ? const AssetImage("assets/logo.png")
+                          : FileImage(File(StudyData.instance.getAvatar()!))
+                              as ImageProvider,
+                      width: 50,
+                      height: 50,
+                    ),
+                  );
+                }),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
