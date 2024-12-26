@@ -111,8 +111,8 @@ class _InnerState extends State<ModeScreen> {
           ITDSelectOption(label: '${qdb.displayName}', value: i, children: []));
 
       for (var (j, sec) in qdb.data!.indexed) {
-        options.last.children.add(
-            ITDSelectOption(label: hideText('${sec.index}: ${sec.title}'), value: j));
+        options.last.children.add(ITDSelectOption(
+            label: hideText('${sec.index}: ${sec.title}'), value: j));
       }
     }
     String? secList = StudyData.instance.getStudySection();
@@ -280,31 +280,6 @@ class _InnerState extends State<ModeScreen> {
                 ),
               ],
             ),
-            const Padding(
-              padding: EdgeInsets.all(15),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "选择题数",
-                    style: TextStyle(
-                        fontSize: 18,
-                        color: Colors.black,
-                        fontWeight: FontWeight.w600),
-                  ),
-                ],
-              ),
-            ),
-            TDStepper(
-              size: TDStepperSize.large,
-              value: StudyData.instance.getStudyQuestionNum(),
-              max: 20,
-              min: 2,
-              onChange: (qnum) {
-                StudyData.instance.setStudyQuestionNum(qnum);
-              },
-            ),
             (() {
               if (StudyData.instance.getStudyType() == StudyType.studyMode) {
                 return FutureBuilder(
@@ -370,6 +345,31 @@ class _InnerState extends State<ModeScreen> {
                           mainAxisAlignment: MainAxisAlignment.start,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            const Padding(
+                              padding: EdgeInsets.all(15),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "选择题数",
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            TDStepper(
+                              size: TDStepperSize.large,
+                              value: StudyData.instance.getStudyQuestionNum(),
+                              max: 20,
+                              min: 2,
+                              onChange: (qnum) {
+                                StudyData.instance.setStudyQuestionNum(qnum);
+                              },
+                            ),
                             const Padding(
                               padding: EdgeInsets.all(15),
                               child: Column(

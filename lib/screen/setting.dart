@@ -135,7 +135,7 @@ class _InnerState extends State<SettingScreen> {
                       leftIcon: Icons.sunny,
                       title: "白天与黑夜",
                       rightIconWidget: YakoThemeSwitch(
-                        enabled: StudyData.instance.getNightMode(),
+                        enabled: !StudyData.instance.getNightMode(),
                         onChanged: ({bool? changed}) {
                           StudyData.instance.setNightMode(!(changed ?? false));
                           setState(() {

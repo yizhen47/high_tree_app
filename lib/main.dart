@@ -34,6 +34,7 @@ Future<void> main() async {
       await windowManager.focus();
     });
   }
+  WidgetsFlutterBinding.ensureInitialized();
   await QuestionBank.init();
   await QuestionBankBuilder.init();
   await WrongQuestionBook.init();
@@ -57,22 +58,20 @@ class MainEnterScreen extends StatelessWidget {
               ? ThemeMode.dark
               : ThemeMode.light,
       darkTheme: ThemeData(
-        // colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         primaryColor: StudyData.instance.getThemeColor(),
         extensions: [
           TDTheme.defaultData()
-            ..colorMap['brandColor7'] = StudyData.instance.getThemeColor()
+        ..colorMap['brandColor7'] = StudyData.instance.getThemeColor()
         ],
         scaffoldBackgroundColor: const Color.fromARGB(255, 24, 24, 24),
         cardColor: const Color.fromRGBO(50, 50, 50, 1),
         useMaterial3: true,
       ),
       theme: ThemeData(
-        // colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         primaryColor: StudyData.instance.getThemeColor(),
         extensions: [
           TDTheme.defaultData()
-            ..colorMap['brandColor7'] = StudyData.instance.getThemeColor()
+        ..colorMap['brandColor7'] = StudyData.instance.getThemeColor()
         ],
         scaffoldBackgroundColor: const Color.fromRGBO(250, 250, 250, 1),
         cardColor: Colors.white,

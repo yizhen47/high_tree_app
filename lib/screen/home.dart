@@ -8,6 +8,7 @@ import 'package:flutter_application_1/screen/bank_manager.dart';
 import 'package:flutter_application_1/screen/personal.dart';
 import 'package:flutter_application_1/screen/mode.dart';
 import 'package:flutter_application_1/screen/question.dart';
+import 'package:flutter_application_1/screen/search.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
@@ -605,19 +606,19 @@ class MainHomePageState extends State<MainHomePage> {
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => const BankChooseScreen()));
+                                builder: (context) => const SearchScreen()));
                       },
                       child: Padding(
                         padding: const EdgeInsets.all(10),
                         child: Column(
                           children: [
                             Icon(
-                              Icons.notes,
+                              Icons.search,
                               size: 40,
                               color: Theme.of(context).primaryColor,
                             ),
                             const Text(
-                              "题库选择",
+                              "题库浏览",
                               style:
                                   TextStyle(fontSize: 12, color: Colors.black),
                             )

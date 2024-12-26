@@ -33,7 +33,7 @@ class _InnerState extends State<AboutScreen> {
                     gradient: LinearGradient(
                       colors: [
                         Theme.of(context).primaryColor,
-                        Colors.white,
+                        Theme.of(context).scaffoldBackgroundColor,
                       ],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
@@ -67,8 +67,8 @@ class _InnerState extends State<AboutScreen> {
                         size: const Offset(20, 20),
                         child: Image.asset(
                           'assets/chu.png',
-                          width: 200,
-                          height: 200,
+                          width: 160,
+                          height: 160,
                         ),
                       ),
                     ],
@@ -77,8 +77,8 @@ class _InnerState extends State<AboutScreen> {
                     borderRadius: BorderRadius.circular(25.0),
                     child: Image.asset(
                       'assets/logo.png',
-                      width: 200,
-                      height: 200,
+                      width: 160,
+                      height: 160,
                       colorBlendMode: BlendMode.multiply,
                       color: Color.fromARGB(109, 96, 115, 161),
                     ),

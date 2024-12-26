@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:archive/archive.dart';
+import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:flutter_application_1/widget/question_text.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
@@ -145,6 +146,32 @@ class Section {
             List.from(fromKonwledgeIndex), fromId, fromName);
       }
     }
+  }
+
+  List<SingleQuestionData> sectionQuestion(List<String> fromKonwledgePoint,
+      List<String> fromKonwledgeIndex, String fromId, String fromName,
+      {List<SingleQuestionData>? questionsList}) {
+    questionsList ??= [];
+    if (fromKonwledgeIndex.isNotEmpty && fromKonwledgeIndex.last == index) {
+    } else {
+      fromKonwledgePoint.add(title);
+      fromKonwledgeIndex.add(index);
+    }
+    // ignore: unnecessary_null_comparison
+    if (questions != null) {
+      for (var q in questions!) {
+        questionsList.add(SingleQuestionData(
+            fromKonwledgePoint, fromKonwledgeIndex, q, fromId, fromName));
+      }
+    }
+    if (children != null) {
+      for (var c in children!) {
+        c.sectionQuestion(List.from(fromKonwledgePoint),
+            List.from(fromKonwledgeIndex), fromId, fromName,
+            questionsList: questionsList);
+      }
+    }
+    return questionsList;
   }
 }
 
@@ -406,6 +433,15 @@ class QuestionBank {
       }
     }
     return q;
+  }
+
+  List<SingleQuestionData> sectionQuestion(){
+    mksureInit();
+    List<SingleQuestionData> qList = [];
+    for (var sec in data!) {
+      qList.addAll(sec.sectionQuestion([], [], id!, displayName!));
+    }
+    return qList;
   }
 
   static Future<void> importQuestionBank(File file) async {

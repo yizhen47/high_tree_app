@@ -10,7 +10,6 @@ import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/tool/wrong_question_book.dart';
 import 'package:flutter_application_1/widget/question_text.dart';
-import 'package:path/path.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:uuid/uuid.dart';
@@ -23,8 +22,8 @@ class QuestionScreen extends StatefulWidget {
   State<QuestionScreen> createState() => _InnerState();
 }
 
-Card buildQuestionCard(
-    BuildContext context,final String knowledgepoint, final String question, final String? answer,final String? note) {
+Card buildQuestionCard(BuildContext context, final String knowledgepoint,
+    final String question, final String? answer, final String? note) {
   return Card(
       color: Theme.of(context).cardColor,
       elevation: 4,
@@ -95,8 +94,8 @@ Card buildQuestionCard(
       ));
 }
 
-Card buildKnowledgeCard(BuildContext context,
-    final String index, final String title, final String knowledge,
+Card buildKnowledgeCard(BuildContext context, final String index,
+    final String title, final String knowledge,
     {final String? images}) {
   return Card(
     color: Theme.of(context).cardColor,
@@ -179,7 +178,11 @@ class _InnerState extends State<QuestionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: TDNavBar(title: '刷题界面', onBack: () {},backgroundColor: Theme.of(context).cardColor,),
+      appBar: TDNavBar(
+        title: '刷题界面',
+        onBack: () {},
+        backgroundColor: Theme.of(context).cardColor,
+      ),
       floatingActionButton: Padding(
           padding: const EdgeInsets.only(bottom: 150),
           child: FloatingActionButton(
@@ -232,8 +235,12 @@ class _InnerState extends State<QuestionScreen> {
                       allQuestions.add(q);
                       questionRemoved.add(false);
                       questionRemain++;
-                      cards.add(buildQuestionCard(context,q.getKonwledgePoint(),
-                          q.question['q']!, q.question['w'],q.question['note']));
+                      cards.add(buildQuestionCard(
+                          context,
+                          q.getKonwledgePoint(),
+                          q.question['q']!,
+                          q.question['w'],
+                          q.question['note']));
                     }
                   } else if (StudyData.instance.getStudyType() ==
                       StudyType.studyMode) {
@@ -253,8 +260,8 @@ class _InnerState extends State<QuestionScreen> {
                       fromKonwledgePoint.add(sec.title);
                     }
                     void buildSection(Section s) {
-                      cards.add(buildKnowledgeCard(context,
-                          s.index, s.title, s.note ?? "暂无知识点"));
+                      cards.add(buildKnowledgeCard(
+                          context, s.index, s.title, s.note ?? "暂无知识点"));
                       questionRemoved.add(false);
                       allQuestions.add(SingleQuestionData([], [], {}, "", ""));
                       questionRemain++;
@@ -268,47 +275,87 @@ class _InnerState extends State<QuestionScreen> {
                     buildSection(sec);
 
                     if (sec.children != null) {}
-                    for (var i = 0;
-                        i < StudyData.instance.getStudyQuestionNum();
-                        i++) {
-                      SingleQuestionData q = sec.randomSectionQuestion(
-                          fromKonwledgePoint,
-                          fromKonwledgeIndex,
-                          snapshot.data!.single.id!,
-                          snapshot.data!.single.displayName!);
-
+                    for (var q in sec.sectionQuestion(
+                        fromKonwledgePoint,
+                        fromKonwledgeIndex,
+                        snapshot.data!.single.id!,
+                        snapshot.data!.single.displayName!)) {
                       questionRemoved.add(false);
                       allQuestions.add(q);
                       questionRemain++;
 
-                      cards.add(buildQuestionCard(context,q.getKonwledgePoint(),
-                          q.question['q']!, q.question['w'],q.question['note']));
+                      cards.add(buildQuestionCard(
+                          context,
+                          q.getKonwledgePoint(),
+                          q.question['q']!,
+                          q.question['w'],
+                          q.question['note']));
                     }
                   }
                   return CardSwiper(
                     controller: controller,
                     onSwipe: (previousIndex, currentIndex, direction) {
-                      String idWrong = const Uuid().v1();
                       if (questionRemain > 0) {
                         if (direction == CardSwiperDirection.right) {
+                          String idWrong =
+                              allQuestions[previousIndex].question['id'] ??
+                                  const Uuid().v4();
                           idList.add(idWrong);
                           if (allQuestions[previousIndex]
                               .fromKonwledgeIndex
                               .isNotEmpty) {
-                            WrongQuestionBook.instance.addWrongQuestion(
-                                idWrong, allQuestions[previousIndex]);
+                            if (WrongQuestionBook.instance
+                                .hasWrongQuestion(idWrong)) {
+                              TDToast.showWarning("已在错题本中", context: context);
+                            } else {
+                              WrongQuestionBook.instance.addWrongQuestion(
+                                  idWrong, allQuestions[previousIndex]);
+                              TDToast.showSuccess("已加入错题本", context: context);
+                            }
+                            String questionId =
+                                allQuestions[previousIndex].question['id']!;
+                            if (WrongQuestionBook.instance
+                                .hasQuestion(questionId)) {
+                              WrongQuestionBook.instance
+                                  .getQuestion(questionId)
+                                  .happenedTimes++;
+                            } else {
+                              WrongQuestionBook.instance
+                                  .addQuestion(questionId, QuestionUserData(1));
+                            }
+
+                            print(WrongQuestionBook.instance
+                                .getQuestion(questionId)
+                                .happenedTimes);
                           }
                           rightQuestions.add(allQuestions[previousIndex]);
                           questionRemoved[previousIndex] = true;
                           questionRemain--;
-
-                          TDToast.showSuccess("已加入错题本", context: context);
                         } else if (direction == CardSwiperDirection.left) {
                           leftQuestions.add(allQuestions[previousIndex]);
                           questionRemoved[previousIndex] = true;
                           questionRemain--;
-                     
+                          if (allQuestions[previousIndex]
+                              .fromKonwledgeIndex
+                              .isNotEmpty) {
+                            String questionId =
+                                allQuestions[previousIndex].question['id']!;
+                            if (WrongQuestionBook.instance
+                                .hasQuestion(questionId)) {
+                              WrongQuestionBook.instance
+                                  .getQuestion(questionId)
+                                  .happenedTimes++;
+                            } else {
+                              WrongQuestionBook.instance
+                                  .addQuestion(questionId, QuestionUserData(1));
+                            }
+
+                            print(WrongQuestionBook.instance
+                                .getQuestion(questionId)
+                                .happenedTimes);
+                          }
                         }
+
                         return true;
                       } else {
                         return false;
@@ -323,6 +370,18 @@ class _InnerState extends State<QuestionScreen> {
                         questionRemoved[currentIndex] = false;
                         questionRemain++;
                         leftQuestions.removeLast();
+                        if (allQuestions[currentIndex]
+                            .fromKonwledgeIndex
+                            .isNotEmpty) {
+                          String questionId =
+                              allQuestions[currentIndex].question['id']!;
+                          if (WrongQuestionBook.instance
+                              .hasQuestion(questionId)) {
+                            WrongQuestionBook.instance
+                                .getQuestion(questionId)
+                                .happenedTimes--;
+                          }
+                        }
                       }
                       if (direction == CardSwiperDirection.right) {
                         questionRemoved[currentIndex] = false;
@@ -330,6 +389,18 @@ class _InnerState extends State<QuestionScreen> {
                         rightQuestions.removeLast();
                         WrongQuestionBook.instance
                             .removeWrongQuestion(idList.removeLast());
+                        if (allQuestions[currentIndex]
+                            .fromKonwledgeIndex
+                            .isNotEmpty) {
+                          String questionId =
+                              allQuestions[currentIndex].question['id']!;
+                          if (WrongQuestionBook.instance
+                              .hasQuestion(questionId)) {
+                            WrongQuestionBook.instance
+                                .getQuestion(questionId)
+                                .happenedTimes--;
+                          }
+                        }
                       }
                       return true;
                     },
@@ -482,13 +553,57 @@ class _InnerState extends State<QuestionScreen> {
                           slideTransitionFrom: SlideTransitionFrom.bottom,
                           builder: (context) {
                             return TDPopupBottomDisplayPanel(
-                              closeClick: () {
-                                Navigator.maybePop(context);
-                              },
-                              child: Container(
-                                height: 200,
-                              ),
-                            );
+                                closeClick: () {
+                                  Navigator.maybePop(context);
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.all(15),
+                                  child: SizedBox(
+                                    height: 300,
+                                    child: GridView.builder(
+                                      gridDelegate:
+                                          const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 6,
+                                        crossAxisSpacing: 10.0,
+                                        mainAxisSpacing: 10.0,
+                                      ),
+                                      itemCount: allQuestions.length,
+                                      itemBuilder: (context, index) {
+                                        return Scaffold(
+                                          body: InkWell(
+                                            onTap: () {
+                                              controller.moveTo(index);
+                                            },
+                                            child: Card(
+                                              margin: const EdgeInsets.all(2),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                              ),
+                                              color: allQuestions[index]
+                                                      .fromKonwledgeIndex
+                                                      .isEmpty
+                                                  ? (Colors.blueAccent)
+                                                  : (WrongQuestionBook.instance
+                                                              .getQuestion(allQuestions[
+                                                                          index]
+                                                                      .question[
+                                                                  'id']!)
+                                                              .happenedTimes >
+                                                          0
+                                                      ? Colors.greenAccent
+                                                      : Theme.of(context)
+                                                          .cardColor),
+                                              child: Center(
+                                                child: Text('${index + 1}'),
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ));
                           }));
                     },
                     child: const Padding(
@@ -500,23 +615,18 @@ class _InnerState extends State<QuestionScreen> {
                 Expanded(
                   child: InkWell(
                     onTap: () {
-                      Navigator.of(context).push(TDSlidePopupRoute(
-                          modalBarrierColor: TDTheme.of(context).fontGyColor2,
-                          slideTransitionFrom: SlideTransitionFrom.bottom,
-                          builder: (context) {
-                            return TDPopupBottomDisplayPanel(
-                                closeClick: () {
-                                  Navigator.maybePop(context);
-                                },
-                                child: const SingleChildScrollView(
-                                    child: Column(
-                                  children: [
-                                    Text("疑难题集"),
-                                  ],
-                                )));
-                          }));
-
-                      const EdgeInsets.only(bottom: 15, top: 15);
+                      showGeneralDialog(
+                        context: context,
+                        pageBuilder: (BuildContext buildContext,
+                            Animation<double> animation,
+                            Animation<double> secondaryAnimation) {
+                          return const TDConfirmDialog(
+                            title: "帮助",
+                            content:
+                                '''右滑加入错题本，左滑表示已掌握。上下滑稍后再看''',
+                          );
+                        },
+                      );
                     },
                     child: const Padding(
                       padding: EdgeInsets.only(bottom: 15, top: 15),
