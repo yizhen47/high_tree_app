@@ -12,7 +12,7 @@
     <uses-permission android:name="android.permission.CAMERA" />
 
     <application
-        android:label="flutter_application_1"
+        android:label="高树"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
