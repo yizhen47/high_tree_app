@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
@@ -54,47 +53,48 @@ class _MyHomePageState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 在 Scaffold 中统一增加背景渐变
     return Scaffold(
-      appBar: TDNavBar(
-        title: ' ',
-        height: 45,
-        useDefaultBack: false,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        leftBarItems: [
-          TDNavBarItem(
-              iconColor: Theme.of(context).primaryColor,
-              icon: Icons.people,
-              action: () {})
-        ],
-      ),
+      extendBodyBehindAppBar: true,
+        appBar: AppBar(
+          toolbarHeight: 0,
+        ),
       resizeToAvoidBottomInset: false, // 设置为 false 避免底部溢出
 
-      body: PageView(
-        controller: _pageController,
-        onPageChanged: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        children: const [
-          CommunityPage(
-            title: ' ',
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.white, Colors.grey.shade100],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
-          MainHomePage(
-            title: ' ',
-          ),
-          ProfilePage(
-            title: ' ',
-          ),
-        ],
+        ),
+        child: PageView(
+          controller: _pageController,
+          onPageChanged: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+          children: const [
+            CommunityPage(
+              title: ' ',
+            ),
+            MainHomePage(
+              title: ' ',
+            ),
+            ProfilePage(
+              title: ' ',
+            ),
+          ],
+        ),
       ),
-
       bottomNavigationBar: CurvedNavigationBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         index: _currentIndex,
         animationDuration: const Duration(milliseconds: 300),
         height: 56,
-        color: Theme.of(context).primaryColor,
+        backgroundColor: Colors.grey.shade100, // 调整为背景色系
+        color: Colors.blue.shade700,
         items: const <Widget>[
           Icon(
             CupertinoIcons.text_justify,
@@ -109,6 +109,7 @@ class _MyHomePageState extends State<HomeScreen> {
             color: Colors.white,
           ),
         ],
+        animationCurve: Curves.ease,
         onTap: (index) {
           _onTabTapped(index);
         },
@@ -355,408 +356,394 @@ class MainHomePageState extends State<MainHomePage> {
     {"url": "http://img5.mtime.cn/mg/2021/08/24/110937.63038065_285X160X4.jpg"},
   ];
 
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Stack(
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  // 新增统一的功能按钮构建方法
+  Widget _buildFeatureButton(BuildContext context,
+      {required IconData icon,
+      required String label,
+      required Color color,
+      required VoidCallback onTap}) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          margin: const EdgeInsets.all(6),
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(6), // 增加边框
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Column(
-                //InkWell：可以给任意控件外面套，然后可以监听点击之类的事件
-                children: [
-                  Center(
-                    child: InkWell(
-                      onTap: () {
-                        if (sectionIsEmpty() ||
-                            QuestionBank.getAllLoadedQuestionBankIds()
-                                .isEmpty) {
-                          TDToast.showWarning('章节未选择',
-                              direction: IconTextDirection.vertical,
-                              context: context);
-                        } else {
-                          Navigator.push(
-                            context,
-                            CupertinoPageRoute(
-                                builder: (context) => const QuestionScreen(
-                                      title: '',
-                                    )),
-                          );
-                        }
-                      },
-                      child: Card(
-                        color: Theme.of(context).primaryColor,
-                        elevation: 2,
-                        margin: const EdgeInsets.all(20),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: SizedBox(
-                          width: double.infinity,
-                          height: 200,
-                          child: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(
-                                  CupertinoIcons.square_stack_3d_up_fill,
-                                  color: Colors.white,
-                                  size: 45,
-                                ),
-                                const Text(
-                                  '开始刷题',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 30,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Text(
-                                  StudyData.instance.getStudySection() == null
-                                      ? "未选择"
-                                      : StudyData.instance
-                                              .getStudySection()!
-                                              .startsWith("{")
-                                          ? "多个题库"
-                                          : StudyData.instance
-                                              .getStudySection()!,
-                                  style: const TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                Text(
-                                  '${StudyData.instance.getStudyType().getDisplayName()} | ${StudyData.instance.getStudyDifficulty().displayName}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: InkWell(
-                          onTap: () {
-                            Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            const BankChooseScreen()))
-                                .then((onValue) {
-                              setState(() {});
-                            });
-                          },
-                          child: Card(
-                            color: Colors.deepPurpleAccent,
-                            elevation: 2,
-                            margin: const EdgeInsets.only(left: 20, right: 10),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const SizedBox(
-                              width: double.infinity,
-                              height: 80,
-                              child: Center(
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      CupertinoIcons.square_list,
-                                      color: Colors.white,
-                                      size: 35,
-                                    ),
-                                    SizedBox(
-                                      width: 10,
-                                    ),
-                                    Text('题库选择',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                        ))
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: InkWell(
-                          onTap: () {
-                            if (QuestionBank.getAllLoadedQuestionBankIds()
-                                .isEmpty) {
-                              TDToast.showWarning('题库未选择',
-                                  direction: IconTextDirection.vertical,
-                                  context: context);
-                            } else {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const ModeScreen(
-                                    title: '',
-                                  ),
-                                ),
-                              ).then((onValue) {
-                                setState(() {});
-                              });
-                            }
-                          },
-                          child: Card(
-                            color: Colors.deepOrangeAccent,
-                            elevation: 2,
-                            margin: const EdgeInsets.only(left: 10, right: 20),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const SizedBox(
-                              width: double.infinity,
-                              height: 80,
-                              child: Center(
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      CupertinoIcons.square_on_square,
-                                      color: Colors.white,
-                                      size: 35,
-                                    ),
-                                    SizedBox(
-                                      width: 10,
-                                    ),
-                                    Text('模式选择',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                        ))
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  )
-                ],
-              ),
-              const SizedBox(
-                height: 15,
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: InkWell(
-                        onTap: () {
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) =>
-                                      const WrongQuestionScreen()));
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.all(10),
-                          child: Column(
-                            children: [
-                              Icon(
-                                Icons.class_outlined,
-                                size: 40,
-                                color: Theme.of(context).primaryColor,
-                              ),
-                              const Text(
-                                "错题查看",
-                                style: TextStyle(
-                                    fontSize: 12, color: Colors.black),
-                              )
-                            ],
-                          ),
-                        )),
-                  ),
-                  Expanded(
-                      child: InkWell(
-                    onTap: () {},
-                    child: Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.mode_outlined,
-                            size: 40,
-                            color: Theme.of(context).primaryColor,
-                          ),
-                          const Text(
-                            "查看笔记",
-                            style: TextStyle(fontSize: 12, color: Colors.black),
-                          )
-                        ],
-                      ),
-                    ),
-                  )),
-                  Expanded(
-                    child: InkWell(
-                      onTap: () {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const SearchScreen()));
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.search,
-                              size: 40,
-                              color: Theme.of(context).primaryColor,
-                            ),
-                            const Text(
-                              "题库浏览",
-                              style:
-                                  TextStyle(fontSize: 12, color: Colors.black),
-                            )
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: InkWell(
-                      onTap: () {},
-                      child: Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.quiz_outlined,
-                              size: 35,
-                              color: Theme.of(context).primaryColor,
-                            ),
-                            const Text(
-                              "使用手册",
-                              style:
-                                  TextStyle(fontSize: 12, color: Colors.black),
-                            )
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(
-                height: 15,
-              ),
-              const Padding(
-                padding: EdgeInsets.fromLTRB(10, 5, 5, 5),
-                child: Text(
-                  '公告',
-                  style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.black,
-                      fontWeight: FontWeight.w400),
-                ),
-              ),
-              Column(
-                children: [
-                  const SizedBox(
-                    width: double.infinity,
-                  ),
-                  Card(
-                    color: Theme.of(context).cardColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                    child: Padding(
-                        padding: const EdgeInsets.all(4),
-                        child: Row(
-                          children: [
-                            const SizedBox(
-                              width: 4,
-                            ),
-                            Image.asset(
-                              'assets/logo.png',
-                              width: 50,
-                              height: 50,
-                            ),
-                            const SizedBox(
-                              width: 10,
-                            ),
-                            const Column(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '长安大学高数练习软件',
-                                  style: TextStyle(
-                                      color: Colors.black, fontSize: 16),
-                                ),
-                                Text(
-                                  '上高树，学高数',
-                                  style: TextStyle(
-                                      color: Colors.grey, fontSize: 14),
-                                ),
-                              ],
-                            )
-                          ],
-                        )),
-                  ),
-                  Card(
-                      color: Theme.of(context).cardColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(4),
-                        child: Row(
-                          children: [
-                            const SizedBox(
-                              width: 4,
-                            ),
-                            Image.asset(
-                              'assets/chu.png',
-                              width: 50,
-                              height: 50,
-                            ),
-                            const SizedBox(
-                              width: 10,
-                            ),
-                            const Column(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '弘毅明德，笃学创新',
-                                  style: TextStyle(
-                                      color: Colors.black, fontSize: 16),
-                                ),
-                                Text(
-                                  '为党育人，为国育才',
-                                  style: TextStyle(
-                                      color: Colors.grey, fontSize: 14),
-                                ),
-                              ],
-                            )
-                          ],
-                        ),
-                      )),
-                ],
+              Icon(icon, size: 28, color: Colors.black54),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.black54,
+                    fontWeight: FontWeight.w600),
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
+  }
+
+  // 新增进度标签样式
+  Widget _buildProgressChip(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(text,
+          style: TextStyle(
+              color: color, fontSize: 12, fontWeight: FontWeight.w600)),
+    );
+  }
+
+  // 新增设置卡片组件
+  Widget _buildSelectionButton({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color startColor,
+    required Color endColor,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            height: 80,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [startColor, endColor],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: startColor.withOpacity(0.3),
+                  blurRadius: 12,
+                  offset: Offset(0, 6),
+                )
+              ],
+            ),
+            child: Stack(
+              children: [
+                // 背景装饰元素
+                Positioned(
+                  right: 10,
+                  top: 10,
+                  child: Icon(
+                    icon,
+                    size: 60,
+                    color: Colors.white.withOpacity(0.15),
+                  ),
+                ),
+
+                // 内容布局
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title,
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 2,
+                                  offset: Offset(1, 1),
+                                )
+                              ])),
+                      SizedBox(height: 4),
+                      Text(subtitle,
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 12,
+                          )),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  double studyProgress = 0.75;
+  @override
+  Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    return SingleChildScrollView(
+        child: Column(
+      children: [
+        // 上半部分背景
+        Stack(
+          children: [
+            Container(
+              height: screenHeight * 0.45,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.blue.shade700,
+                    Colors.purple.shade400,
+                  ],
+                ),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                children: [
+                  const SizedBox(height: 40),
+                  // 标题
+                  Row(
+                    children: [
+                      Icon(Icons.school, color: Colors.white, size: 28),
+                      const SizedBox(width: 10),
+                      Text("高等数学练习平台",
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  // 开始刷题卡片
+                  InkWell(
+                    onTap: () {/* 原点击逻辑 */},
+                    borderRadius: BorderRadius.circular(0),
+                    child: Container(
+                      height: 140,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                            color: Colors.white.withOpacity(0.3), width: 2),
+                        boxShadow: [
+                          BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 20,
+                              offset: Offset(0, 10))
+                        ],
+                      ),
+                      child: Stack(
+                        children: [
+                          Positioned(
+                            right: -50,
+                            top: -50,
+                            child: Icon(Icons.fingerprint,
+                                color: Colors.white.withOpacity(0.1),
+                                size: 180),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(Icons.auto_awesome,
+                                        color: Colors.amber, size: 28),
+                                    const SizedBox(width: 10),
+                                    Text("每日练习",
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                                const SizedBox(height: 15),
+                                // 进度条
+                                LinearProgressIndicator(
+                                  value: studyProgress,
+                                  backgroundColor:
+                                      Colors.white.withOpacity(0.2),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.lightGreenAccent),
+                                  minHeight: 8,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                    "当前进度：${(studyProgress * 100).toStringAsFixed(1)}%",
+                                    style: TextStyle(
+                                        color: Colors.white.withOpacity(0.9),
+                                        fontSize: 14)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // 题库和模式选择
+                  Padding(
+                    padding: const EdgeInsets.only(top: 20),
+                    child: Row(
+                      children: [
+                        _buildSelectionButton(
+                          icon: Icons.library_books,
+                          title: "题库选择",
+                          subtitle: "已选3个题库",
+                          startColor: Colors.blueAccent.shade400,
+                          endColor: Colors.indigoAccent,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => BankChooseScreen()),
+                          ),
+                        ),
+                        _buildSelectionButton(
+                          icon: Icons.tune,
+                          title: "模式选择",
+                          subtitle: "当前：智能刷题",
+                          startColor: Colors.purple.shade400,
+                          endColor: Colors.pinkAccent.shade200,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => ModeScreen(
+                                      title: "",
+                                    )),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                ],
+              ),
+            )
+          ],
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          child: Column(
+            children: [
+              // 保留原有的功能按钮布局
+              Row(
+                children: [
+                  _buildFeatureButton(
+                    context,
+                    icon: Icons.class_outlined,
+                    label: "错题查看",
+                    color: Colors.purple,
+                    onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const WrongQuestionScreen())),
+                  ),
+                  _buildFeatureButton(
+                    context,
+                    icon: Icons.note_add_outlined,
+                    label: "查看笔记",
+                    color: Colors.orange,
+                    onTap: () {},
+                  ),
+                  _buildFeatureButton(
+                    context,
+                    icon: Icons.search_rounded,
+                    label: "题库浏览",
+                    color: Colors.blue,
+                    onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const SearchScreen())),
+                  ),
+                  _buildFeatureButton(
+                    context,
+                    icon: Icons.help_outline_rounded,
+                    label: "使用手册",
+                    color: Colors.green,
+                    onTap: () {},
+                  ),
+                ],
+              ),
+              const SizedBox(
+                height: 0,
+              ),
+
+              Column(
+                children: [
+                  Container(
+                    margin: const EdgeInsets.all(4.0), // 四周外边距
+                    child: Card(
+                      color: Theme.of(context).cardColor,
+                      elevation: 0.3,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: Row(
+                            children: [
+                              const SizedBox(
+                                width: 10,
+                              ),
+                              const Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '长安大学高数练习软件',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                        color: Colors.black,
+                                        fontSize: 14),
+                                  ),
+                                  Text(
+                                    '上高树，学高数',
+                                    style: TextStyle(
+                                        color: Colors.grey, fontSize: 14),
+                                  ),
+                                ],
+                              ),
+                              Image.asset(
+                                'assets/logo.png',
+                                width: 50,
+                                height: 50,
+                              ),
+                            ],
+                          )),
+                    ),
+                  )
+                ],
+              ),
+
+              // 其他内容...
+            ],
+          ),
+        ),
+        // 修改底部四个功能图标的布局，增加图标多样性和视觉层次
+      ],
+    ));
   }
 }
 

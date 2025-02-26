@@ -46,6 +46,7 @@ dev_dependencies:
   json_serializable: ^6.9.0
   build_runner: ^2.4.13
   hive_generator: ^2.0.1
+
   
 flutter:
   uses-material-design: true
@@ -54,3 +55,4 @@ flutter:
     - assets/logo.png
     - assets/chu.png
     - assets/come_on.jpg
+    - assets/SourceHanSansCN-Regular.otf

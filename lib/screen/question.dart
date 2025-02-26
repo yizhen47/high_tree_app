@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:extended_text/extended_text.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screen/loading.dart';
 import 'package:flutter_application_1/screen/mode.dart';
@@ -25,112 +26,157 @@ class QuestionScreen extends StatefulWidget {
 
 Card buildQuestionCard(BuildContext context, final String knowledgepoint,
     final String question, final String? answer, final String? note) {
+  final ValueNotifier<int> update = ValueNotifier(0);
   return Card(
-      color: Theme.of(context).cardColor,
-      elevation: 4,
-      child: SizedBox(
-        height: double.infinity,
-        child: SingleChildScrollView(
-            child: Padding(
-          padding: const EdgeInsets.all(15),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(
-                width: double.infinity,
-              ),
-              Card(
-                color: Theme.of(context).primaryColor,
-                margin: const EdgeInsets.fromLTRB(0, 4, 18, 4),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(6, 2, 6, 2),
-                  child: ExtendedText(
-                    knowledgepoint,
-                    specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
-                    style: const TextStyle(color: Colors.white, fontSize: 14),
+    color: Theme.of(context).cardColor,
+    elevation: 4,
+    child: ValueListenableBuilder(
+      valueListenable: update,
+      builder: (context, v, _) {
+        return SizedBox(
+          height: double.infinity,
+          child: SingleChildScrollView(
+              child: Padding(
+            padding: const EdgeInsets.all(15),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(
+                  width: double.infinity,
+                ),
+                Card(
+                  color: Theme.of(context).primaryColor,
+                  margin: const EdgeInsets.fromLTRB(0, 4, 18, 4),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(6, 2, 6, 2),
+                    child: ExtendedText(
+                      knowledgepoint,
+                      specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
+                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                    ),
                   ),
                 ),
-              ),
-              ExtendedText(
-                question,
-                specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color.fromARGB(255, 94, 94, 94),
-                ),
-              ),
-              SizedBox(
-                height: 30,
-                child: Container(
-                  alignment: Alignment.center,
-                  child: const TDDivider(
-                    color: Colors.black38,
+                ExtendedText(
+                  question,
+                  specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromARGB(255, 94, 94, 94),
                   ),
                 ),
-              ),
-              const Text(
-                "解析",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                  fontFamily: 'Times New Roman',
+                SizedBox(
+                  height: 30,
+                  child: Container(
+                    alignment: Alignment.center,
+                    child: const TDDivider(
+                      color: Colors.black38,
+                    ),
+                  ),
                 ),
-              ),
-              ExtendedText(
-                answer ?? "暂无解析",
-                specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontFamily: 'Times New Roman',
-                ),
-              ),
-              ...(() {
-                if (note != null && note.isNotEmpty) {
-                  return [
-                    SizedBox(
-                      height: 30,
-                      child: Container(
-                        alignment: Alignment.center,
-                        child: const TDDivider(
-                          color: Colors.black38,
+                ...(() {
+                  if (v != 0) {
+                    return [
+                      const Text(
+                        "解析",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                          fontFamily: 'Times New Roman',
                         ),
                       ),
-                    ),
-                    const Text(
-                      "笔记",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                        fontFamily: 'Times New Roman',
+                      ExtendedText(
+                        answer == null || answer.isEmpty ? "暂无解析" : answer,
+                        specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontFamily: 'Times New Roman',
+                        ),
                       ),
-                    ),
-                    Builder(
-                      builder: (context) => LaTexT(
-                        laTeXCode: ExtendedText(
-                          note,
-                          specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontFamily: 'Times New Roman',
+                      ...(() {
+                        if (note != null && note.isNotEmpty) {
+                          return [
+                            SizedBox(
+                              height: 30,
+                              child: Container(
+                                alignment: Alignment.center,
+                                child: const TDDivider(
+                                  color: Colors.black38,
+                                ),
+                              ),
+                            ),
+                            const Text(
+                              "笔记",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                                fontFamily: 'Times New Roman',
+                              ),
+                            ),
+                            Builder(
+                              builder: (context) => LaTexT(
+                                laTeXCode: ExtendedText(
+                                  note,
+                                  specialTextSpanBuilder:
+                                      MathIncludeTextSpanBuilder(),
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontFamily: 'Times New Roman',
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ];
+                        } else {
+                          return [];
+                        }
+                      })()
+                    ];
+                  } else {
+                    if (answer == null || answer.isEmpty) {
+                      return [
+                        const Center(
+                          child: Text(
+                            "暂无解析",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                              fontFamily: 'Times New Roman',
+                            ),
+                          ),
+                        )
+                      ];
+                    } else {
+                      return [
+                        Center(
+                          child: TDButton(
+                            text: '查看解析',
+                            size: TDButtonSize.large,
+                            type: TDButtonType.text,
+                            shape: TDButtonShape.rectangle,
+                            theme: TDButtonTheme.light,
+                            onTap: () {
+                              update.value = 1;
+                            },
                           ),
                         ),
-                      ),
-                    ),
-                  ];
-                } else {
-                  return [];
-                }
-              })()
-            ],
-          ),
-        )),
-      ));
+                      ];
+                    }
+                  }
+                })(),
+              ],
+            ),
+          )),
+        );
+      },
+    ),
+  );
 }
 
 Card buildKnowledgeCard(BuildContext context, final String index,
@@ -279,7 +325,9 @@ class _InnerState extends State<QuestionScreen> {
                           q.getKonwledgePoint(),
                           q.question['q']!,
                           q.question['w'],
-                          WrongQuestionBook.instance.getQuestion(q.question['id']!).note));
+                          WrongQuestionBook.instance
+                              .getQuestion(q.question['id']!)
+                              .note));
                     }
                   } else if (StudyData.instance.getStudyType() ==
                       StudyType.studyMode) {
@@ -328,7 +376,9 @@ class _InnerState extends State<QuestionScreen> {
                           q.getKonwledgePoint(),
                           q.question['q']!,
                           q.question['w'],
-                          WrongQuestionBook.instance.getQuestion(q.question['id']!).note));
+                          WrongQuestionBook.instance
+                              .getQuestion(q.question['id']!)
+                              .note));
                     }
                   }
                   return CardSwiper(
@@ -346,6 +396,8 @@ class _InnerState extends State<QuestionScreen> {
                             if (WrongQuestionBook.instance
                                 .hasWrongQuestion(idWrong)) {
                               TDToast.showWarning("已在错题本中", context: context);
+                              //随机改id防止‘重做’操作后错题被删
+                              idList.last = const Uuid().v4();
                             } else {
                               WrongQuestionBook.instance.addWrongQuestion(
                                   idWrong, allQuestions[previousIndex]);
@@ -362,8 +414,6 @@ class _InnerState extends State<QuestionScreen> {
                               WrongQuestionBook.instance
                                   .addQuestion(questionId, QuestionUserData(1));
                             }
-
-                            
                           }
                           rightQuestions.add(allQuestions[previousIndex]);
                           questionRemoved[previousIndex] = true;
@@ -481,8 +531,13 @@ class _InnerState extends State<QuestionScreen> {
                                                 'assets/come_on.jpg',
                                                 height: 150,
                                               ),
-                                              const Text('''
-                                           提示：退出or继续'''),
+                                              const Text(
+                                                '''
+                                           提示：退出or继续''',
+                                                style: TextStyle(
+                                                    fontStyle:
+                                                        FontStyle.italic),
+                                              ),
                                               InkWell(
                                                   onTap: () {
                                                     Navigator.push(
@@ -606,6 +661,8 @@ class _InnerState extends State<QuestionScreen> {
                                       ),
                                       itemCount: allQuestions.length,
                                       itemBuilder: (context, index) {
+                                        var questionId =
+                                            allQuestions[index].question['id'];
                                         return Scaffold(
                                           body: InkWell(
                                             onTap: () {
@@ -617,18 +674,21 @@ class _InnerState extends State<QuestionScreen> {
                                                 borderRadius:
                                                     BorderRadius.circular(10),
                                               ),
-                                              color: allQuestions[index]
+                                              color: (allQuestions[index]
                                                       .fromKonwledgeIndex
-                                                      .isEmpty
+                                                      .isEmpty) || questionId == null
                                                   ? (Colors.blueAccent)
                                                   : (WrongQuestionBook.instance
-                                                              .getQuestion(allQuestions[
-                                                                          index]
-                                                                      .question[
-                                                                  'id']!)
+                                                              .getQuestion(
+                                                                  questionId)
                                                               .happenedTimes >
                                                           0
-                                                      ? Colors.greenAccent
+                                                      ? (WrongQuestionBook
+                                                              .instance
+                                                              .hasWrongQuestion(
+                                                                  questionId)
+                                                          ? Colors.redAccent
+                                                          : Colors.greenAccent)
                                                       : Theme.of(context)
                                                           .cardColor),
                                               child: Center(

@@ -52,6 +52,7 @@ class MainEnterScreen extends StatelessWidget {
     //入口，一般不用改
     return MaterialApp(
       title: '高数',
+      
       themeMode: StudyData.instance.getNightModeFollowSystem()
           ? ThemeMode.system
           : StudyData.instance.getNightMode()
@@ -68,6 +69,7 @@ class MainEnterScreen extends StatelessWidget {
         useMaterial3: true,
       ),
       theme: ThemeData(
+        fontFamily: Platform.isWindows ? "PingFang SC" : null,
         primaryColor: StudyData.instance.getThemeColor(),
         extensions: [
           TDTheme.defaultData()
