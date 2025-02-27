@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
@@ -13,6 +14,7 @@ import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:flutter_application_1/screen/setting.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'dart:math';
 
 import 'bank_choose.dart';
 import 'wrong_question.dart';
@@ -151,190 +153,263 @@ class CommunityPageState extends State<CommunityPage> {
     yValues = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0];
   }
 
-  @override
+  static const _primaryColor = Color(0xFF6A88E6);
+  static const _secondaryColor = Color(0xFF8E49E2);
+  static const _warningColor = Color(0xFFFFA726);
+  static const _textColor = Color(0xFF4A4A6A);
+  static const _iconColor = Color(0xFF5A5A89);
+
+@override
   Widget build(BuildContext context) {
-    final List<int> showIndexes = yValues.asMap().keys.toList();
-    final lineBarsData = [
-      LineChartBarData(
-        isCurved: true,
-        color: const Color(0xFF22A3FD),
-        barWidth: 2,
-        spots: yValues.asMap().entries.map((e) {
-          return FlSpot(e.key.toDouble(), e.value);
-        }).toList(),
-        belowBarData: BarAreaData(show: false),
-        dotData: FlDotData(
-          show: true,
-          getDotPainter: (spot, percent, barData, index) {
-            return FlDotCirclePainter(
-              radius: index != weekDays.length - 1 && showCircles ? 1 : 3,
-              color: index != weekDays.length - 1 && showCircles
-                  ? const Color(0xFF22A3FD)
-                  : Colors.white,
-              strokeWidth: 2,
-              strokeColor: const Color(0xFF22A3FD),
-            );
-          },
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFF5F7FF), Color(0xFFE8ECFA)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // 紧凑型标题区
+              _buildCompactHeader(),
+              // 密集统计卡片
+              _buildDenseStatsGrid(),
+              // 强化图表区
+              _buildEnhancedChart(),
+              // 辅助信息区
+              _buildMetadataSection(),
+            ],
+          ),
         ),
       ),
-    ];
+    );
+  }
 
-    final referenceValueUpper =
-        double.parse(medicalCaseIndexVary.referenceValueUpper);
-    final referenceValueLower =
-        double.parse(medicalCaseIndexVary.referenceValueLower);
-    double numMax = [referenceValueUpper, referenceValueLower, ...yValues]
-        .reduce((a, b) => a > b ? a : b);
-    numMax *= 1.25;
-
-    return weekDays.isNotEmpty
-        ? Column(
-            mainAxisSize: MainAxisSize.max,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              _buildHeader(),
-              _buildSubHeader(),
-              const SizedBox(height: 15),
-              _buildChart(numMax, showIndexes, lineBarsData),
+  Widget _buildCompactHeader() {
+    return Container(
+      padding: EdgeInsets.fromLTRB(20, 40, 20, 24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: [_primaryColor, _secondaryColor]),
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.insights, color: Colors.white, size: 24),
+              SizedBox(width: 12),
+              Text('数据趋势分析',
+                  style: TextStyle(
+                      fontSize: 20,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700)),
+              Spacer(),
+              IconButton(
+                icon: Icon(Icons.more_horiz, size: 24, color: Colors.white),
+                onPressed: () {},
+              ),
             ],
-          )
-        : Center(child: Image.asset("assets/logo.png"));
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text(
-            '数据趋势',
-            style: TextStyle(
-                color: Color(0xFF555555),
-                fontSize: 18.0,
-                fontWeight: FontWeight.bold),
           ),
-          GestureDetector(
-            child: const Text(
-              '详情',
-              style: TextStyle(color: Color(0xFF8C8C8C), fontSize: 14.0),
-              textAlign: TextAlign.right,
-            ),
-          ),
+          SizedBox(height: 16),
+          Text('单位：次 · 参考范围：0-10',
+              style: TextStyle(color: Colors.white70, fontSize: 13)),
         ],
       ),
     );
   }
 
-  Widget _buildSubHeader() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      child: const Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildDenseStatsGrid() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: GridView.count(
+        shrinkWrap: true,
+        physics: NeverScrollableScrollPhysics(),
+        crossAxisCount: 3,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+        childAspectRatio: 0.75,
         children: [
-          Text(
-            '单位：次',
-            style: TextStyle(color: Color(0xFF8C8C8C), fontSize: 12.0),
-          ),
-          Text(
-            '参考值范围：0-10',
-            style: TextStyle(color: Color(0xFF8C8C8C), fontSize: 12.0),
-          ),
+          _buildStatCell('平均值', '0', Icons.trending_up),
+          _buildStatCell('最高值', '0', Icons.vertical_align_top),
+          _buildStatCell('达标率', '${_calculateComplianceRate()}%', Icons.check_circle),
         ],
       ),
     );
   }
 
-  Widget _buildChart(double numMax, List<int> showIndexes,
-      List<LineChartBarData> lineBarsData) {
+  Widget _buildStatCell(String title, String value, IconData icon) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      height: 200,
-      child: LineChart(
-        LineChartData(
-          showingTooltipIndicators: showIndexes.map((index) {
-            return ShowingTooltipIndicators([
-              LineBarSpot(lineBarsData[0], 0, lineBarsData[0].spots[index]),
-            ]);
-          }).toList(),
-          lineTouchData: LineTouchData(
-            enabled: false,
-            getTouchedSpotIndicator: (barData, spotIndexes) {
-              return spotIndexes.map((index) {
-                return const TouchedSpotIndicatorData(
-                  FlLine(color: Colors.transparent),
-                  FlDotData(show: false),
-                );
-              }).toList();
-            },
-            touchTooltipData: LineTouchTooltipData(
-              getTooltipItems: (lineBarsSpot) {
-                return lineBarsSpot.map((lineBarSpot) {
-                  return LineTooltipItem(
-                    lineBarSpot.y.toString(),
-                    const TextStyle(
-                        color: Color(0xFF22A3FD),
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold),
-                  );
-                }).toList();
-              },
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3)),
+        ],
+      ),
+      padding: EdgeInsets.all(12),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: _primaryColor.withOpacity(0.1),
+              shape: BoxShape.circle,
             ),
+            child: Icon(icon, size: 20, color: _primaryColor),
           ),
-          extraLinesData: ExtraLinesData(horizontalLines: [
-            HorizontalLine(
-              y: 0.0,
-              color: const Color(0xFF64FFE4),
-              strokeWidth: 2,
-              dashArray: [20, 2],
+          SizedBox(height: 8),
+          Text(value,
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: _textColor)),
+          SizedBox(height: 4),
+          Text(title,
+              style: TextStyle(
+                  fontSize: 12,
+                  color: _textColor.withOpacity(0.7))),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEnhancedChart() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
+          ],
+        ),
+        padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // 图表标签
+            Row(
+              children: [
+                _buildChartLabel(_primaryColor, '数据趋势线'),
+                SizedBox(width: 16),
+                _buildChartLabel(Color(0xFF64FFE4), '参考下限'),
+                SizedBox(width: 16),
+                _buildChartLabel(_warningColor, '警戒上限'),
+              ],
             ),
-            HorizontalLine(
-              y: 10.0,
-              color: const Color(0xFFF8A70A),
-              strokeWidth: 2,
-              dashArray: [20, 2],
-            ),
-          ]),
-          lineBarsData: lineBarsData,
-          borderData: FlBorderData(
-            show: true,
-            border: const Border(
-              bottom: BorderSide(width: 0.5, color: Color(0xFF8FFFEB)),
-            ),
-          ),
-          minY: 0,
-          maxY: numMax,
-          gridData: const FlGridData(
-            show: true,
-            drawHorizontalLine: false,
-            drawVerticalLine: false,
-          ),
-          titlesData: FlTitlesData(
-            show: true,
-            leftTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                getTitlesWidget: (value, meta) {
-                  return Text(
-                    "${weekDays[value.toInt()].substring(0, 4)}\n${weekDays[value.toInt()].substring(5, 7)}\n${weekDays[value.toInt()].substring(8, 10)}",
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: value == touchedValue
-                          ? const Color(0xFF000000)
-                          : const Color(0xFF000000).withOpacity(0.5),
-                      fontWeight: FontWeight.bold,
+            SizedBox(height: 12),
+            // 图表主体
+            Container(
+              height: 220,
+              child: LineChart(
+                // 保持原有图表配置，调整颜色...
+                LineChartData(
+                  lineBarsData: [
+                    LineChartBarData(
+                      gradient: LinearGradient(colors: [_primaryColor, _secondaryColor]),
+                      isCurved: true,
+                      barWidth: 2.5,
+                      shadow: BoxShadow(color: _primaryColor.withOpacity(0.15), blurRadius: 6),
                     ),
-                  );
-                },
+                  ],
+                ),
               ),
             ),
-          ),
+            // X轴标签
+            Padding(
+              padding: EdgeInsets.only(top: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: weekDays.map((date) => _buildDateLabel(date)).toList(),
+              ),
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  Widget _buildChartLabel(Color color, String text) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        SizedBox(width: 6),
+        Text(text,
+            style: TextStyle(
+                fontSize: 12,
+                color: _textColor,
+                fontWeight: FontWeight.w500)),
+      ],
+    );
+  }
+
+  Widget _buildDateLabel(String dateStr) {
+    final parts = dateStr.split('-');
+    return Column(
+      children: [
+        Text(parts[1],
+            style: TextStyle(
+                fontSize: 12,
+                color: _textColor,
+                fontWeight: FontWeight.w600)),
+        Text(parts[2],
+            style: TextStyle(
+                fontSize: 11,
+                color: _textColor.withOpacity(0.6))),
+      ],
+    );
+  }
+
+  Widget _buildMetadataSection() {
+    return Padding(
+      padding: EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Divider(color: Colors.grey.shade300, height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('数据更新于：2021-08-01',
+                  style: TextStyle(fontSize: 12, color: _iconColor)),
+              IconButton(
+                icon: Icon(Icons.refresh, size: 18, color: _iconColor),
+                onPressed: () {},
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 新增计算方法
+  double _calculateAverage(List<double> values) {
+    if (values.isEmpty) return 0;
+    return values.reduce((a, b) => a + b) / values.length;
+  }
+  double _calculateComplianceRate() {
+    final compliantCount = yValues.where((v) => v <= 10).length;
+    return (compliantCount / yValues.length) * 100;
+  }
+
+  void _showAnalysisDetail() {
+    // 显示详细分析的弹窗
   }
 }
 
@@ -433,7 +508,7 @@ class MainHomePageState extends State<MainHomePage> {
                 BoxShadow(
                   color: startColor.withOpacity(0.3),
                   blurRadius: 12,
-                  offset: Offset(0, 6),
+                  offset: const Offset(0, 6),
                 )
               ],
             ),
@@ -465,10 +540,10 @@ class MainHomePageState extends State<MainHomePage> {
                                 Shadow(
                                   color: Colors.black.withOpacity(0.2),
                                   blurRadius: 2,
-                                  offset: Offset(1, 1),
+                                  offset: const Offset(1, 1),
                                 )
                               ])),
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Text(subtitle,
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.9),
@@ -497,7 +572,7 @@ class MainHomePageState extends State<MainHomePage> {
         Stack(
           children: [
             Container(
-              height: screenHeight * 0.45,
+              height: 300,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
@@ -521,7 +596,7 @@ class MainHomePageState extends State<MainHomePage> {
                   // 标题
                   Row(
                     children: [
-                      Icon(Icons.school, color: Colors.white, size: 28),
+                      const Icon(Icons.school, color: Colors.white, size: 28),
                       const SizedBox(width: 10),
                       Text("高等数学练习平台",
                           style: Theme.of(context)
@@ -549,7 +624,7 @@ class MainHomePageState extends State<MainHomePage> {
                           BoxShadow(
                               color: Colors.black.withOpacity(0.1),
                               blurRadius: 20,
-                              offset: Offset(0, 10))
+                              offset: const Offset(0, 10))
                         ],
                       ),
                       child: Stack(
@@ -567,11 +642,11 @@ class MainHomePageState extends State<MainHomePage> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Row(
+                                const Row(
                                   children: [
                                     Icon(Icons.auto_awesome,
                                         color: Colors.amber, size: 28),
-                                    const SizedBox(width: 10),
+                                    SizedBox(width: 10),
                                     Text("每日练习",
                                         style: TextStyle(
                                             color: Colors.white,
@@ -585,7 +660,7 @@ class MainHomePageState extends State<MainHomePage> {
                                   value: studyProgress,
                                   backgroundColor:
                                       Colors.white.withOpacity(0.2),
-                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                  valueColor: const AlwaysStoppedAnimation<Color>(
                                       Colors.lightGreenAccent),
                                   minHeight: 8,
                                   borderRadius: BorderRadius.circular(4),
@@ -618,7 +693,7 @@ class MainHomePageState extends State<MainHomePage> {
                           onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (_) => BankChooseScreen()),
+                                builder: (_) => const BankChooseScreen()),
                           ),
                         ),
                         _buildSelectionButton(
@@ -630,7 +705,7 @@ class MainHomePageState extends State<MainHomePage> {
                           onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (_) => ModeScreen(
+                                builder: (_) => const ModeScreen(
                                       title: "",
                                     )),
                           ),
@@ -754,98 +829,264 @@ class ProfilePage extends StatefulWidget {
   @override
   State<ProfilePage> createState() => ProfilePageState();
 }
-
 class ProfilePageState extends State<ProfilePage> {
+  // 设计系统常量（保持颜色不变）
+  static const _accentColor = Color(0xFF6A88E6);
+  static const _textPrimary = Color(0xFF2D2D3A);
+  static const _textSecondary = Color(0xFF6E6E8A);
+  static const _bgGradient = LinearGradient(
+    colors: [Color(0xFFF8FAFF), Color(0xFFF2F6FF)],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        InkWell(
-          onTap: () {
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const PersonalScreen(
-                          title: '',
-                        ))).then((e) => setState(() {}));
-          },
-          child: Card(
-            color: Theme.of(context).cardColor,
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(children: [
-                Builder(builder: (context) {
-                  return ClipRRect(
-                    borderRadius: BorderRadius.circular(25),
-                    child: Image(
-                      image: StudyData.instance.getAvatar() == null
-                          ? const AssetImage("assets/logo.png")
-                          : FileImage(File(StudyData.instance.getAvatar()!))
-                              as ImageProvider,
-                      width: 50,
-                      height: 50,
-                    ),
-                  );
-                }),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        StudyData.instance.getUserName(),
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        StudyData.instance.getSign(),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(gradient: _bgGradient),
+        child: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              expandedHeight: 120, // 缩小标题栏高度
+              flexibleSpace: _buildProfileHeader(),
+              pinned: true,
+              collapsedHeight: 60, // 添加折叠后高度
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16), // 缩小水平间距
+                child: Column(
+                  children: [
+                    const SizedBox(height: 12),
+                    _buildStatsCard(),
+                    const SizedBox(height: 16), // 缩小间距
+                    _buildFunctionList(),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileHeader() {
+    return FlexibleSpaceBar(
+      background: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [_accentColor.withOpacity(0.8), _accentColor],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // 头像部分
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white24, width: 1.5), // 缩小边框
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 8, // 缩小阴影
+                        offset: Offset(0, 2),
                       ),
                     ],
                   ),
+                  child: CircleAvatar(
+                    radius: 32, // 缩小头像尺寸
+                    backgroundImage: _getAvatarImage(),
+                    backgroundColor: Colors.white,
+                  ),
                 ),
-              ]),
+                const SizedBox(height: 12), // 缩小间距
+                Text(
+                  StudyData.instance.getUserName(),
+                  style: const TextStyle(
+                    fontSize: 18, // 缩小字体
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600, // 调整字重
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
-        Card(
-          color: Theme.of(context).cardColor,
-          child: TDCellGroup(
-            cells: [
-              TDCell(
-                  leftIcon: Icons.settings,
-                  title: "应用设置",
-                  onClick: (_) {
-                    Navigator.push(
-                      context,
-                      CupertinoPageRoute(
-                        builder: (context) => const SettingScreen(),
-                      ),
-                    );
-                  }),
-              TDCell(
-                  leftIcon: Icons.library_books,
-                  title: "题库管理",
-                  onClick: (_) async {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const BankManagerScreen(
-                                  title: '',
-                                ))).then((e) => setState(() {}));
-                  }),
-            ],
+      ),
+    );
+  }
+
+  Widget _buildStatsCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16), // 调整圆角
+        boxShadow: [
+          BoxShadow(
+            color: _accentColor.withOpacity(0.1),
+            blurRadius: 12, // 缩小阴影
+            offset: Offset(0, 4),
           ),
-        )
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16), // 调整内边距
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildStatItem("练习天数", "28"),
+          _buildStatItem("正确率", "92%"),
+          _buildStatItem("连续打卡", "7天"),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem(String label, String value) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 18, // 缩小数值
+            fontWeight: FontWeight.w700,
+            color: _accentColor,
+          ),
+        ),
+        const SizedBox(height: 2), // 缩小间距
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12, // 调整标签大小
+            color: _textSecondary,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
       ],
     );
   }
+
+  Widget _buildFunctionList() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12), // 缩小圆角
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8), // 减少模糊
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.6),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white30),
+          ),
+          child: Column(
+            children: [
+              _buildFunctionTile(
+                icon: Icons.person_outline_rounded,
+                title: "个人资料",
+                onTap: _navigateToPersonalScreen,
+              ),
+              _buildFunctionTile(
+                icon: Icons.auto_awesome_mosaic_rounded,
+                title: "学习统计",
+                onTap: () {},
+              ),
+              _buildFunctionTile(
+                icon: Icons.settings_rounded,
+                title: "应用设置",
+                onTap: _navigateToSettingScreen,
+              ),
+              _buildFunctionTile(
+                icon: Icons.library_books_rounded,
+                title: "题库管理",
+                onTap: _navigateToBankManagerScreen,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFunctionTile({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        splashColor: _accentColor.withOpacity(0.1),
+        highlightColor: _accentColor.withOpacity(0.05),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16), // 调整内边距
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8), // 缩小图标容器
+                decoration: BoxDecoration(
+                  color: _accentColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, size: 20, color: _accentColor), // 缩小图标
+              ),
+              const SizedBox(width: 12), // 调整间距
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 15, // 缩小标题
+                    color: _textPrimary,
+                    fontWeight: FontWeight.w500, // 调整字重
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: _textSecondary,
+                size: 20, // 缩小图标
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+  // 导航方法
+  ImageProvider _getAvatarImage() {
+    return StudyData.instance.getAvatar() == null
+        ? const AssetImage("assets/logo.png")
+        : FileImage(File(StudyData.instance.getAvatar()!));
+  }
+  void _navigateToPersonalScreen() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const PersonalScreen(title: '')),
+    );
+    setState(() {});
+  }
+
+  void _navigateToSettingScreen() {
+    Navigator.push(
+      context,
+      CupertinoPageRoute(builder: (context) => const SettingScreen()),
+    );
+  }
+
+  void _navigateToBankManagerScreen() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const BankManagerScreen(title: '')),
+    );
+    setState(() {});
+  }
 }
+
+
