@@ -111,7 +111,7 @@ class _MainEnterScreenState extends State<_MainEnterScreen> {
             // ignore: use_build_context_synchronously
             context,
             MaterialPageRoute(
-                builder: (context) => const HomeScreen(title: '')),
+                builder: (context) => const HomeScreen()),
             (route) => false);
       }
     });
@@ -175,7 +175,7 @@ class _MainEnterScreenState extends State<_MainEnterScreen> {
                 Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => const HomeScreen(title: '')),
+                        builder: (context) => const HomeScreen()),
                     (route) => false);
               },
               child: SizedBox(

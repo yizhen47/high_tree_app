@@ -38,6 +38,7 @@ dependencies:
   package_info_plus: ^8.1.2
   flutter_tilt: ^3.2.0
   rebirth: ^1.0.2
+  page_transition: ^2.2.1
 
 dev_dependencies:
   flutter_test:

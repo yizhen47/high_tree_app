@@ -24,227 +24,332 @@ class QuestionScreen extends StatefulWidget {
   State<QuestionScreen> createState() => _InnerState();
 }
 
-Card buildQuestionCard(BuildContext context, final String knowledgepoint,
-    final String question, final String? answer, final String? note) {
-  final ValueNotifier<int> update = ValueNotifier(0);
+Card buildKnowledgeCard(BuildContext context, final String index,
+    final String title, final String knowledge,
+    {final String? images}) {
   return Card(
-    color: Theme.of(context).cardColor,
-    elevation: 4,
-    child: ValueListenableBuilder(
-      valueListenable: update,
-      builder: (context, v, _) {
-        return SizedBox(
-          height: double.infinity,
-          child: SingleChildScrollView(
-              child: Padding(
-            padding: const EdgeInsets.all(15),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
+    elevation: 6,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(16),
+      side: BorderSide(color: Colors.grey.shade100, width: 1),
+    ),
+    child: Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Theme.of(context).cardColor,
+            Theme.of(context).cardColor.withOpacity(0.8),
+          ],
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header Section
+            Row(
               children: [
-                const SizedBox(
-                  width: double.infinity,
-                ),
-                Card(
-                  color: Theme.of(context).primaryColor,
-                  margin: const EdgeInsets.fromLTRB(0, 4, 18, 4),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(6, 2, 6, 2),
-                    child: ExtendedText(
-                      knowledgepoint,
-                      specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                Container(
+                  width: 32,
+                  height: 32,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    index,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
-                ExtendedText(
-                  question,
-                  specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Color.fromARGB(255, 94, 94, 94),
-                  ),
-                ),
-                SizedBox(
-                  height: 30,
-                  child: Container(
-                    alignment: Alignment.center,
-                    child: const TDDivider(
-                      color: Colors.black38,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.grey.shade800,
+                      height: 1.2,
                     ),
                   ),
                 ),
-                ...(() {
-                  if (v != 0) {
-                    return [
-                      const Text(
-                        "解析",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                          fontFamily: 'Times New Roman',
-                        ),
-                      ),
-                      ExtendedText(
-                        answer == null || answer.isEmpty ? "暂无解析" : answer,
-                        specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontFamily: 'Times New Roman',
-                        ),
-                      ),
-                      ...(() {
-                        if (note != null && note.isNotEmpty) {
-                          return [
-                            SizedBox(
-                              height: 30,
-                              child: Container(
-                                alignment: Alignment.center,
-                                child: const TDDivider(
-                                  color: Colors.black38,
-                                ),
-                              ),
-                            ),
-                            const Text(
-                              "笔记",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                                fontFamily: 'Times New Roman',
-                              ),
-                            ),
-                            Builder(
-                              builder: (context) => LaTexT(
-                                laTeXCode: ExtendedText(
-                                  note,
-                                  specialTextSpanBuilder:
-                                      MathIncludeTextSpanBuilder(),
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontFamily: 'Times New Roman',
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ];
-                        } else {
-                          return [];
-                        }
-                      })()
-                    ];
-                  } else {
-                    if (answer == null || answer.isEmpty) {
-                      return [
-                        const Center(
-                          child: Text(
-                            "暂无解析",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                              fontFamily: 'Times New Roman',
-                            ),
-                          ),
-                        )
-                      ];
-                    } else {
-                      return [
-                        Center(
-                          child: TDButton(
-                            text: '查看解析',
-                            size: TDButtonSize.large,
-                            type: TDButtonType.text,
-                            shape: TDButtonShape.rectangle,
-                            theme: TDButtonTheme.light,
-                            onTap: () {
-                              update.value = 1;
-                            },
-                          ),
-                        ),
-                      ];
-                    }
-                  }
-                })(),
               ],
             ),
-          )),
+
+            const SizedBox(height: 20),
+
+            // Knowledge Content
+            Text(
+              knowledge,
+              style: TextStyle(
+                fontSize: 15,
+                height: 1.6,
+                color: Colors.grey.shade700,
+              ),
+            ),
+
+            // Image Section
+            if (images != null) ...[
+              const SizedBox(height: 24),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Image.network(
+                    images,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Container(
+                        height: 200,
+                        alignment: Alignment.center,
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                  loadingProgress.expectedTotalBytes!
+                              : null,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+Card buildQuestionCard(BuildContext context, final String knowledgepoint,
+    final String question, final String? answer, final String? note) {
+  final ValueNotifier<bool> isExpanded = ValueNotifier(false);
+  return Card(
+    color: Theme.of(context).cardColor,
+    elevation: 3,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+      side: BorderSide(color: Colors.grey.shade200),
+    ),
+    child: ValueListenableBuilder<bool>(
+      valueListenable: isExpanded,
+      builder: (context, expanded, _) {
+        return ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: 200, // 最小高度
+            maxHeight: 500, // 最大高度
+          ),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min, // 重要：让内容决定高度
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.library_books_outlined,
+                            size: 16, color: Theme.of(context).primaryColor),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ExtendedText(
+                            knowledgepoint,
+                            specialTextSpanBuilder:
+                                MathIncludeTextSpanBuilder(),
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Theme.of(context).primaryColor,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // 题目内容
+                  Container(
+                    padding: const EdgeInsets.only(left: 8),
+                    decoration: BoxDecoration(
+                      border: Border(
+                        left: BorderSide(
+                          color: Colors.blueGrey.withOpacity(0.3),
+                          width: 3,
+                        ),
+                      ),
+                    ),
+                    child: LaTexT(
+                      laTeXCode: ExtendedText(
+                        question,
+                        specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
+                        style: TextStyle(
+                          fontSize: 15,
+                          height: 1.5,
+                          color: Colors.grey.shade800,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // 展开按钮
+
+                  // 解析切换按钮
+                  GestureDetector(
+                      onTap: () => isExpanded.value = !expanded,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              expanded ? Icons.expand_less : Icons.expand_more,
+                              color: Colors.blueGrey.shade600,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              expanded ? '收起解析' : '展开解析',
+                              style: TextStyle(
+                                color: Colors.blueGrey.shade600,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )),
+                  // 解析内容（始终保留空间）
+                  AnimatedOpacity(
+                    duration: const Duration(milliseconds: 200),
+                    opacity: expanded ? 1 : 0,
+                    child: AnimatedSize(
+                      duration: const Duration(milliseconds: 300),
+                      child: expanded
+                          ? _buildAnswerSection(answer, note, context)
+                          : const SizedBox.shrink(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         );
       },
     ),
   );
 }
 
-Card buildKnowledgeCard(BuildContext context, final String index,
-    final String title, final String knowledge,
-    {final String? images}) {
-  return Card(
-    color: Theme.of(context).cardColor,
-    elevation: 4,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: SizedBox(
-      height: double.infinity,
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(15),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(
-                width: double.infinity,
-              ),
-              Row(
-                children: [
-                  ExtendedText(
-                    index,
-                    specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  ExtendedText(
-                    title,
-                    specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 5),
-              const TDDivider(
-                color: Colors.black38,
-              ),
-              const SizedBox(height: 20),
-              ExtendedText(
-                knowledge,
-                specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontFamily: 'Times New Roman',
-                ),
-              ),
-              if (images != null) ...[
-                const SizedBox(height: 20),
-                Image.network(images),
-              ],
-            ],
-          ),
-        ),
+Widget _buildAnswerSection(String? answer, String? note, BuildContext context) {
+  final hasAnswer = answer?.isNotEmpty ?? false;
+  final hasNote = note?.isNotEmpty ?? false;
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const SizedBox(height: 16),
+      // 解析部分
+      _buildSection(
+        icon: Icons.analytics_outlined,
+        title: '题目解析',
+        content: answer,
+        defaultText: '等待老师添加解析中...',
+        context: context,
       ),
-    ),
+
+      if (hasNote) ...[
+        const SizedBox(height: 20),
+        Divider(color: Colors.grey.shade300, height: 1),
+        const SizedBox(height: 20),
+        _buildSection(
+          icon: Icons.note_alt_outlined,
+          title: '学习笔记',
+          content: note,
+          defaultText: '暂无学习笔记',
+          context: context,
+        ),
+      ],
+    ],
+  );
+}
+
+Widget _buildSection({
+  required IconData icon,
+  required String title,
+  required String? content,
+  required String defaultText,
+  required BuildContext context,
+}) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      // 标题行
+      Row(
+        children: [
+          Icon(icon, size: 18, color: Theme.of(context).primaryColor),
+          const SizedBox(width: 8),
+          Text(title,
+              style: TextStyle(
+                fontSize: 15,
+                color: Colors.grey.shade800,
+                fontWeight: FontWeight.w600,
+              )),
+        ],
+      ),
+      const SizedBox(height: 12),
+      // 内容容器
+      Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.blueGrey.withOpacity(0.03),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.blueGrey.withOpacity(0.1)),
+        ),
+        child: (content?.isNotEmpty ?? false)
+            ? LaTexT(
+                laTeXCode: ExtendedText(
+                  content!,
+                  specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.6,
+                    color: Colors.grey.shade800,
+                  ),
+                ),
+              )
+            : Text(defaultText,
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontStyle: FontStyle.italic,
+                )),
+      ),
+    ],
   );
 }
 
@@ -675,8 +780,9 @@ class _InnerState extends State<QuestionScreen> {
                                                     BorderRadius.circular(10),
                                               ),
                                               color: (allQuestions[index]
-                                                      .fromKonwledgeIndex
-                                                      .isEmpty) || questionId == null
+                                                          .fromKonwledgeIndex
+                                                          .isEmpty) ||
+                                                      questionId == null
                                                   ? (Colors.blueAccent)
                                                   : (WrongQuestionBook.instance
                                                               .getQuestion(

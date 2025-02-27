@@ -278,7 +278,7 @@ class _InnerState extends State<BankManagerScreen> {
                         );
                       } else {
                         var fromFilePath = await FilePicker.platform.pickFiles(
-                            allowMultiple: false, allowedExtensions: ["docx"]);
+                            allowMultiple: false, allowedExtensions: ["docx","md"]);
                         if (fromFilePath == null) return;
                         var saveFilePath = await FilePicker.platform.saveFile(
                           dialogTitle: "请选择保存路径",

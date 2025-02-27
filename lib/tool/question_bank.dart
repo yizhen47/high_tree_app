@@ -111,7 +111,11 @@ class Section {
     }
     if (q == null) {
       return SingleQuestionData(
-          [], [], {'q': '本章没有题目', 'w': '本章没有答案','id':const Uuid().v4()}, fromId, fromName);
+          [],
+          [],
+          {'q': '本章没有题目', 'w': '本章没有答案', 'id': const Uuid().v4()},
+          fromId,
+          fromName);
     }
     return q;
   }
@@ -152,7 +156,8 @@ class Section {
       List<String> fromKonwledgeIndex, String fromId, String fromName,
       {List<SingleQuestionData>? questionsList}) {
     questionsList ??= [];
-    questionsList.addAll(sectionQuestionOnly(fromKonwledgePoint, fromKonwledgeIndex, fromId, fromName));
+    questionsList.addAll(sectionQuestionOnly(
+        fromKonwledgePoint, fromKonwledgeIndex, fromId, fromName));
     if (children != null) {
       for (var c in children!) {
         c.sectionQuestion(List.from(fromKonwledgePoint),
@@ -200,6 +205,21 @@ class QuestionBankData {
   String toString() {
     return jsonEncode(this);
   }
+}
+
+Future<void> generateByMd(File fromFile, File saveFile) async {
+  mksureInit();
+  var id = const Uuid().v4();
+  var text = await fromFile.readAsString();
+  var builder = QuestionBankBuilder.parseWordToJSONData(
+      text, path.basename(fromFile.path.split('/').first), id);
+
+  List<Future> futures = [];
+
+  await Future.wait(futures);
+  _wmf2png!.cleanup();
+  builder.addTestFile(text);
+  builder.build(saveFile.path);
 }
 
 Future<void> generateByDocx(File fromFile, File saveFile) async {
@@ -551,7 +571,11 @@ class QuestionBank {
   }
 
   static create(String path, String outputFile) async {
-    generateByDocx(File(path), File(outputFile));
+    if (path.endsWith('.md')) {
+      await generateByMd(File(path), File(outputFile));
+    } else if (path.endsWith('.docx')) {
+      await generateByDocx(File(path), File(outputFile));
+    }
   }
 }
 
@@ -715,9 +739,28 @@ class QuestionBankBuilder {
     }
 
     var matchf = RegExp(r'^[0-9]+ *[\.|．|、] *(?![0-9 ])');
-    for (var line in lines) {
+
+    var line = '';
+    var inLatex = false;
+    for (var lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+      if (!inLatex) {
+        line = lines[lineIndex];
+      } else {
+        if (line.startsWith('\$\$')) {
+          inLatex = false;
+        }
+        line = line + '\n' + lines[lineIndex];
+        continue;
+      }
       // Handle examples and exercise questions only when inside exercises section
       if (RegExp(r'[一二三四五六七八九]+、.*题').hasMatch(line) && inExercises) continue;
+
+      if (line.trim().isEmpty) continue;
+
+      if (line.startsWith('\$\$')) {
+        inLatex = true;
+        continue;
+      }
 
       if ((line.startsWith('例') || (inExercises && matchf.hasMatch(line)))) {
         stack.last.questions!.add({'q': '', 'w': ''});
