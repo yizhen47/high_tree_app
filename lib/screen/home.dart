@@ -10,8 +10,10 @@ import 'package:flutter_application_1/screen/bank_manager.dart';
 import 'package:flutter_application_1/screen/personal.dart';
 import 'package:flutter_application_1/screen/setting.dart';
 import 'package:flutter_application_1/screen/wrong_question.dart';
+import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:page_transition/page_transition.dart';
+import 'package:tdesign_flutter/tdesign_flutter.dart';
 
 // 全局样式配置
 class AppTheme {
@@ -917,6 +919,15 @@ class ProfilePage extends StatelessWidget {
                 },
                 icon: Icons.menu_book_sharp,
                 title: '题库管理',
+              ),
+              _buildDivider(),
+              _buildCompactListTile(
+                onTap: () {
+                  QuestionBank.clearAllCache();
+                  TDToast.showSuccess("清理完毕", context: context);
+                },
+                icon: Icons.cached_outlined,
+                title: '数据清理',
               ),
               _buildDivider(),
               _buildCompactListTile(

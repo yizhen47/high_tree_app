@@ -188,7 +188,7 @@ class Section {
       List<String> fromKonwledgeIndex, String fromId, String fromName) {
     if (_random!.nextInt(3) == 1) {
       // ignore: unnecessary_null_comparison
-      if (questions == null) {
+      if (questions == null || questions!.isEmpty) {
         return null;
       }
       if (fromKonwledgePoint.isEmpty || fromKonwledgePoint.last != title) {
@@ -204,7 +204,7 @@ class Section {
           fromName);
     } else {
       // ignore: unnecessary_null_comparison
-      if (children == null) {
+      if (children == null || children!.isEmpty) {
         return null;
       } else {
         var sec = children![_random!.nextInt(children!.length)];
@@ -621,12 +621,22 @@ class QuestionBank {
     if (cacheDir != null) Directory(cacheDir!).delete();
   }
 
-  static clean() async {
-    return Directory(QuestionBank.loadedDirPath).list().forEach((e) async {
-      if ((await e.stat()).type == FileSystemEntityType.directory) {
-        e.delete();
-      }
-    });
+  static Future<void> clearAllCache() async {
+    mksureInit();
+
+    // 清理已解压文件
+    final cacheDir = Directory(loadedDirPath);
+    if (await cacheDir.exists()) {
+      await cacheDir.delete(recursive: true);
+      await cacheDir.create();
+    }
+
+    // 清理导入的题库文件
+    final importedDir = Directory(importedDirPath);
+    if (await importedDir.exists()) {
+      await importedDir.delete(recursive: true);
+      await importedDir.create();
+    }
   }
 
   static Future<bool> _removeDirectoryIfExists(Directory file) async {
