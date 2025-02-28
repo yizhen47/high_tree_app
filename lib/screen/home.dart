@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math';
 
 import 'package:fl_chart/fl_chart.dart';
@@ -5,7 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter_application_1/screen/bank_choose.dart';
 import 'package:flutter_application_1/screen/bank_manager.dart';
+import 'package:flutter_application_1/screen/personal.dart';
 import 'package:flutter_application_1/screen/wrong_question.dart';
+import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:page_transition/page_transition.dart';
 
 // 全局样式配置
@@ -653,8 +656,13 @@ class MainHomePage extends StatelessWidget {
       childAspectRatio: 0.9,
       children: [
         CommonComponents.buildIconButton(
+          icon: Icons.auto_awesome_motion,
+          label: '智能刷题',
+          onPressed: () {},
+        ),
+        CommonComponents.buildIconButton(
           icon: Icons.play_circle_outline,
-          label: '开始练习',
+          label: '顺序练习',
           onPressed: () {
             Navigator.push(
               context,
@@ -668,11 +676,6 @@ class MainHomePage extends StatelessWidget {
               ),
             );
           },
-        ),
-        CommonComponents.buildIconButton(
-          icon: Icons.auto_awesome_motion,
-          label: '智能刷题',
-          onPressed: () {},
         ),
         CommonComponents.buildIconButton(
           icon: Icons.assignment_outlined,
@@ -752,7 +755,7 @@ class ProfilePage extends StatelessWidget {
               delegate: SliverChildListDelegate([
                 _buildProfileStats(),
                 const SizedBox(height: 16),
-                _buildAccountSettings(),
+                _buildAccountSettings(context),
                 const SizedBox(height: 16),
                 _buildSystemSettings(context),
               ]),
@@ -775,18 +778,19 @@ class ProfilePage extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 32, // 调整头像尺寸
-                backgroundImage: AssetImage('assets/avatar.png'),
+                backgroundImage:
+                    FileImage(File(StudyData.instance.getAvatar() ?? '')),
               ),
               const SizedBox(height: 12), // 减少间距
-              const Text('张同学',
-                  style: TextStyle(
+              Text(StudyData.instance.getUserName(),
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 20, // 调小字体
                     fontWeight: FontWeight.w500,
                   )),
-              Text('数学与应用数学专业',
+              Text(StudyData.instance.getSign(),
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.9),
                     fontSize: 14, // 调小字体
@@ -798,7 +802,7 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildAccountSettings() {
+  Widget _buildAccountSettings(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -817,6 +821,12 @@ class ProfilePage extends StatelessWidget {
               _buildCompactListTile(
                 icon: Icons.person_outline,
                 title: '个人资料',
+                onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const PersonalScreen(
+                              title: '',
+                            ))),
               ),
               _buildDivider(),
               _buildCompactListTile(
@@ -900,7 +910,9 @@ class ProfilePage extends StatelessWidget {
                       type: PageTransitionType.rightToLeftPop,
                       childCurrent: this,
                       alignment: const Alignment(10, 20),
-                      child: const BankManagerScreen(title: '',),
+                      child: const BankManagerScreen(
+                        title: '',
+                      ),
                       duration: const Duration(milliseconds: 400),
                       curve: Curves.easeInOut,
                     ),
@@ -981,48 +993,6 @@ class _GoalProgress extends StatelessWidget {
           backgroundColor: Colors.grey[200],
           valueColor: const AlwaysStoppedAnimation(AppTheme.primaryColor),
         ),
-      ],
-    );
-  }
-}
-
-class _ActivityItem extends StatelessWidget {
-  final IconData icon;
-  final String title;
-
-  const _ActivityItem({required this.icon, required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(icon, color: AppTheme.primaryColor),
-      title: Text(title),
-      trailing:
-          const Text('1天前', style: TextStyle(color: AppTheme.textSecondary)),
-    );
-  }
-}
-
-class _ProfileStatItem extends StatelessWidget {
-  final String value;
-  final String label;
-
-  const _ProfileStatItem({required this.value, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(value,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            )),
-        Text(label,
-            style: const TextStyle(
-              color: AppTheme.textSecondary,
-              fontSize: 14,
-            )),
       ],
     );
   }

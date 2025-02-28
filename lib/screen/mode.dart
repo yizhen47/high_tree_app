@@ -185,52 +185,52 @@ class _InnerState extends State<ModeScreen> {
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.all(15),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "选择难度",
-                    style: TextStyle(
-                        fontSize: 18,
-                        color: Colors.black,
-                        fontWeight: FontWeight.w600),
-                  ),
-                ],
-              ),
-            ),
-            TDRadioGroup(
-              selectId: '${StudyData.instance.getStudyDifficulty().index}',
-              onRadioGroupChange: (selectedId) {
-                if (selectedId != null) {
-                  StudyData.instance.setStudyDifficulty(
-                      StudyDifficulty.values[int.parse(selectedId)]);
-                }
-                setState(() {});
-              },
-              cardMode: true,
-              direction: Axis.horizontal,
-              rowCount: 3,
-              directionalTdRadios: [
-                TDRadio(
-                  id: '${StudyDifficulty.easy.index}',
-                  title: StudyDifficulty.easy.displayName,
-                  cardMode: true,
-                ),
-                TDRadio(
-                  id: '${StudyDifficulty.normal.index}',
-                  title: StudyDifficulty.normal.displayName,
-                  cardMode: true,
-                ),
-                TDRadio(
-                  id: '${StudyDifficulty.hard.index}',
-                  title: StudyDifficulty.hard.displayName,
-                  cardMode: true,
-                ),
-              ],
-            ),
+            // const Padding(
+            //   padding: EdgeInsets.all(15),
+            //   child: Column(
+            //     mainAxisAlignment: MainAxisAlignment.start,
+            //     crossAxisAlignment: CrossAxisAlignment.start,
+            //     children: [
+            //       Text(
+            //         "选择难度",
+            //         style: TextStyle(
+            //             fontSize: 18,
+            //             color: Colors.black,
+            //             fontWeight: FontWeight.w600),
+            //       ),
+            //     ],
+            //   ),
+            // ),
+            // TDRadioGroup(
+            //   selectId: '${StudyData.instance.getStudyDifficulty().index}',
+            //   onRadioGroupChange: (selectedId) {
+            //     if (selectedId != null) {
+            //       StudyData.instance.setStudyDifficulty(
+            //           StudyDifficulty.values[int.parse(selectedId)]);
+            //     }
+            //     setState(() {});
+            //   },
+            //   cardMode: true,
+            //   direction: Axis.horizontal,
+            //   rowCount: 3,
+            //   directionalTdRadios: [
+            //     TDRadio(
+            //       id: '${StudyDifficulty.easy.index}',
+            //       title: StudyDifficulty.easy.displayName,
+            //       cardMode: true,
+            //     ),
+            //     TDRadio(
+            //       id: '${StudyDifficulty.normal.index}',
+            //       title: StudyDifficulty.normal.displayName,
+            //       cardMode: true,
+            //     ),
+            //     TDRadio(
+            //       id: '${StudyDifficulty.hard.index}',
+            //       title: StudyDifficulty.hard.displayName,
+            //       cardMode: true,
+            //     ),
+            //   ],
+            // ),
             const Padding(
               padding: EdgeInsets.all(15),
               child: Column(
@@ -273,11 +273,11 @@ class _InnerState extends State<ModeScreen> {
                   title: StudyType.testMode.getDisplayName(),
                   cardMode: true,
                 ),
-                TDRadio(
-                  id: '${StudyType.recommandMode.index}',
-                  title: StudyType.recommandMode.getDisplayName(),
-                  cardMode: true,
-                ),
+                // TDRadio(
+                //   id: '${StudyType.recommandMode.index}',
+                //   title: StudyType.recommandMode.getDisplayName(),
+                //   cardMode: true,
+                // ),
               ],
             ),
             (() {

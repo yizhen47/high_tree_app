@@ -744,38 +744,62 @@ class QuestionBankBuilder {
 
     var lineIndex = -1;
 
-    lines =
-        lines.map((e) => e.trim()).toList().where((e) => e.isNotEmpty).toList();
+    lines = lines.map((e) => e.trim()).toList().where((element) => element.isNotEmpty,).toList();
 
+    List<String> processStringArray(List<String> input) {
+      final List<String> result = [];
+
+      for (final element in input) {
+        if (element.isEmpty) {
+          // 当遇到空字符串且存在前驱非空元素时
+          if (result.isNotEmpty) {
+            // 给最后一个元素追加换行符
+            result[result.length - 1] += '\n';
+          }
+          // 没有前驱元素时直接忽略空字符串
+        } else {
+          // 非空元素直接保留
+          result.add(element);
+        }
+      }
+
+      return result;
+    }
+
+    lines = processStringArray(lines);
     getNextLine() {
       if (lineIndex + 1 >= lines.length) return '-1';
       return lines[lineIndex + 1];
     }
+
     getPrevLine() {
       if (lineIndex - 1 < 0) return '-1';
       return lines[lineIndex - 1];
     }
+
     String nextLine() {
       lineIndex++;
       if (lineIndex >= lines.length) return '-1';
       return lines[lineIndex];
     }
+
     String getLine() {
       return lines[lineIndex];
-    };
+    }
+
+    ;
 
     while (getNextLine() != '-1') {
       line = nextLine();
-      while(getNextLine() == '\$\$') {
+      while (getNextLine() == ('\$\$')) {
         line += "\n" + nextLine();
         nextLine();
-        while(getLine() != '\$\$') {
+        while (getLine() != ('\$\$')) {
           line += '\n' + getLine();
           nextLine();
         }
         line += '\n' + getLine();
       }
-
       // print(line);
 
       // Handle examples and exercise questions only when inside exercises section
@@ -789,8 +813,11 @@ class QuestionBankBuilder {
               stack.last.questions!.last, 'q', line.substring(2).trim());
         } else if (inExercises) {
           // Inside exercises section, treat numbered lines as questions
-          appendQuestionOrAnswer(stack.last.questions!.last, 'q',
-              line.substring(matchf.firstMatch(line)?.end ?? 0 + 1).trim());
+          var q = line.substring(matchf.firstMatch(line)?.end ?? 0 + 1).trim();
+          if (q.startsWith('.') || q.startsWith('．')) {
+            q = q.substring(1).trim();
+          }
+          appendQuestionOrAnswer(stack.last.questions!.last, 'q', q);
         }
       } else if (line.startsWith('解')) {
         // Handle solutions
