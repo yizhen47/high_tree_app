@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:extended_text/extended_text.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screen/home.dart';
 import 'package:flutter_application_1/screen/loading.dart';
 import 'package:flutter_application_1/screen/mode.dart';
 import 'package:flutter_application_1/screen/wrong_question.dart';
@@ -228,11 +229,8 @@ Card buildQuestionCard(BuildContext context, final String knowledgepoint,
     child: ValueListenableBuilder<bool>(
       valueListenable: isExpanded,
       builder: (context, expanded, _) {
-        return ConstrainedBox(
-          constraints: const BoxConstraints(
-            minHeight: 200, // 最小高度
-            maxHeight: 500, // 最大高度
-          ),
+        return SizedBox(
+          height: double.infinity,
           child: SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -521,36 +519,88 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
   }
 
 // 构建统一风格的按钮组件
-  Widget _buildActionButton(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(15),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Theme.of(context).colorScheme.primary,
-              Theme.of(context).colorScheme.secondary,
-            ],
-          ),
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Row(
+
+  _buildCompleteCard(BuildContext context) {
+    return Card(
+      color: Colors.white, // 使用主色作为底色
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: AppTheme.primaryColor.withOpacity(0.2)), // 主色边框
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: Colors.white),
-            const SizedBox(width: 8),
+            // 图标使用主色
+            Container(
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor,
+                shape: BoxShape.circle,
+              ),
+              padding: const EdgeInsets.all(16),
+              child: Icon(
+                Icons.check_rounded,
+                size: 36,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 28),
+
+            // 标题使用文本主色
             Text(
-              label,
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+              '任务完成',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary, // 使用定义的文本主色
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // 副标题使用文本次要色
+            Text(
+              '已完成所有题目练习',
+              style: TextStyle(
+                fontSize: 16,
+                color: AppTheme.textSecondary, // 使用定义的文本次要色
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            // 按钮使用次要色系
+            Column(
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: Colors.blue[50], // 浅色背景
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onPressed: () {},
+                    child: Text('保存',
+                        style: TextStyle(
+                            color: Colors.blue[800],
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 1.2)),
                   ),
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppTheme.textSecondary, // 使用文本次要色
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('暂时离开'),
+                ),
+              ],
             ),
           ],
         ),
@@ -558,111 +608,18 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
     );
   }
 
-  _buildCompleteCard(BuildContext context) {
-    return Card(
-      color: Theme.of(context).cardColor,
-      elevation: 8, // 增加阴影高度
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20.0), // 更圆润的边框
+// 简化的动画图标
+  Widget _buildCheckmarkAnimation() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primaryContainer,
+        shape: BoxShape.circle,
       ),
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 图标部分添加动画
-              _buildAnimatedIcons(),
-              const SizedBox(height: 25),
-
-              // 标题文字样式优化
-              Text(
-                '🎉 任务完成！',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-              ),
-              const SizedBox(height: 15),
-
-              // 提示文字样式优化
-              Text(
-                '您已经完成了所有题目',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.secondary,
-                    ),
-              ),
-              const SizedBox(height: 30),
-
-              // 图片容器优化
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15),
-                  boxShadow: [
-                    const BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 10,
-                      offset: Offset(0, 4),
-                    )
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(15),
-                  child: Image.asset(
-                    'assets/come_on.jpg',
-                    height: 180,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 30),
-
-              // 按钮组布局
-              Column(
-                children: [
-                  Text(
-                    '请选择下一步操作',
-                    style: TextStyle(
-                      fontStyle: FontStyle.italic,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.8),
-                    ),
-                  ),
-                  const SizedBox(height: 25),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // 继续按钮美化
-                      _buildActionButton(
-                        context,
-                        icon: Icons.refresh,
-                        label: '继续刷题',
-                        onTap: () => Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                const ModeScreen(title: '刷题界面'),
-                          ),
-                          (route) => route.isFirst,
-                        ),
-                      ),
-                      const SizedBox(width: 20),
-                      // 退出按钮美化
-                      _buildActionButton(
-                        context,
-                        icon: Icons.exit_to_app,
-                        label: '退出',
-                        onTap: () => Navigator.pop(context),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+      padding: const EdgeInsets.all(16),
+      child: const Icon(
+        Icons.check_rounded,
+        size: 36,
+        color: Colors.white,
       ),
     );
   }
@@ -791,34 +748,6 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                           )
                           .forEach(addQuestionCard);
                     }
-
-// 滑动处理统一逻辑
-                    void handleQuestionSwipe(
-                        int index, CardSwiperDirection direction) {
-                      final question = allQuestions[index];
-                      questionRemoved[index] = true;
-                      questionRemain--;
-
-                      if (question.fromKonwledgeIndex.isNotEmpty) {
-                        final questionId =
-                            question.question['id'] ?? const Uuid().v4();
-                        final questionData =
-                            WrongQuestionBook.instance.getQuestion(questionId);
-
-                        if (direction == CardSwiperDirection.right) {
-                          idList.add(questionId);
-                          if (!WrongQuestionBook.instance
-                              .hasWrongQuestion(questionId)) {
-                            WrongQuestionBook.instance
-                                .addWrongQuestion(questionId, question);
-                          }
-                        }
-
-                        questionData.happenedTimes =
-                            (questionData.happenedTimes ?? 0) + 1;
-                      }
-                    }
-
                     // 卡片滑动组件
                     return CardSwiper(
                       controller: controller,
@@ -834,9 +763,12 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                           // 记录发生次数（无论是否知识点题目）
                           final userData = WrongQuestionBook.instance
                               .getQuestion(questionId);
-                          userData.happenedTimes++;
-                          print(userData.happenedTimes);
-
+                          userData.tryCompleteTimes++;
+                          if (!WrongQuestionBook.instance
+                              .hasQuestion(questionId)) {
+                            WrongQuestionBook.instance
+                                .addQuestion(questionId, userData); // 更新发生次数
+                          }
                           // 仅知识点题目需要记录错题本
                           if (question.fromKonwledgeIndex.isNotEmpty) {
                             if (direction == CardSwiperDirection.right) {
@@ -893,13 +825,12 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                       // 在 CardSwiper 的 onUndo 回调中直接实现撤销逻辑（原简写方案中缺失的部分）
                       onUndo: (previousIndex, currentIndex, direction) {
                         final question = allQuestions[currentIndex];
-                        final String questionId =
-                            question.question['id'] ?? '';
+                        final String questionId = question.question['id'] ?? '';
 
                         // 还原发生次数
                         final userData =
                             WrongQuestionBook.instance.getQuestion(questionId);
-                        userData.happenedTimes--;
+                        userData.tryCompleteTimes--;
 
                         if (direction == CardSwiperDirection.right) {
                           // 错题本撤销处理
@@ -1016,19 +947,19 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                                                           .isEmpty) ||
                                                       questionId == null
                                                   ? (Colors.blueAccent)
-                                                  : (WrongQuestionBook.instance
-                                                              .getQuestion(
-                                                                  questionId)
-                                                              .happenedTimes >
-                                                          0
-                                                      ? (WrongQuestionBook
-                                                              .instance
-                                                              .hasWrongQuestion(
-                                                                  questionId)
-                                                          ? Colors.redAccent
-                                                          : Colors.greenAccent)
-                                                      : Theme.of(context)
-                                                          .cardColor),
+                                                  : WrongQuestionBook.instance
+                                                          .hasWrongQuestion(
+                                                              questionId)
+                                                      ? Colors.redAccent
+                                                      : (WrongQuestionBook
+                                                                  .instance
+                                                                  .getQuestion(
+                                                                      questionId)
+                                                                  .tryCompleteTimes >
+                                                              0
+                                                          ? (Colors.greenAccent)
+                                                          : Theme.of(context)
+                                                              .cardColor),
                                               child: Center(
                                                 child: Text('${index + 1}'),
                                               ),

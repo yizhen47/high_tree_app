@@ -91,9 +91,9 @@ class WrongQuestionBook {
 @HiveType(typeId: 1)
 class QuestionUserData {
   @HiveField(0)
-  int happenedTimes = 0;
+  int tryCompleteTimes = 0;
   @HiveField(1)
   String note = "";
 
-  QuestionUserData(this.happenedTimes);
+  QuestionUserData(this.tryCompleteTimes);
 }

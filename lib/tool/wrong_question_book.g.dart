@@ -26,7 +26,7 @@ class QuestionUserDataAdapter extends TypeAdapter<QuestionUserData> {
     writer
       ..writeByte(1)
       ..writeByte(0)
-      ..write(obj.happenedTimes);
+      ..write(obj.tryCompleteTimes);
   }
 
   @override

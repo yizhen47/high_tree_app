@@ -30,6 +30,254 @@ class WrongQuestionWidth extends StatefulWidget {
 }
 
 class _WrongQuestionWidthInnerState extends State<WrongQuestionWidth> {
+  writeNote({filteredList, index, screenWidth, screenHeight, context}) {
+    Navigator.of(context).push(
+      TDSlidePopupRoute(
+        slideTransitionFrom: SlideTransitionFrom.center,
+        builder: (_) {
+          final TextEditingController laTeXInputController = TextEditingController(
+              text: r'What do you think about $L'
+                  '\''
+                  r' = {L}{\sqrt{1-\frac{v^2}{c^2}}}$ ?'
+                  r'\n'
+                  r'And some display $\LaTeX$: $$\boxed{\rm{A function: } f(x) = \frac{5}{3} \cdot x}$$');
+
+          // 初始化逻辑保持不变
+          if (WrongQuestionBook.instance
+              .getQuestion(filteredList[index]['id']!)
+              .note
+              .isNotEmpty) {
+            laTeXInputController.text = WrongQuestionBook.instance
+                .getQuestion(filteredList[index]['id']!)
+                .note;
+          }
+
+          var latexText = laTeXInputController.text;
+
+          return StatefulBuilder(
+            builder: (context, innerSetState) {
+              return TDPopupCenterPanel(
+                radius: 24, // 增加圆角
+                child: SizedBox(
+                  width: screenWidth - 40, // 增加弹窗宽度
+                  height: screenHeight - 100, // 增加弹窗高度
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 30, 20, 20),
+                    child: Scaffold(
+                      resizeToAvoidBottomInset: true,
+                      backgroundColor: Colors.white,
+                      body: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 标题栏
+                          Row(
+                            children: [
+                              Icon(Icons.edit_note,
+                                  color: Colors.blue[800], size: 24),
+                              const SizedBox(width: 12),
+                              Text(
+                                '编辑笔记',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey[800],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+
+                          // 预览区域
+                          Expanded(
+                            flex: 4,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.grey[50],
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black12,
+                                    blurRadius: 6,
+                                    offset: Offset(0, 2),
+                                  )
+                                ],
+                              ),
+                              padding: EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('预览',
+                                      style: TextStyle(
+                                          color: Colors.grey[600],
+                                          fontWeight: FontWeight.w500)),
+                                  const SizedBox(height: 10),
+                                  Expanded(
+                                    child: SingleChildScrollView(
+                                      physics: BouncingScrollPhysics(),
+                                      child: LaTexT(
+                                        laTeXCode: Text(
+                                          latexText,
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontFamily: 'FiraCode', // 使用等宽字体
+                                            color: Colors.blueGrey[800],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // 输入区域
+                          Expanded(
+                            flex: 3,
+                            child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                      color: Colors.blue[100]!, width: 1.5),
+                                ),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                        color: Colors.blue[200]!, width: 1.5),
+                                  ),
+                                  child: TextField(
+                                    controller: laTeXInputController,
+                                    maxLines: 8,
+                                    style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.blue[900],
+                                        height: 1.4),
+                                    decoration: InputDecoration(
+                                      hintText: '输入LaTeX公式...',
+                                      hintStyle: TextStyle(
+                                          color: Colors.grey[400],
+                                          fontSize: 14,
+                                          fontStyle: FontStyle.italic),
+                                      border: InputBorder.none,
+                                      contentPadding: EdgeInsets.all(16),
+                                      suffixIcon: laTeXInputController
+                                              .text.isNotEmpty
+                                          ? IconButton(
+                                              icon: Icon(Icons.clear, size: 20),
+                                              onPressed: () {
+                                                laTeXInputController.clear();
+                                                innerSetState(
+                                                    () => latexText = '');
+                                              },
+                                            )
+                                          : null,
+                                    ),
+                                    onChanged: (text) =>
+                                        innerSetState(() => latexText = text),
+                                  ),
+                                )),
+                          ),
+
+                          const SizedBox(height: 25),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextButton(
+                                  style: TextButton.styleFrom(
+                                    padding: EdgeInsets.symmetric(vertical: 16),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      side: BorderSide(
+                                          color: Colors.grey[300]!), // 线框样式
+                                    ),
+                                  ),
+                                  onPressed: () => Navigator.pop(context),
+                                  child: Text('取消',
+                                      style: TextStyle(
+                                          color: Colors.grey[600],
+                                          fontSize: 15,
+                                          letterSpacing: 1.2)),
+                                ),
+                              ),
+                              SizedBox(width: 16),
+                              Expanded(
+                                child: TextButton(
+                                  style: TextButton.styleFrom(
+                                    padding: EdgeInsets.symmetric(vertical: 16),
+                                    backgroundColor: Colors.blue[50], // 浅色背景
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  onPressed: () {
+                                    final questionId =
+                                        filteredList[index]['id'];
+                                    WrongQuestionBook.instance
+                                        .mksureQuestion(questionId);
+                                    WrongQuestionBook.instance
+                                        .getQuestion(questionId)
+                                        .note = latexText;
+                                    setState(() {});
+                                    Navigator.pop(context);
+                                  },
+                                  child: Text('保存',
+                                      style: TextStyle(
+                                          color: Colors.blue[800],
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w500,
+                                          letterSpacing: 1.2)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildActionButton(
+      {required String text,
+      required Color color,
+      required IconData icon,
+      required Function onTap}) {
+    return Material(
+      borderRadius: BorderRadius.circular(10),
+      color: color,
+      child: InkWell(
+        onTap: () => onTap(),
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          height: 48,
+          padding: EdgeInsets.symmetric(vertical: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Text(text,
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     var screenWidth = MediaQuery.of(context).size.width;
@@ -86,11 +334,16 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidth> {
                     .map((e) => TDCell(
                           note: hideText('${(e['note'])}', maxLen: 10),
                           description: e['description'],
-                          leftIconWidget: WrongQuestionBook.instance.getQuestion(e['id']).note.isNotEmpty ? Container(
-                            width: 8,
-                            height: 80,
-                            color: Theme.of(context).primaryColor,
-                          ) : null,
+                          leftIconWidget: WrongQuestionBook.instance
+                                  .getQuestion(e['id'])
+                                  .note
+                                  .isNotEmpty
+                              ? Container(
+                                  width: 8,
+                                  height: 80,
+                                  color: Theme.of(context).primaryColor,
+                                )
+                              : null,
                           onClick: (_) {
                             Navigator.of(context).push(
                               TDSlidePopupRoute(
@@ -113,7 +366,9 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidth> {
                                           q.getKonwledgePoint(),
                                           q.question['q']!,
                                           q.question['w'],
-                                          WrongQuestionBook.instance.getQuestion(q.question['id']!).note),
+                                          WrongQuestionBook.instance
+                                              .getQuestion(q.question['id']!)
+                                              .note),
                                     ),
                                   );
                                 },
@@ -142,174 +397,17 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidth> {
                       extentRatio: 60 / screenWidth,
                       children: [
                         TDSwipeCellAction(
-                          flex: 60,
-                          backgroundColor: TDTheme.of(context).warningColor4,
-                          label: '笔记',
-                          onPressed: (_) {
-                            Navigator.of(context).push(
-                              TDSlidePopupRoute(
-                                // modalBarrierColor:
-                                //     TDTheme.of(context).fontGyColor2,
-                                slideTransitionFrom: SlideTransitionFrom.center,
-                                builder: (_) {
-                                  final TextEditingController
-                                      laTeXInputController =
-                                      TextEditingController(
-                                          text: r'What do you think about $L'
-                                              '\''
-                                              r' = {L}{\sqrt{1-\frac{v^2}{c^2}}}$ ?'
-                                              r'\n'
-                                              r'And some display $\LaTeX$: $$\boxed{\rm{A function: } f(x) = \frac{5}{3} \cdot x}$$');
-                                  if (WrongQuestionBook.instance
-                                      .getQuestion(filteredList[index]['id']!)
-                                      .note
-                                      .isNotEmpty) {
-                                    laTeXInputController.text =
-                                        WrongQuestionBook.instance
-                                            .getQuestion(
-                                                filteredList[index]['id']!)
-                                            .note;
-                                  }
-                                  var latexText = laTeXInputController.text;
-                                  return StatefulBuilder(
-                                    builder: (context, innerSetState) {
-                                      return TDPopupCenterPanel(
-                                        radius: 15,
-                                        // backgroundColor: Colors.transparent,
-                                        closeClick: () {
-                                          Navigator.maybePop(context);
-                                        },
-                                        child: SizedBox(
-                                          width: screenWidth - 80,
-                                          height: screenHeight - 150,
-                                          child: Padding(
-                                            padding: const EdgeInsets.fromLTRB(
-                                                10, 30, 10, 10),
-                                            child: Scaffold(
-                                              resizeToAvoidBottomInset: false,
-                                                body: Column(
-                                              children: [
-                                                Flexible(
-                                                  flex: 1,
-                                                  child: Column(
-                                                    children: [
-                                                      SingleChildScrollView(
-                                                        child: Padding(
-                                                          padding:
-                                                              EdgeInsets.all(
-                                                                  10),
-                                                          child: Builder(
-                                                            builder:
-                                                                (context) =>
-                                                                    LaTexT(
-                                                              laTeXCode: Text(
-                                                                latexText,
-                                                                style: Theme.of(
-                                                                        context)
-                                                                    .textTheme
-                                                                    .bodyMedium,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      TDInput(
-                                                        controller:
-                                                            laTeXInputController,
-                                                        backgroundColor:
-                                                            Colors.white,
-                                                        hintText: '请输入文字',
-                                                        type: TDInputType
-                                                            .cardStyle,
-                                                        onChanged: (text) {
-                                                          innerSetState(() {
-                                                            latexText = text;
-                                                          });
-                                                        },
-                                                        needClear: false,
-                                                        maxLines: 6,
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                                Row(
-                                                  children: [
-                                                    Expanded(
-                                                      child: Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .all(10),
-                                                        child: TDButton(
-                                                          onTap: () {
-                                                            Navigator.of(
-                                                                    context)
-                                                                .pop();
-                                                          },
-                                                          size: TDButtonSize
-                                                              .large,
-                                                          type: TDButtonType
-                                                              .outline,
-                                                          shape: TDButtonShape
-                                                              .rectangle,
-                                                          theme: TDButtonTheme
-                                                              .primary,
-                                                          text: '取消',
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    Expanded(
-                                                      child: Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .all(10),
-                                                        child: TDButton(
-                                                          onTap: () {
-                                                            var questionId =
-                                                                filteredList[
-                                                                        index]
-                                                                    ['id'];
-                                                            WrongQuestionBook
-                                                                .instance
-                                                                .mksureQuestion(
-                                                                    questionId);
-                                                            WrongQuestionBook
-                                                                .instance
-                                                                .getQuestion(
-                                                                    questionId)
-                                                                .note = latexText;
-                                                            setState(() {
-                                                              
-                                                            });
-                                                            Navigator.of(
-                                                                    context)
-                                                                .pop();
-                                                          },
-                                                          size: TDButtonSize
-                                                              .large,
-                                                          type:
-                                                              TDButtonType.fill,
-                                                          shape: TDButtonShape
-                                                              .rectangle,
-                                                          theme: TDButtonTheme
-                                                              .primary,
-                                                          text: '保存',
-                                                        ),
-                                                      ),
-                                                    )
-                                                  ],
-                                                )
-                                              ],
-                                            )),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  );
-                                },
-                              ),
-                            );
-                          },
-                        ),
+                            flex: 60,
+                            backgroundColor: TDTheme.of(context).warningColor4,
+                            label: '笔记',
+                            onPressed: (context) {
+                              writeNote(
+                                  filteredList: filteredList,
+                                  index: index,
+                                  screenWidth: screenWidth,
+                                  screenHeight: screenHeight,
+                                  context: context);
+                            }),
                       ],
                     ),
                     right: TDSwipeCellPanel(

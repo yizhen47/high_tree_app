@@ -6,7 +6,6 @@ import 'package:flutter_application_1/tool/text_string_handle.dart';
 import 'package:flutter_application_1/tool/wrong_question_book.dart';
 import 'package:flutter_application_1/widget/itd_collapse.dart';
 import 'package:flutter_application_1/widget/question_text.dart';
-import 'package:latext/latext.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 
 class CollapseDataItem {

@@ -11,6 +11,7 @@
     <!--允许程序打开相机-->
     <uses-permission android:name="android.permission.CAMERA" />
 
+
     <application
         android:label="高树"
         android:name="${applicationName}"
@@ -35,6 +36,15 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+
+            <!--TODO:  Add this filter, if you want support opening files into your app-->
+            <intent-filter>
+              <action android:name="android.intent.action.VIEW" />
+              <category android:name="android.intent.category.DEFAULT" />
+              <data
+                   android:mimeType="*/*"
+                   android:scheme="content" />
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
