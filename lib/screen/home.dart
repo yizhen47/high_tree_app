@@ -4,9 +4,11 @@ import 'dart:math';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
+import 'package:flutter_application_1/screen/about.dart';
 import 'package:flutter_application_1/screen/bank_choose.dart';
 import 'package:flutter_application_1/screen/bank_manager.dart';
 import 'package:flutter_application_1/screen/personal.dart';
+import 'package:flutter_application_1/screen/setting.dart';
 import 'package:flutter_application_1/screen/wrong_question.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:page_transition/page_transition.dart';
@@ -906,15 +908,10 @@ class ProfilePage extends StatelessWidget {
                 onTap: () {
                   Navigator.push(
                     context,
-                    PageTransition(
-                      type: PageTransitionType.rightToLeftPop,
-                      childCurrent: this,
-                      alignment: const Alignment(10, 20),
-                      child: const BankManagerScreen(
+                    MaterialPageRoute(
+                      builder: (context) => const BankManagerScreen(
                         title: '',
                       ),
-                      duration: const Duration(milliseconds: 400),
-                      curve: Curves.easeInOut,
                     ),
                   );
                 },
@@ -925,6 +922,12 @@ class ProfilePage extends StatelessWidget {
               _buildCompactListTile(
                 icon: Icons.info_outline,
                 title: '关于我们',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AboutScreen(),
+                  ),
+                ),
               ),
             ],
           ),

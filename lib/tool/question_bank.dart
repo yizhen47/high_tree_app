@@ -58,6 +58,70 @@ class SingleQuestionData {
         fromId,
         fromDisplayName);
   }
+
+  XmlElement toXml() {
+    return XmlElement(XmlName('SingleQuestionData'), [
+      XmlAttribute(XmlName('fromId'), fromId),
+      XmlAttribute(XmlName('fromDisplayName'), fromDisplayName),
+    ], [
+      XmlElement(
+          XmlName('fromKonwledgePoint'),
+          [],
+          fromKonwledgePoint
+              .map((point) => XmlElement(XmlName('item'), [], [XmlText(point)]))
+              .toList()),
+      XmlElement(
+          XmlName('fromKonwledgeIndex'),
+          [],
+          fromKonwledgeIndex
+              .map((index) => XmlElement(XmlName('item'), [], [XmlText(index)]))
+              .toList()),
+      XmlElement(
+          XmlName('question'),
+          [],
+          question.entries
+              .map((entry) =>
+                  XmlElement(XmlName(entry.key), [], [XmlText(entry.value)]))
+              .toList())
+    ]);
+  }
+
+  // SingleQuestionData 的反序列化
+  factory SingleQuestionData.fromXml(XmlElement element) {
+    final fromId = element.getAttribute('fromId') ?? '';
+    final fromDisplayName = element.getAttribute('fromDisplayName') ?? '';
+
+    final knowledgePoint = element
+        .findElements('fromKonwledgePoint')
+        .first
+        .findElements('item')
+        .map((e) => e.text)
+        .toList();
+
+    final knowledgeIndex = element
+        .findElements('fromKonwledgeIndex')
+        .first
+        .findElements('item')
+        .map((e) => e.text)
+        .toList();
+
+    final questionMap = element
+        .findElements('question')
+        .first
+        .childElements
+        .fold<Map<String, String>>({}, (map, element) {
+      map[element.name.local] = element.text;
+      return map;
+    });
+
+    return SingleQuestionData(
+      knowledgePoint,
+      knowledgeIndex,
+      questionMap,
+      fromId,
+      fromDisplayName,
+    );
+  }
 }
 
 @JsonSerializable()
@@ -186,6 +250,69 @@ class Section {
     }
     return questionsList;
   }
+
+  XmlElement toXml() {
+    return XmlElement(XmlName('Section'), [
+      XmlAttribute(XmlName('index'), index),
+      XmlAttribute(XmlName('title'), title),
+    ], [
+      if (note != null && note!.isNotEmpty)
+        XmlElement(XmlName('note'), [], [XmlText(note!)]),
+      if (children != null && children!.isNotEmpty)
+        XmlElement(XmlName('children'), [],
+            children!.map((child) => child.toXml()).toList()),
+      if (questions != null && questions!.isNotEmpty)
+        XmlElement(
+            XmlName('questions'),
+            [],
+            questions!.map((q) {
+              final id = q['id'] ?? const Uuid().v4();
+              return XmlElement(
+                  XmlName('question'),
+                  [XmlAttribute(XmlName('id'), id)],
+                  q.entries
+                      .where((e) => e.key != 'id')
+                      .map((entry) => XmlElement(
+                          XmlName(entry.key), [], [XmlText(entry.value ?? '')]))
+                      .toList());
+            }).toList())
+    ]);
+  }
+
+  factory Section.fromXml(XmlElement element) {
+    final index = element.getAttribute('index') ?? '';
+    final title = element.getAttribute('title') ?? '';
+    final section = Section(index, title);
+
+    // 解析备注
+    section.note = element.findElements('note').firstOrNull?.text;
+
+    // 解析子章节
+    section.children = element
+            .findElements('children')
+            .firstOrNull
+            ?.findElements('Section')
+            .map((e) => Section.fromXml(e))
+            .toList() ??
+        [];
+
+    // 解析题目
+    section.questions = element
+            .findElements('questions')
+            .firstOrNull
+            ?.findElements('question')
+            .map((q) {
+          final id = q.getAttribute('id') ?? const Uuid().v4();
+          return {
+            'id': id,
+            ...q.childElements.fold<Map<String, String>>(
+                {}, (map, e) => map..[e.name.local] = e.text)
+          };
+        }).toList() ??
+        [];
+
+    return section;
+  }
 }
 
 @JsonSerializable() // 使用泛型的注解
@@ -205,6 +332,44 @@ class QuestionBankData {
   String toString() {
     return jsonEncode(this);
   }
+
+  XmlDocument toXml() {
+    return XmlDocument([
+      XmlElement(XmlName('QuestionBankData'), [
+        if (id != null) XmlAttribute(XmlName('id'), id!),
+        if (version != null)
+          XmlAttribute(XmlName('version'), version.toString()),
+        if (displayName != null)
+          XmlAttribute(XmlName('displayName'), displayName!),
+      ], [
+        XmlElement(XmlName('data'), [],
+            data?.map((section) => section.toXml()).toList() ?? [])
+      ])
+    ]);
+  }
+
+  factory QuestionBankData.fromXml(XmlElement element) {
+    final bank = QuestionBankData();
+    bank.id = element.getAttribute('id');
+    bank.version = int.tryParse(element.getAttribute('version') ?? '');
+    bank.displayName = element.getAttribute('displayName');
+
+    bank.data = element
+            .findElements('data')
+            .firstOrNull
+            ?.findElements('Section')
+            .map((e) => Section.fromXml(e))
+            .toList() ??
+        [];
+
+    return bank;
+  }
+}
+
+// 擴展方法用於安全訪問元素
+extension XmlElementExtensions on XmlElement {
+  XmlElement? firstOrNull(String name) =>
+      findElements(name).isEmpty ? null : findElements(name).first;
 }
 
 Future<void> generateByMd(File fromFile, File saveFile) async {
@@ -387,32 +552,63 @@ class QuestionBank {
 
   Future<QuestionBank> getQuestionBankInf() async {
     mksureInit();
-    var iid = path.basenameWithoutExtension(filePath);
-    var dir = path.join(QuestionBank.loadedDirPath, iid);
-    if (Directory(dir).existsSync()) {
-      _getQuestionBankInf(
-          utf8.decode(await File(path.join(dir, "data.json")).readAsBytes()));
-    } else {
-      File fromFile = File(filePath);
-      final achieve = _zipDecoder!.decodeBytes(await fromFile.readAsBytes());
-      for (final file in achieve) {
-        if (file.name == "data.json") {
-          _getQuestionBankInf(utf8.decode(file.content));
-          break;
+    final iid = path.basenameWithoutExtension(filePath);
+    final dir = path.join(QuestionBank.loadedDirPath, iid);
+
+    try {
+      // 优先从已解压目录读取
+      if (Directory(dir).existsSync()) {
+        final xmlFile = File(path.join(dir, "data.xml"));
+        // print(xmlFile.path);
+        if (!xmlFile.existsSync()) {
+          throw Exception("在目录中未找到 data.xml 文件");
         }
+        final xmlContent = await xmlFile.readAsString();
+        return _parseQuestionBankXml(xmlContent);
       }
+
+      // 从压缩包直接读取
+      final fromFile = File(filePath);
+      final archive = _zipDecoder!.decodeBytes(await fromFile.readAsBytes());
+
+      final xmlEntry = archive.files.firstWhere(
+          (file) => file.name == "data.xml",
+          orElse: () => throw Exception("ZIP包中缺少 data.xml 文件"));
+
+      return _parseQuestionBankXml(utf8.decode(xmlEntry.content));
+    } on XmlParserException catch (e) {
+      throw Exception("XML解析失败: ${e.message}");
+    } on FormatException catch (e) {
+      throw Exception("文件格式错误: ${e.message}");
     }
-    return this;
   }
 
-  _getQuestionBankInf(String d) {
-    Map<String, dynamic> jsonO = jsonDecode(d);
-    var json = QuestionBankData.fromJson(jsonO);
-    data = json.data;
-    displayName = json.displayName;
-    id = json.id;
-    version = json.version;
-    cacheDir = path.join(loadedDirPath, id);
+  QuestionBank _parseQuestionBankXml(String xmlString) {
+    final xmlDoc = XmlDocument.parse(xmlString);
+    final root = xmlDoc.rootElement;
+
+    // 验证根元素
+    if (root.name.local != 'QuestionBank') {
+      throw FormatException("无效的根元素: ${root.name.local}");
+    }
+
+    // 解析元数据
+    id = root.getAttribute('id') ?? const Uuid().v4();
+    version = int.tryParse(root.getAttribute('version') ?? '0') ?? 0;
+    displayName = root.getAttribute('displayName') ?? '未命名题库';
+
+    // 解析章节数据
+    final sectionsElement = root.findElements('Sections').firstOrNull;
+    data = sectionsElement
+            ?.findElements('Section')
+            .map((e) => Section.fromXml(e))
+            .toList() ??
+        [];
+
+    // 设置缓存路径
+    cacheDir = path.join(QuestionBank.loadedDirPath, id);
+
+    return this;
   }
 
   static deleteQuestionBank(String id) async {
@@ -474,22 +670,45 @@ class QuestionBank {
 
   static Future<void> importQuestionBank(File file) async {
     mksureInit();
+
     if (!file.existsSync()) {
       throw Exception("文件不存在");
     }
-    var achieve = _zipDecoder!.decodeBytes(await file.readAsBytes());
+
+    final archive = _zipDecoder!.decodeBytes(await file.readAsBytes());
     String? id;
-    for (final f in achieve) {
-      if (f.name == "data.json") {
-        var json = jsonDecode(utf8.decode(f.content));
-        id = json["id"];
-        break;
+
+    try {
+      // 在 ZIP 中查找 XML 数据文件
+      final xmlEntry = archive.files.firstWhere((f) => f.name == "data.xml",
+          orElse: () => throw Exception("ZIP 包中缺少 data.xml 文件"));
+
+      // 解析 XML 内容
+      final xmlDoc = XmlDocument.parse(utf8.decode(xmlEntry.content));
+      final rootElement = xmlDoc.rootElement;
+
+      // 验证根元素并获取 ID
+      if (rootElement.name.local != 'QuestionBank') {
+        throw Exception("无效的 XML 根元素");
       }
+
+      id = rootElement.getAttribute('id');
+      if (id == null || id.isEmpty) {
+        throw Exception("XML 文件缺少有效的 ID 属性");
+      }
+
+      // 验证版本号
+      final version = rootElement.getAttribute('version');
+      if (version == null || int.tryParse(version) == null) {
+        throw Exception("无效的版本号格式");
+      }
+    } on XmlParserException catch (e) {
+      throw Exception("XML 解析失败: ${e.message}");
+    } on FormatException catch (e) {
+      throw Exception("文件格式错误: ${e.message}");
     }
-    if (id == null) {
-      throw Exception("文件格式不正确");
-    }
-    var npath = path.join(QuestionBank.importedDirPath, "$id.qset");
+    // 保存到题库目录
+    final npath = path.join(QuestionBank.importedDirPath, "$id.qset");
     await file.copy(npath);
   }
 
@@ -609,8 +828,28 @@ class QuestionBankBuilder {
     };
   }
 
-  String getDataFileContent() {
-    return jsonEncode(getDataFileJson());
+  // 將整個數據結構轉換為 XML 文檔
+  XmlDocument buildDataFileXml() {
+    final root = XmlElement(XmlName('QuestionBank'));
+
+    // 添加元數據屬性
+    root.attributes.addAll([
+      XmlAttribute(XmlName('id'), id),
+      XmlAttribute(XmlName('version'), version.toString()),
+      XmlAttribute(XmlName('displayName'), displayName)
+    ]);
+
+    // 構建章節數據樹
+    final dataElement = XmlElement(XmlName('Sections'));
+    dataElement.children.addAll(data.map((section) => section.toXml()));
+
+    root.children.add(dataElement);
+    return XmlDocument([root]);
+  }
+
+  // 生成 XML 字符串的快捷方法
+  String toXmlString({bool pretty = false}) {
+    return buildDataFileXml().toXmlString(pretty: pretty);
   }
 
   int imageIndex = 0;
@@ -706,9 +945,11 @@ class QuestionBankBuilder {
   Future<void> build(String outputPath) async {
     File saveFile = File(outputPath);
     try {
-      final jsonContent = utf8.encode(getDataFileContent());
-      archive
-          .addFile(ArchiveFile('data.json', jsonContent.length, jsonContent));
+      // final jsonContent = utf8.encode(getDataFileContent());
+      // archive
+      //     .addFile(ArchiveFile('data.json', jsonContent.length, jsonContent));
+      final xmlContent = utf8.encode(toXmlString());
+      archive.addFile(ArchiveFile('data.xml', xmlContent.length, xmlContent));
     } catch (e) {
       print(e);
     }
@@ -744,7 +985,13 @@ class QuestionBankBuilder {
 
     var lineIndex = -1;
 
-    lines = lines.map((e) => e.trim()).toList().where((element) => element.isNotEmpty,).toList();
+    lines = lines
+        .map((e) => e.trim())
+        .toList()
+        .where(
+          (element) => element.isNotEmpty,
+        )
+        .toList();
 
     List<String> processStringArray(List<String> input) {
       final List<String> result = [];

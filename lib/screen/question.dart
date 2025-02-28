@@ -27,6 +27,7 @@ class QuestionScreen extends StatefulWidget {
   @override
   State<QuestionScreen> createState() => _InnerState();
 }
+
 Card buildKnowledgeCard(BuildContext context, final String index,
     final String title, final String knowledge,
     {final String? images}) {
@@ -54,7 +55,7 @@ Card buildKnowledgeCard(BuildContext context, final String index,
           children: [
             // 修复章节标题显示问题
             _buildHeader(context, index, title), // 提取标题组件
-            
+
             const SizedBox(height: 20),
 
             // 内容滚动区域
@@ -62,7 +63,8 @@ Card buildKnowledgeCard(BuildContext context, final String index,
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch, // 关键修改2：内容横向撑满
+                  crossAxisAlignment:
+                      CrossAxisAlignment.stretch, // 关键修改2：内容横向撑满
                   children: [
                     _buildMarkdownContent(knowledge), // Markdown内容
                     if (images != null) _buildImageSection(images), // 图片部分
@@ -82,8 +84,8 @@ Widget _buildHeader(BuildContext context, String index, String title) {
     children: [
       // 左侧 index 容器
       Container(
-        constraints: BoxConstraints(
-          minWidth: 32,  // 最小保持正方形
+        constraints: const BoxConstraints(
+          minWidth: 32, // 最小保持正方形
           // maxWidth: 56,  // 限制最大扩展宽度
         ),
         height: 32,
@@ -117,21 +119,24 @@ Widget _buildAdaptiveIndexText(String text) {
   return LayoutBuilder(
     builder: (context, constraints) {
       // 计算文本宽度是否超出容器
-      final textSpan = TextSpan(text: text, style: const TextStyle(fontWeight: FontWeight.bold));
+      final textSpan = TextSpan(
+          text: text, style: const TextStyle(fontWeight: FontWeight.bold));
       final painter = TextPainter(
         text: textSpan,
         maxLines: 1,
         textDirection: TextDirection.ltr,
       )..layout();
-      
+
       // 根据宽度动态选择布局
       if (painter.width > constraints.maxWidth) {
-        return FittedBox( // 超长文本缩放
+        return FittedBox(
+          // 超长文本缩放
           fit: BoxFit.scaleDown,
           child: Text(text, style: const TextStyle(color: Colors.white)),
         );
       } else {
-        return Text( // 正常显示
+        return Text(
+          // 正常显示
           text,
           style: const TextStyle(color: Colors.white),
           overflow: TextOverflow.clip,
@@ -145,17 +150,17 @@ Widget _buildAdaptiveIndexText(String text) {
 Widget _buildMarkdownContent(String knowledge) {
   return Container(
     width: double.infinity,
-    child: MarkdownBody( 
+    child: MarkdownBody(
       data: knowledge,
       styleSheet: MarkdownStyleSheet(
-        p: TextStyle(fontSize: 16, color: Colors.black87), // 统一正文字号
-        h1: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        h2: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        p: const TextStyle(fontSize: 16, color: Colors.black87), // 统一正文字号
+        h1: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        h2: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         // 其他元素样式...
       ),
       builders: {
         'latex': LatexElementBuilder(
-          textStyle: TextStyle(
+          textStyle: const TextStyle(
             fontWeight: FontWeight.w100,
             fontSize: 16, // 与普通文本一致
           ),
@@ -169,6 +174,7 @@ Widget _buildMarkdownContent(String knowledge) {
     ),
   );
 }
+
 // 图片组件
 Widget _buildImageSection(String images) {
   return Padding(
@@ -208,6 +214,7 @@ Widget _buildImageSection(String images) {
     ),
   );
 }
+
 Card buildQuestionCard(BuildContext context, final String knowledgepoint,
     final String question, final String? answer, final String? note) {
   final ValueNotifier<bool> isExpanded = ValueNotifier(false);
@@ -222,7 +229,7 @@ Card buildQuestionCard(BuildContext context, final String knowledgepoint,
       valueListenable: isExpanded,
       builder: (context, expanded, _) {
         return ConstrainedBox(
-          constraints: BoxConstraints(
+          constraints: const BoxConstraints(
             minHeight: 200, // 最小高度
             maxHeight: 500, // 最大高度
           ),
@@ -339,7 +346,6 @@ Card buildQuestionCard(BuildContext context, final String knowledgepoint,
 }
 
 Widget _buildAnswerSection(String? answer, String? note, BuildContext context) {
-  final hasAnswer = answer?.isNotEmpty ?? false;
   final hasNote = note?.isNotEmpty ?? false;
 
   return Column(
@@ -398,6 +404,7 @@ Widget _buildSection({
       // 内容容器
       Container(
         padding: const EdgeInsets.all(12),
+        width: double.infinity,
         decoration: BoxDecoration(
           color: Colors.blueGrey.withOpacity(0.03),
           borderRadius: BorderRadius.circular(8),
@@ -427,7 +434,38 @@ Widget _buildSection({
   );
 }
 
-class _InnerState extends State<QuestionScreen> {
+// 弹跳动画组件示例
+class BounceTransition extends StatelessWidget {
+  final Widget child;
+
+  final AnimationController controller;
+
+  const BounceTransition(
+      {super.key, required this.child, required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final animation = Tween<double>(begin: 0, end: 10).animate(
+      CurvedAnimation(
+        parent: controller,
+        curve: Curves.elasticOut,
+      ),
+    );
+
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, animation.value),
+          child: child,
+        );
+      },
+      child: child,
+    );
+  }
+}
+
+class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
   List<String> idList = [];
 
   final CardSwiperController controller = CardSwiperController();
@@ -437,6 +475,88 @@ class _InnerState extends State<QuestionScreen> {
   final List<SingleQuestionData> leftQuestions = [];
   final List<SingleQuestionData> rightQuestions = [];
   int questionRemain = 0;
+
+// 构建带动画的图标组件
+  Widget _buildAnimatedIcons() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const ScaleTransition(
+          scale: AlwaysStoppedAnimation(1.2),
+          child: Icon(
+            Icons.emoji_flags,
+            size: 100,
+            color: Colors.orange,
+          ),
+        ),
+        BounceTransition(
+          // 自定义弹跳动画
+          child: const Icon(
+            Icons.emoji_people,
+            size: 80,
+            color: Colors.lightBlue,
+          ),
+          controller: _controller,
+        ),
+      ],
+    );
+  }
+
+  // 在State类中添加
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+// 构建统一风格的按钮组件
+  Widget _buildActionButton(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(15),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Theme.of(context).colorScheme.primary,
+              Theme.of(context).colorScheme.secondary,
+            ],
+          ),
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: Colors.white),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   //这修改页面2的内容
   @override
@@ -677,81 +797,120 @@ class _InnerState extends State<QuestionScreen> {
                       if (questionRemain == 0) {
                         return Card(
                           color: Theme.of(context).cardColor,
-                          elevation: 4,
+                          elevation: 8, // 增加阴影高度
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20.0), // 更圆润的边框
+                          ),
                           child: SingleChildScrollView(
-                            child: SizedBox(
-                              width: double.infinity,
-                              child: Padding(
-                                padding: const EdgeInsets.all(15),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    SizedBox(
-                                        width: double.infinity,
-                                        child: Center(
-                                          child: Column(
-                                            children: [
-                                              const Row(children: [
-                                                Icon(
-                                                  Icons.emoji_flags,
-                                                  size: 100,
-                                                ),
-                                                Icon(
-                                                  Icons.emoji_people,
-                                                  size: 60,
-                                                ),
-                                              ]),
-                                              const Text(
-                                                '''太棒啦，您已完成本次任务！  ''',
-                                                style: TextStyle(fontSize: 20),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 30, horizontal: 20),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // 图标部分添加动画
+                                  _buildAnimatedIcons(),
+                                  const SizedBox(height: 25),
+
+                                  // 标题文字样式优化
+                                  Text(
+                                    '🎉 任务完成！',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineSmall
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 15),
+
+                                  // 提示文字样式优化
+                                  Text(
+                                    '您已经完成了所有题目',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .secondary,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 30),
+
+                                  // 图片容器优化
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(15),
+                                      boxShadow: [
+                                        const BoxShadow(
+                                          color: Colors.black12,
+                                          blurRadius: 10,
+                                          offset: Offset(0, 4),
+                                        )
+                                      ],
+                                    ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(15),
+                                      child: Image.asset(
+                                        'assets/come_on.jpg',
+                                        height: 180,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 30),
+
+                                  // 按钮组布局
+                                  Column(
+                                    children: [
+                                      Text(
+                                        '请选择下一步操作',
+                                        style: TextStyle(
+                                          fontStyle: FontStyle.italic,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withOpacity(0.8),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 25),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          // 继续按钮美化
+                                          _buildActionButton(
+                                            context,
+                                            icon: Icons.refresh,
+                                            label: '继续刷题',
+                                            onTap: () =>
+                                                Navigator.pushAndRemoveUntil(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    const ModeScreen(
+                                                        title: '刷题界面'),
                                               ),
-                                              Image.asset(
-                                                'assets/come_on.jpg',
-                                                height: 150,
-                                              ),
-                                              const Text(
-                                                '''
-                                           提示：退出or继续''',
-                                                style: TextStyle(
-                                                    fontStyle:
-                                                        FontStyle.italic),
-                                              ),
-                                              InkWell(
-                                                  onTap: () {
-                                                    Navigator.push(
-                                                        context,
-                                                        MaterialPageRoute(
-                                                            builder: (context) =>
-                                                                const LoadingScreen(
-                                                                    title:
-                                                                        '')));
-                                                  },
-                                                  child: TDButton(
-                                                    text: '继续刷题',
-                                                    size: TDButtonSize.large,
-                                                    type: TDButtonType.ghost,
-                                                    shape:
-                                                        TDButtonShape.rectangle,
-                                                    theme:
-                                                        TDButtonTheme.primary,
-                                                    onTap: () {
-                                                      Navigator.pushAndRemoveUntil(
-                                                          context,
-                                                          MaterialPageRoute(
-                                                              builder: (context) =>
-                                                                  const ModeScreen(
-                                                                      title:
-                                                                          '')),
-                                                          (route) =>
-                                                              route.isFirst);
-                                                    },
-                                                  ))
-                                            ],
+                                              (route) => route.isFirst,
+                                            ),
                                           ),
-                                        )),
-                                  ],
-                                ),
+                                          const SizedBox(width: 20),
+                                          // 退出按钮美化
+                                          _buildActionButton(
+                                            context,
+                                            icon: Icons.exit_to_app,
+                                            label: '退出',
+                                            onTap: () => Navigator.pop(context),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
                             ),
                           ),

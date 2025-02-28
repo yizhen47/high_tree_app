@@ -34,11 +34,8 @@ Future<void> main() async {
       await windowManager.focus();
     });
   }
-  WidgetsFlutterBinding.ensureInitialized();
-  await QuestionBank.init();
-  await QuestionBankBuilder.init();
-  await WrongQuestionBook.init();
   await StudyData.instance.init();
+
   runApp(const WidgetRebirth(materialApp: MainEnterScreen()));
 }
 
@@ -52,7 +49,6 @@ class MainEnterScreen extends StatelessWidget {
     //入口，一般不用改
     return MaterialApp(
       title: '高数',
-      
       themeMode: StudyData.instance.getNightModeFollowSystem()
           ? ThemeMode.system
           : StudyData.instance.getNightMode()
@@ -62,7 +58,7 @@ class MainEnterScreen extends StatelessWidget {
         primaryColor: StudyData.instance.getThemeColor(),
         extensions: [
           TDTheme.defaultData()
-        ..colorMap['brandColor7'] = StudyData.instance.getThemeColor()
+            ..colorMap['brandColor7'] = StudyData.instance.getThemeColor()
         ],
         scaffoldBackgroundColor: const Color.fromARGB(255, 24, 24, 24),
         cardColor: const Color.fromRGBO(50, 50, 50, 1),
@@ -73,7 +69,7 @@ class MainEnterScreen extends StatelessWidget {
         primaryColor: StudyData.instance.getThemeColor(),
         extensions: [
           TDTheme.defaultData()
-        ..colorMap['brandColor7'] = StudyData.instance.getThemeColor()
+            ..colorMap['brandColor7'] = StudyData.instance.getThemeColor()
         ],
         scaffoldBackgroundColor: const Color.fromRGBO(250, 250, 250, 1),
         cardColor: Colors.white,
@@ -95,106 +91,137 @@ class _MainEnterScreen extends StatefulWidget {
   State<_MainEnterScreen> createState() => _MainEnterScreenState();
 }
 
-class _MainEnterScreenState extends State<_MainEnterScreen> {
-//init: 在页面初始化的时候执行
+class _MainEnterScreenState extends State<_MainEnterScreen>
+    with TickerProviderStateMixin {
+  late AnimationController _fadeController;
+  double _opacity = 1.0;
+  bool _initCompleted = false;
+
   @override
   void initState() {
     super.initState();
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      fetchAll();
-    });
-    //future.delay xxxxx格式：延时执行一串代码
 
-    Future.delayed(const Duration(milliseconds: 5000), () {
-      if (!isStarted) {
-        Navigator.pushAndRemoveUntil(
-            // ignore: use_build_context_synchronously
-            context,
-            MaterialPageRoute(
-                builder: (context) => const HomeScreen()),
-            (route) => false);
-      }
-    });
-  }
-
-  Future<void> fetchAll() async {
-    //设置安卓平台的高屏幕刷新率
-    if (Platform.isAndroid) {
-      List<Permission> permissionNames = [];
-      // permissionNames.add(Permission.location);
-      // permissionNames.add(Permission.camera);
-      permissionNames.add(Permission.storage);
-      for (var p in permissionNames) {
-        p.request();
-      }
+    Future(() async {
       try {
-        await FlutterDisplayMode.setHighRefreshRate();
-      } on PlatformException catch (e) {
-        print(e);
+        await QuestionBank.init();
+        await QuestionBankBuilder.init();
+        await WrongQuestionBook.init();
+
+        if (mounted) {
+          setState(() => _initCompleted = true);
+          _navigateToHome();
+        }
+      } catch (e) {
+        print("初始化失败: $e");
+        _navigateToHome(); // 即使失败也跳转
       }
-    }
+    });
+
+    // 5秒超时机制
+    Future.delayed(const Duration(seconds: 5), _navigateToHome);
+
+    // 渐隐动画控制器
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
   }
 
-  //界面1的界面内容
+  void _navigateToHome() {
+    if (!mounted) return;
+
+    _fadeController.forward().then((_) {
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          transitionDuration: const Duration(milliseconds: 800),
+          pageBuilder: (_, __, ___) => const HomeScreen(),
+          transitionsBuilder: (_, animation, __, child) {
+            return FadeTransition(
+              opacity: animation,
+              child: child,
+            );
+          },
+        ),
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final themeColor = StudyData.instance.getThemeColor();
+
     return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          verticalDirection: VerticalDirection.up,
-          children: <Widget>[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset(
-                  'assets/logo.png',
-                  width: 60,
-                  height: 60,
-                ),
-                const SizedBox(width: 10),
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '长安大学高数练习软件',
-                      style: TextStyle(color: Colors.black, fontSize: 20),
+      body: AnimatedBuilder(
+        animation: _fadeController,
+        builder: (context, child) {
+          return Opacity(
+            opacity: 1 - _fadeController.value,
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Logo容器（修复空白框问题）
+                  Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(24),
+                      gradient: LinearGradient(
+                        colors: [
+                          themeColor,
+                          themeColor.withOpacity(0.8),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
                     ),
-                    Text(
-                      '上高树，学高数',
-                      style: TextStyle(color: Colors.grey, fontSize: 16),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Image.asset(
+                        'assets/logo.png',
+                        filterQuality: FilterQuality.high,
+                      ),
                     ),
-                  ],
-                )
-              ],
-            ),
-            const SizedBox(height: 50),
-            InkWell(
-              onTap: () {
-                isStarted = true;
-                Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const HomeScreen()),
-                    (route) => false);
-              },
-              child: SizedBox(
-                width: 250.0,
-                child: TextLiquidFill(
-                  text: 'CHU',
-                  waveColor: Colors.blueAccent,
-                  boxBackgroundColor: Colors.redAccent,
-                  textStyle: const TextStyle(
-                    fontSize: 80.0,
-                    fontWeight: FontWeight.bold,
                   ),
-                  boxHeight: 250.0,
-                ),
+
+                  const SizedBox(height: 32),
+
+                  // 加载状态提示
+                  _initCompleted
+                      ? Text("加载完成", style: TextStyle(color: themeColor))
+                      : const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+
+                  const SizedBox(height: 20),
+
+                  // 轻触跳过提示（保留原有交互）
+                  GestureDetector(
+                    onTap: _navigateToHome,
+                    child: AnimatedOpacity(
+                      opacity: _initCompleted ? 0.0 : 1.0,
+                      duration: const Duration(milliseconds: 300),
+                      child: Text("轻触跳过",
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          )),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    super.dispose();
   }
 }
