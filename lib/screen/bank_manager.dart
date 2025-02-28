@@ -6,7 +6,6 @@ import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/tool/wrong_question_book.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
-import 'package:uuid/uuid.dart';
 
 class BankManagerScreen extends StatefulWidget {
   const BankManagerScreen({super.key, required this.title});

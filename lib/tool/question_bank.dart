@@ -43,11 +43,11 @@ class SingleQuestionData {
       this.question, this.fromId, this.fromDisplayName);
 
   String getKonwledgePoint() {
-    return fromKonwledgePoint.join('/');
+    return fromKonwledgePoint.isEmpty ? '' : fromKonwledgePoint.last;
   }
 
   String getKonwledgeIndex() {
-    return fromKonwledgeIndex.join('/');
+    return fromKonwledgeIndex.isEmpty ? '' : fromKonwledgeIndex.last;
   }
 
   SingleQuestionData clone() {
@@ -1143,7 +1143,7 @@ class QuestionBankBuilder {
           var newIndex = matchSub.group(1)!.replaceAll(' ', '');
           var newTitle = matchSub.group(2)!.replaceAll(' ', '');
 
-          if(newTitle.startsWith(".")||newTitle.startsWith("．")){
+          if (newTitle.startsWith(".") || newTitle.startsWith("．")) {
             newTitle = newTitle.substring(1);
           }
 

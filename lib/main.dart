@@ -1,23 +1,20 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/tool/wrong_question_book.dart';
-import 'package:flutter_application_1/widget/question_text.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:rebirth/rebirth.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'screen/home.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
-import 'package:animated_text_kit/animated_text_kit.dart';
 import 'tool/question_bank.dart';
 import 'package:window_manager/window_manager.dart';
 
 //整个软件入口（测试用）
 Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   if (Platform.isWindows) {
-    WidgetsFlutterBinding.ensureInitialized();
     await windowManager.ensureInitialized();
 
     WindowOptions windowOptions = const WindowOptions(
@@ -65,7 +62,7 @@ class MainEnterScreen extends StatelessWidget {
         useMaterial3: true,
       ),
       theme: ThemeData(
-        fontFamily: Platform.isWindows ? "PingFang SC" : null,
+        fontFamily: Platform.isWindows ? "微软雅黑" : null,
         primaryColor: StudyData.instance.getThemeColor(),
         extensions: [
           TDTheme.defaultData()
@@ -106,7 +103,7 @@ class _MainEnterScreenState extends State<_MainEnterScreen>
         await QuestionBank.init();
         await QuestionBankBuilder.init();
         await WrongQuestionBook.init();
-
+        await platformInit();
         if (mounted) {
           setState(() => _initCompleted = true);
           _navigateToHome();
@@ -125,6 +122,23 @@ class _MainEnterScreenState extends State<_MainEnterScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     );
+  }
+
+  Future<void> platformInit() async {
+    if (Platform.isAndroid) {
+      List<Permission> permissionNames = [];
+      // permissionNames.add(Permission.location);
+      // permissionNames.add(Permission.camera);
+      permissionNames.add(Permission.storage);
+      for (var p in permissionNames) {
+        p.request();
+      }
+      try {
+        await FlutterDisplayMode.setHighRefreshRate();
+      } on PlatformException catch (e) {
+        print(e);
+      }
+    }
   }
 
   void _navigateToHome() {

@@ -2,10 +2,8 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:extended_text/extended_text.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screen/home.dart';
-import 'package:flutter_application_1/screen/loading.dart';
 import 'package:flutter_application_1/screen/mode.dart';
 import 'package:flutter_application_1/screen/wrong_question.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
@@ -14,7 +12,6 @@ import 'package:flutter_application_1/tool/wrong_question_book.dart';
 import 'package:flutter_application_1/widget/question_text.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_markdown_latex/flutter_markdown_latex.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:latext/latext.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
@@ -252,17 +249,17 @@ Card buildQuestionCard(BuildContext context, final String knowledgepoint,
                             size: 16, color: Theme.of(context).primaryColor),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: ExtendedText(
-                            knowledgepoint,
-                            specialTextSpanBuilder:
-                                MathIncludeTextSpanBuilder(),
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Theme.of(context).primaryColor,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
+                            child: Builder(
+                                builder: (context) => LaTexT(
+                                      laTeXCode: ExtendedText(
+                                        knowledgepoint,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Theme.of(context).primaryColor,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ))),
                       ],
                     ),
                   ),
@@ -432,37 +429,6 @@ Widget _buildSection({
   );
 }
 
-// 弹跳动画组件示例
-class BounceTransition extends StatelessWidget {
-  final Widget child;
-
-  final AnimationController controller;
-
-  const BounceTransition(
-      {super.key, required this.child, required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    final animation = Tween<double>(begin: 0, end: 10).animate(
-      CurvedAnimation(
-        parent: controller,
-        curve: Curves.elasticOut,
-      ),
-    );
-
-    return AnimatedBuilder(
-      animation: animation,
-      builder: (context, child) {
-        return Transform.translate(
-          offset: Offset(0, animation.value),
-          child: child,
-        );
-      },
-      child: child,
-    );
-  }
-}
-
 class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
   List<String> idList = [];
 
@@ -474,48 +440,9 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
   final List<SingleQuestionData> rightQuestions = [];
   int questionRemain = 0;
 
-// 构建带动画的图标组件
-  Widget _buildAnimatedIcons() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const ScaleTransition(
-          scale: AlwaysStoppedAnimation(1.2),
-          child: Icon(
-            Icons.emoji_flags,
-            size: 100,
-            color: Colors.orange,
-          ),
-        ),
-        BounceTransition(
-          // 自定义弹跳动画
-          child: const Icon(
-            Icons.emoji_people,
-            size: 80,
-            color: Colors.lightBlue,
-          ),
-          controller: _controller,
-        ),
-      ],
-    );
-  }
-
-  // 在State类中添加
-  late AnimationController _controller;
-
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1000),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
   }
 
 // 构建统一风格的按钮组件
@@ -535,12 +462,12 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
           children: [
             // 图标使用主色
             Container(
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppTheme.primaryColor,
                 shape: BoxShape.circle,
               ),
               padding: const EdgeInsets.all(16),
-              child: Icon(
+              child: const Icon(
                 Icons.check_rounded,
                 size: 36,
                 color: Colors.white,
@@ -549,7 +476,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
             const SizedBox(height: 28),
 
             // 标题使用文本主色
-            Text(
+            const Text(
               '任务完成',
               style: TextStyle(
                 fontSize: 22,
@@ -561,7 +488,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
             const SizedBox(height: 12),
 
             // 副标题使用文本次要色
-            Text(
+            const Text(
               '已完成所有题目练习',
               style: TextStyle(
                 fontSize: 16,
@@ -577,14 +504,24 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                   width: double.infinity,
                   child: TextButton(
                     style: TextButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 16),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
                       backgroundColor: Colors.blue[50], // 浅色背景
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    onPressed: () {},
-                    child: Text('保存',
+                    onPressed: () {
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ModeScreen(
+                            title: '',
+                          ),
+                        ),
+                        (layer) => layer.isFirst,
+                      );
+                    },
+                    child: Text('继续做题',
                         style: TextStyle(
                             color: Colors.blue[800],
                             fontSize: 15,
@@ -608,19 +545,232 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
     );
   }
 
-// 简化的动画图标
-  Widget _buildCheckmarkAnimation() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer,
-        shape: BoxShape.circle,
+  _buildCardData(BuildContext context) {
+    return FutureBuilder(
+      future: QuestionBank.getAllLoadedQuestionBanks(),
+      builder: (context, snapshot) {
+        // 请求已结束
+        if (snapshot.connectionState == ConnectionState.done) {
+          if (snapshot.hasError) {
+            // 请求失败，显示错误
+            return Text("Error: ${snapshot.error}" '${snapshot.stackTrace}');
+          } else {
+            List<Card> cards = [];
+            final studyType = StudyData.instance.getStudyType();
+            final isTestMode = studyType == StudyType.testMode;
+            final isStudyMode = studyType == StudyType.studyMode;
+
+            // 公共处理逻辑
+            void addQuestionCard(SingleQuestionData q) {
+              allQuestions.add(q);
+              questionRemoved.add(false);
+              questionRemain++;
+              cards.add(buildQuestionCard(
+                context,
+                q.getKonwledgePoint(),
+                q.question['q']!,
+                q.question['w'],
+                WrongQuestionBook.instance.getQuestion(q.question['id']!).note,
+              ));
+            }
+
+            // 测试模式处理
+            if (isTestMode) {
+              final secList = StudyData.instance.getStudySection();
+              Map<String, List<int>> dtype = {};
+
+              if (secList != null) {
+                final decoded = json.decode(secList) as Map<String, dynamic>;
+                dtype = decoded
+                    .map((k, v) => MapEntry(k, List<int>.from(v as List)));
+              }
+
+              final rQdb = snapshot.data!;
+              final sectionKeys = List<String>.from(dtype.keys);
+
+              for (int i = 0;
+                  i < StudyData.instance.getStudyQuestionNum();
+                  i++) {
+                final randomKey =
+                    sectionKeys[Random().nextInt(sectionKeys.length)];
+                final sectionData = rQdb[int.parse(randomKey)];
+                final questionIndexes = dtype[randomKey]!;
+                final randomIndex =
+                    questionIndexes[Random().nextInt(questionIndexes.length)];
+
+                final question = sectionData.data![randomIndex];
+                final qData = question.randomSectionQuestion(
+                    [], [], sectionData.id!, sectionData.displayName!);
+
+                addQuestionCard(qData);
+              }
+            }
+
+// 学习模式处理
+            else if (isStudyMode) {
+              final secList = StudyData.instance.getStudySection() ??
+                  (throw Exception("需要指定学习章节"));
+              Section currentSection = Section("", "")
+                ..children = snapshot.data!.single.data;
+              final knowledgePath = secList.split("/");
+
+              // 递归构建知识卡片
+              void buildSectionTree(Section section) {
+                cards.add(buildKnowledgeCard(context, section.index,
+                    section.title, section.note ?? "暂无知识点"));
+                questionRemoved.add(false);
+                allQuestions.add(SingleQuestionData([], [], {}, "", ""));
+                questionRemain++;
+
+                section.children?.forEach((child) => buildSectionTree(child));
+              }
+
+              // 定位目标章节
+              for (final index in knowledgePath) {
+                currentSection = currentSection.children!
+                    .firstWhere((e) => e.index == index);
+              }
+
+              buildSectionTree(currentSection);
+              currentSection
+                  .sectionQuestion(
+                    knowledgePath.map((e) => currentSection.title).toList(),
+                    knowledgePath,
+                    snapshot.data!.single.id!,
+                    snapshot.data!.single.displayName!,
+                  )
+                  .forEach(addQuestionCard);
+            }
+            // 卡片滑动组件
+            return CardSwiper(
+              controller: controller,
+              onSwipe: (previousIndex, currentIndex, direction) {
+                if (questionRemain > 0) {
+                  final index = previousIndex;
+                  final question = allQuestions[index];
+
+                  // 生成持久化ID（重要修复）
+                  final String questionId = question.question['id'] ?? '';
+
+                  // 记录发生次数（无论是否知识点题目）
+                  final userData =
+                      WrongQuestionBook.instance.getQuestion(questionId);
+                  userData.tryCompleteTimes++;
+                  if (!WrongQuestionBook.instance.hasQuestion(questionId)) {
+                    WrongQuestionBook.instance
+                        .addQuestion(questionId, userData); // 更新发生次数
+                  }
+                  // 仅知识点题目需要记录错题本
+                  if (question.fromKonwledgeIndex.isNotEmpty) {
+                    if (direction == CardSwiperDirection.right) {
+                      if (!WrongQuestionBook.instance
+                          .hasWrongQuestion(questionId)) {
+                        WrongQuestionBook.instance
+                            .addWrongQuestion(questionId, question);
+                        idList.add(questionId); // 记录可撤销的错题ID
+                        TDToast.showSuccess("已加入错题本", context: context);
+                      } else {
+                        TDToast.showWarning("已在错题本中", context: context);
+                        idList.add(const Uuid().v4()); // 生成伪ID防止误删
+                      }
+                    }
+                  }
+
+                  // 状态更新（统一处理）
+                  questionRemoved[index] = true;
+                  questionRemain--;
+                  direction == CardSwiperDirection.right
+                      ? rightQuestions.add(question)
+                      : leftQuestions.add(question);
+
+                  return true;
+                }
+                return false;
+              },
+              cardsCount: cards.length,
+              cardBuilder:
+                  (context, index, percentThresholdX, percentThresholdY) {
+                if (questionRemain == 0) {
+                  return _buildCompleteCard(context);
+                } else {
+                  // 记录原始索引和尝试次数防止死循环
+                  int attempts = 0;
+
+                  // 查找下一个未移除的卡片，最多尝试cards.length次
+                  while (questionRemoved[index] && attempts < cards.length) {
+                    index = (index + 1) % cards.length;
+                    attempts++;
+                  }
+
+                  // 所有卡片都被移除了但questionRemain未及时更新，强制显示完成
+                  if (attempts >= cards.length || questionRemoved[index]) {
+                    return _buildCompleteCard(context);
+                  }
+
+                  return cards[index];
+                }
+              },
+              // 在 CardSwiper 的 onUndo 回调中直接实现撤销逻辑（原简写方案中缺失的部分）
+              onUndo: (previousIndex, currentIndex, direction) {
+                final question = allQuestions[currentIndex];
+                final String questionId = question.question['id'] ?? '';
+
+                // 还原发生次数
+                final userData =
+                    WrongQuestionBook.instance.getQuestion(questionId);
+                userData.tryCompleteTimes--;
+
+                if (direction == CardSwiperDirection.right) {
+                  // 错题本撤销处理
+                  if (question.fromKonwledgeIndex.isNotEmpty) {
+                    final removedId = idList.removeLast();
+                    if (removedId == questionId) {
+                      // 验证ID一致性
+                      WrongQuestionBook.instance.removeWrongQuestion(removedId);
+                    }
+                  }
+                  rightQuestions.removeLast();
+                } else {
+                  leftQuestions.removeLast();
+                }
+
+                questionRemoved[currentIndex] = false;
+                questionRemain++;
+                return true;
+              },
+            );
+          }
+        } else {
+          return const Center(
+            child: TDLoading(
+              size: TDLoadingSize.large,
+              icon: TDLoadingIcon.circle,
+              text: '加载中…',
+              axis: Axis.horizontal,
+            ),
+          );
+        }
+      },
+    );
+  }
+
+// 统一的小型浮动按钮
+  Widget _buildMiniFab({
+    required IconData icon,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return FloatingActionButton(
+      heroTag: 'fab_${icon.codePoint}',
+      mini: true,
+      backgroundColor: color.withOpacity(0.9),
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(color: color.withOpacity(0.3), width: 1),
       ),
-      padding: const EdgeInsets.all(16),
-      child: const Icon(
-        Icons.check_rounded,
-        size: 36,
-        color: Colors.white,
-      ),
+      child: Icon(icon, size: 20, color: Colors.white),
+      onPressed: onPressed,
     );
   }
 
@@ -634,238 +784,42 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
         backgroundColor: Theme.of(context).cardColor,
       ),
       floatingActionButton: Padding(
-          padding: const EdgeInsets.only(bottom: 150),
-          child: FloatingActionButton(
-              backgroundColor: const Color.fromARGB(255, 237, 237, 237),
-              hoverColor: const Color.fromARGB(255, 207, 207, 207),
-              child: const Icon(Icons.reply),
+        padding: const EdgeInsets.only(bottom: 150),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            _buildMiniFab(
+              icon: Icons.check,
+              color: Colors.green.shade200,
               onPressed: () {
-                controller.undo();
-              })),
-      body: Column(
-        children: [
-          Flexible(
-            child: FutureBuilder(
-              future: QuestionBank.getAllLoadedQuestionBanks(),
-              builder: (context, snapshot) {
-                // 请求已结束
-                if (snapshot.connectionState == ConnectionState.done) {
-                  if (snapshot.hasError) {
-                    // 请求失败，显示错误
-                    return Text(
-                        "Error: ${snapshot.error}" '${snapshot.stackTrace}');
-                  } else {
-                    List<Card> cards = [];
-                    final studyType = StudyData.instance.getStudyType();
-                    final isTestMode = studyType == StudyType.testMode;
-                    final isStudyMode = studyType == StudyType.studyMode;
-
-// 公共处理逻辑
-                    void addQuestionCard(SingleQuestionData q) {
-                      allQuestions.add(q);
-                      questionRemoved.add(false);
-                      questionRemain++;
-                      cards.add(buildQuestionCard(
-                        context,
-                        q.getKonwledgePoint(),
-                        q.question['q']!,
-                        q.question['w'],
-                        WrongQuestionBook.instance
-                            .getQuestion(q.question['id']!)
-                            .note,
-                      ));
-                    }
-
-                    // 测试模式处理
-                    if (isTestMode) {
-                      final secList = StudyData.instance.getStudySection();
-                      Map<String, List<int>> dtype = {};
-
-                      if (secList != null) {
-                        final decoded =
-                            json.decode(secList) as Map<String, dynamic>;
-                        dtype = decoded.map(
-                            (k, v) => MapEntry(k, List<int>.from(v as List)));
-                      }
-
-                      final rQdb = snapshot.data!;
-                      final sectionKeys = List<String>.from(dtype.keys);
-
-                      for (int i = 0;
-                          i < StudyData.instance.getStudyQuestionNum();
-                          i++) {
-                        final randomKey =
-                            sectionKeys[Random().nextInt(sectionKeys.length)];
-                        final sectionData = rQdb[int.parse(randomKey)];
-                        final questionIndexes = dtype[randomKey]!;
-                        final randomIndex = questionIndexes[
-                            Random().nextInt(questionIndexes.length)];
-
-                        final question = sectionData.data![randomIndex];
-                        final qData = question.randomSectionQuestion(
-                            [], [], sectionData.id!, sectionData.displayName!);
-
-                        addQuestionCard(qData);
-                      }
-                    }
-
-// 学习模式处理
-                    else if (isStudyMode) {
-                      final secList = StudyData.instance.getStudySection() ??
-                          (throw Exception("需要指定学习章节"));
-                      Section currentSection = Section("", "")
-                        ..children = snapshot.data!.single.data;
-                      final knowledgePath = secList.split("/");
-
-                      // 递归构建知识卡片
-                      void buildSectionTree(Section section) {
-                        cards.add(buildKnowledgeCard(context, section.index,
-                            section.title, section.note ?? "暂无知识点"));
-                        questionRemoved.add(false);
-                        allQuestions
-                            .add(SingleQuestionData([], [], {}, "", ""));
-                        questionRemain++;
-
-                        section.children
-                            ?.forEach((child) => buildSectionTree(child));
-                      }
-
-                      // 定位目标章节
-                      for (final index in knowledgePath) {
-                        currentSection = currentSection.children!
-                            .firstWhere((e) => e.index == index);
-                      }
-
-                      buildSectionTree(currentSection);
-                      currentSection
-                          .sectionQuestion(
-                            knowledgePath
-                                .map((e) => currentSection.title)
-                                .toList(),
-                            knowledgePath,
-                            snapshot.data!.single.id!,
-                            snapshot.data!.single.displayName!,
-                          )
-                          .forEach(addQuestionCard);
-                    }
-                    // 卡片滑动组件
-                    return CardSwiper(
-                      controller: controller,
-                      onSwipe: (previousIndex, currentIndex, direction) {
-                        if (questionRemain > 0) {
-                          final index = previousIndex!;
-                          final question = allQuestions[index];
-
-                          // 生成持久化ID（重要修复）
-                          final String questionId =
-                              question.question['id'] ?? '';
-
-                          // 记录发生次数（无论是否知识点题目）
-                          final userData = WrongQuestionBook.instance
-                              .getQuestion(questionId);
-                          userData.tryCompleteTimes++;
-                          if (!WrongQuestionBook.instance
-                              .hasQuestion(questionId)) {
-                            WrongQuestionBook.instance
-                                .addQuestion(questionId, userData); // 更新发生次数
-                          }
-                          // 仅知识点题目需要记录错题本
-                          if (question.fromKonwledgeIndex.isNotEmpty) {
-                            if (direction == CardSwiperDirection.right) {
-                              if (!WrongQuestionBook.instance
-                                  .hasWrongQuestion(questionId)) {
-                                WrongQuestionBook.instance
-                                    .addWrongQuestion(questionId, question);
-                                idList.add(questionId); // 记录可撤销的错题ID
-                                TDToast.showSuccess("已加入错题本", context: context);
-                              } else {
-                                TDToast.showWarning("已在错题本中", context: context);
-                                idList.add(const Uuid().v4()); // 生成伪ID防止误删
-                              }
-                            }
-                          }
-
-                          // 状态更新（统一处理）
-                          questionRemoved[index] = true;
-                          questionRemain--;
-                          direction == CardSwiperDirection.right
-                              ? rightQuestions.add(question)
-                              : leftQuestions.add(question);
-
-                          return true;
-                        }
-                        return false;
-                      },
-                      cardsCount: cards.length,
-                      cardBuilder: (context, index, percentThresholdX,
-                          percentThresholdY) {
-                        if (questionRemain == 0) {
-                          return _buildCompleteCard(context);
-                        } else {
-                          // 记录原始索引和尝试次数防止死循环
-                          int originalIndex = index;
-                          int attempts = 0;
-
-                          // 查找下一个未移除的卡片，最多尝试cards.length次
-                          while (questionRemoved[index] &&
-                              attempts < cards.length) {
-                            index = (index + 1) % cards.length;
-                            attempts++;
-                          }
-
-                          // 所有卡片都被移除了但questionRemain未及时更新，强制显示完成
-                          if (attempts >= cards.length ||
-                              questionRemoved[index]) {
-                            return _buildCompleteCard(context);
-                          }
-
-                          return cards[index];
-                        }
-                      },
-                      // 在 CardSwiper 的 onUndo 回调中直接实现撤销逻辑（原简写方案中缺失的部分）
-                      onUndo: (previousIndex, currentIndex, direction) {
-                        final question = allQuestions[currentIndex];
-                        final String questionId = question.question['id'] ?? '';
-
-                        // 还原发生次数
-                        final userData =
-                            WrongQuestionBook.instance.getQuestion(questionId);
-                        userData.tryCompleteTimes--;
-
-                        if (direction == CardSwiperDirection.right) {
-                          // 错题本撤销处理
-                          if (question.fromKonwledgeIndex.isNotEmpty) {
-                            final removedId = idList.removeLast();
-                            if (removedId == questionId) {
-                              // 验证ID一致性
-                              WrongQuestionBook.instance
-                                  .removeWrongQuestion(removedId);
-                            }
-                          }
-                          rightQuestions.removeLast();
-                        } else {
-                          leftQuestions.removeLast();
-                        }
-
-                        questionRemoved[currentIndex] = false;
-                        questionRemain++;
-                        return true;
-                      },
-                    );
-                  }
-                } else {
-                  return const Center(
-                    child: TDLoading(
-                      size: TDLoadingSize.large,
-                      icon: TDLoadingIcon.circle,
-                      text: '加载中…',
-                      axis: Axis.horizontal,
-                    ),
-                  );
-                }
+                controller.swipe(CardSwiperDirection.left);
               },
             ),
-          ),
+            const SizedBox(height: 16),
+            _buildMiniFab(
+              icon: Icons.close,
+              color: Colors.red.shade200,
+              onPressed: () {
+                controller.swipe(CardSwiperDirection.right);
+              },
+            ),
+            const SizedBox(height: 16),
+            // 撤回按钮
+            FloatingActionButton(
+              heroTag: 'undo_btn',
+              mini: true,
+              backgroundColor: Colors.grey[200],
+              elevation: 2,
+              child: Icon(Icons.reply, color: Colors.grey[700]),
+              onPressed: controller.undo,
+            ),
+          ],
+        ),
+      ),
+      body: Column(
+        children: [
+          Flexible(child: _buildCardData(context)),
           Container(
             color: Theme.of(context).cardColor,
             child: Row(

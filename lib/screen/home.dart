@@ -8,7 +8,6 @@ import 'package:flutter_application_1/screen/about.dart';
 import 'package:flutter_application_1/screen/bank_choose.dart';
 import 'package:flutter_application_1/screen/bank_manager.dart';
 import 'package:flutter_application_1/screen/personal.dart';
-import 'package:flutter_application_1/screen/setting.dart';
 import 'package:flutter_application_1/screen/wrong_question.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:flutter_application_1/tool/study_data.dart';

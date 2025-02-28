@@ -94,7 +94,7 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidth> {
                               decoration: BoxDecoration(
                                 color: Colors.grey[50],
                                 borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
+                                boxShadow: const [
                                   BoxShadow(
                                     color: Colors.black12,
                                     blurRadius: 6,
@@ -102,7 +102,7 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidth> {
                                   )
                                 ],
                               ),
-                              padding: EdgeInsets.all(16),
+                              padding: const EdgeInsets.all(16),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -113,7 +113,7 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidth> {
                                   const SizedBox(height: 10),
                                   Expanded(
                                     child: SingleChildScrollView(
-                                      physics: BouncingScrollPhysics(),
+                                      physics: const BouncingScrollPhysics(),
                                       child: LaTexT(
                                         laTeXCode: Text(
                                           latexText,
@@ -163,11 +163,12 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidth> {
                                           fontSize: 14,
                                           fontStyle: FontStyle.italic),
                                       border: InputBorder.none,
-                                      contentPadding: EdgeInsets.all(16),
+                                      contentPadding: const EdgeInsets.all(16),
                                       suffixIcon: laTeXInputController
                                               .text.isNotEmpty
                                           ? IconButton(
-                                              icon: Icon(Icons.clear, size: 20),
+                                              icon: const Icon(Icons.clear,
+                                                  size: 20),
                                               onPressed: () {
                                                 laTeXInputController.clear();
                                                 innerSetState(
@@ -188,7 +189,8 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidth> {
                               Expanded(
                                 child: TextButton(
                                   style: TextButton.styleFrom(
-                                    padding: EdgeInsets.symmetric(vertical: 16),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 16),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
                                       side: BorderSide(
@@ -203,11 +205,12 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidth> {
                                           letterSpacing: 1.2)),
                                 ),
                               ),
-                              SizedBox(width: 16),
+                              const SizedBox(width: 16),
                               Expanded(
                                 child: TextButton(
                                   style: TextButton.styleFrom(
-                                    padding: EdgeInsets.symmetric(vertical: 16),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 16),
                                     backgroundColor: Colors.blue[50], // 浅色背景
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
@@ -260,14 +263,14 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidth> {
         borderRadius: BorderRadius.circular(10),
         child: Container(
           height: 48,
-          padding: EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 12),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(icon, color: Colors.white, size: 20),
               const SizedBox(width: 8),
               Text(text,
-                  style: TextStyle(
+                  style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.w600)),
@@ -331,51 +334,55 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidth> {
             builder: (BuildContext context, value, Widget? child) {
               return TDCellGroup(
                 cells: filteredList
-                    .map((e) => TDCell(
-                          note: hideText('${(e['note'])}', maxLen: 10),
-                          description: e['description'],
-                          leftIconWidget: WrongQuestionBook.instance
-                                  .getQuestion(e['id'])
-                                  .note
-                                  .isNotEmpty
-                              ? Container(
-                                  width: 8,
-                                  height: 80,
-                                  color: Theme.of(context).primaryColor,
-                                )
-                              : null,
-                          onClick: (_) {
-                            Navigator.of(context).push(
-                              TDSlidePopupRoute(
-                                // modalBarrierColor:
-                                //     TDTheme.of(context).fontGyColor2,
-                                slideTransitionFrom: SlideTransitionFrom.center,
-                                builder: (_) {
-                                  SingleQuestionData q = e['data'];
-                                  return TDPopupCenterPanel(
-                                    radius: 15,
-                                    backgroundColor: Colors.transparent,
-                                    closeClick: () {
-                                      Navigator.maybePop(context);
-                                    },
-                                    child: SizedBox(
-                                      width: screenWidth - 80,
-                                      height: screenHeight - 150,
-                                      child: buildQuestionCard(
-                                          context,
-                                          q.getKonwledgePoint(),
-                                          q.question['q']!,
-                                          q.question['w'],
-                                          WrongQuestionBook.instance
-                                              .getQuestion(q.question['id']!)
-                                              .note),
-                                    ),
-                                  );
-                                },
-                              ),
-                            );
-                          },
-                          titleWidget: ExtendedText(e['title'],
+                    .map(
+                      (e) => TDCell(
+                        note: hideText('${(e['note'])}', maxLen: 10),
+                        description: e['description'],
+                        leftIconWidget: WrongQuestionBook.instance
+                                .getQuestion(e['id'])
+                                .note
+                                .isNotEmpty
+                            ? Container(
+                                width: 8,
+                                height: 80,
+                                color: Theme.of(context).primaryColor,
+                              )
+                            : null,
+                        onClick: (_) {
+                          Navigator.of(context).push(
+                            TDSlidePopupRoute(
+                              // modalBarrierColor:
+                              //     TDTheme.of(context).fontGyColor2,
+                              slideTransitionFrom: SlideTransitionFrom.center,
+                              builder: (_) {
+                                SingleQuestionData q = e['data'];
+                                return TDPopupCenterPanel(
+                                  radius: 15,
+                                  backgroundColor: Colors.transparent,
+                                  closeClick: () {
+                                    Navigator.maybePop(context);
+                                  },
+                                  child: SizedBox(
+                                    width: screenWidth - 80,
+                                    height: screenHeight - 150,
+                                    child: buildQuestionCard(
+                                        context,
+                                        q.getKonwledgePoint(),
+                                        q.question['q']!,
+                                        q.question['w'],
+                                        WrongQuestionBook.instance
+                                            .getQuestion(q.question['id']!)
+                                            .note),
+                                  ),
+                                );
+                              },
+                            ),
+                          );
+                        },
+                        titleWidget: Builder(
+                          builder: (context) => LaTexT(
+                            laTeXCode: ExtendedText(
+                              e['title'],
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               softWrap: true,
@@ -384,8 +391,12 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidth> {
                               style: TextStyle(
                                 fontSize: 16,
                                 color: TDTheme.of(context).fontGyColor1,
-                              )),
-                        ))
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    )
                     .toList(),
                 scrollable: true,
                 builder: (context, cell, index) {

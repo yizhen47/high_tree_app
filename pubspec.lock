@@ -573,14 +573,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.0"
-  liquid_swipe:
-    dependency: "direct main"
-    description:
-      name: liquid_swipe
-      sha256: "04277568a4a5a5e8e1dfa8b222b4e497e294cf64e72113d936fcc54ef0e29149"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.1.0"
   logging:
     dependency: transitive
     description:
@@ -598,7 +590,7 @@ packages:
     source: hosted
     version: "0.1.2-main.4"
   markdown:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: markdown
       sha256: "935e23e1ff3bc02d390bad4d4be001208ee92cc217cb5b5a6c19bc14aaa318c1"
@@ -861,14 +853,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.2"
-  receive_sharing_intent:
-    dependency: "direct main"
-    description:
-      name: receive_sharing_intent
-      sha256: ec76056e4d258ad708e76d85591d933678625318e411564dcb9059048ca3a593
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.8.1"
   screen_retriever:
     dependency: transitive
     description:
