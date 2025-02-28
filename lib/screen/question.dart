@@ -11,9 +11,13 @@ import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/tool/wrong_question_book.dart';
 import 'package:flutter_application_1/widget/question_text.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter_markdown_latex/flutter_markdown_latex.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:latext/latext.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
+import 'package:markdown/markdown.dart' as md;
 import 'package:uuid/uuid.dart';
 
 class QuestionScreen extends StatefulWidget {
@@ -23,7 +27,6 @@ class QuestionScreen extends StatefulWidget {
   @override
   State<QuestionScreen> createState() => _InnerState();
 }
-
 Card buildKnowledgeCard(BuildContext context, final String index,
     final String title, final String knowledge,
     {final String? images}) {
@@ -47,90 +50,26 @@ Card buildKnowledgeCard(BuildContext context, final String index,
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch, // 关键修改1：撑满横向空间
           children: [
-            // Header Section
-            Row(
-              children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    index,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.grey.shade800,
-                      height: 1.2,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
+            // 修复章节标题显示问题
+            _buildHeader(context, index, title), // 提取标题组件
+            
             const SizedBox(height: 20),
 
-            // Knowledge Content
-            Text(
-              knowledge,
-              style: TextStyle(
-                fontSize: 15,
-                height: 1.6,
-                color: Colors.grey.shade700,
-              ),
-            ),
-
-            // Image Section
-            if (images != null) ...[
-              const SizedBox(height: 24),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Image.network(
-                    images,
-                    fit: BoxFit.cover,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Container(
-                        height: 200,
-                        alignment: Alignment.center,
-                        child: CircularProgressIndicator(
-                          value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded /
-                                  loadingProgress.expectedTotalBytes!
-                              : null,
-                        ),
-                      );
-                    },
-                  ),
+            // 内容滚动区域
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch, // 关键修改2：内容横向撑满
+                  children: [
+                    _buildMarkdownContent(knowledge), // Markdown内容
+                    if (images != null) _buildImageSection(images), // 图片部分
+                  ],
                 ),
               ),
-            ],
+            ),
           ],
         ),
       ),
@@ -138,6 +77,137 @@ Card buildKnowledgeCard(BuildContext context, final String index,
   );
 }
 
+Widget _buildHeader(BuildContext context, String index, String title) {
+  return Row(
+    children: [
+      // 左侧 index 容器
+      Container(
+        constraints: BoxConstraints(
+          minWidth: 32,  // 最小保持正方形
+          // maxWidth: 56,  // 限制最大扩展宽度
+        ),
+        height: 32,
+        padding: const EdgeInsets.symmetric(horizontal: 4), // 左右留白
+        decoration: BoxDecoration(
+          color: Theme.of(context).primaryColor,
+          borderRadius: BorderRadius.circular(4), // 圆角更美观
+        ),
+        alignment: Alignment.center,
+        child: _buildAdaptiveIndexText(index), // 智能文本组件
+      ),
+      const SizedBox(width: 12), // 缩小间距
+      // 右侧标题部分
+      Expanded(
+        child: Text(
+          title,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: Colors.grey.shade800,
+            height: 1.2,
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
+// 智能文本适配组件
+Widget _buildAdaptiveIndexText(String text) {
+  return LayoutBuilder(
+    builder: (context, constraints) {
+      // 计算文本宽度是否超出容器
+      final textSpan = TextSpan(text: text, style: const TextStyle(fontWeight: FontWeight.bold));
+      final painter = TextPainter(
+        text: textSpan,
+        maxLines: 1,
+        textDirection: TextDirection.ltr,
+      )..layout();
+      
+      // 根据宽度动态选择布局
+      if (painter.width > constraints.maxWidth) {
+        return FittedBox( // 超长文本缩放
+          fit: BoxFit.scaleDown,
+          child: Text(text, style: const TextStyle(color: Colors.white)),
+        );
+      } else {
+        return Text( // 正常显示
+          text,
+          style: const TextStyle(color: Colors.white),
+          overflow: TextOverflow.clip,
+        );
+      }
+    },
+  );
+}
+
+// Markdown内容组件
+Widget _buildMarkdownContent(String knowledge) {
+  return Container(
+    width: double.infinity,
+    child: MarkdownBody( 
+      data: knowledge,
+      styleSheet: MarkdownStyleSheet(
+        p: TextStyle(fontSize: 16, color: Colors.black87), // 统一正文字号
+        h1: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        h2: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        // 其他元素样式...
+      ),
+      builders: {
+        'latex': LatexElementBuilder(
+          textStyle: TextStyle(
+            fontWeight: FontWeight.w100,
+            fontSize: 16, // 与普通文本一致
+          ),
+          textScaleFactor: 1.2,
+        ),
+      },
+      extensionSet: md.ExtensionSet(
+        [LatexBlockSyntax()],
+        [LatexInlineSyntax()],
+      ),
+    ),
+  );
+}
+// 图片组件
+Widget _buildImageSection(String images) {
+  return Padding(
+    padding: const EdgeInsets.only(top: 24),
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: double.infinity, // 关键修改4：图片横向撑满
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Image.network(
+          images,
+          fit: BoxFit.cover,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Container(
+              height: 200,
+              alignment: Alignment.center,
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                        loadingProgress.expectedTotalBytes!
+                    : null,
+              ),
+            );
+          },
+        ),
+      ),
+    ),
+  );
+}
 Card buildQuestionCard(BuildContext context, final String knowledgepoint,
     final String question, final String? answer, final String? note) {
   final ValueNotifier<bool> isExpanded = ValueNotifier(false);
@@ -205,15 +275,17 @@ Card buildQuestionCard(BuildContext context, final String knowledgepoint,
                         ),
                       ),
                     ),
-                    child: LaTexT(
-                      laTeXCode: ExtendedText(
-                        question,
-                        specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
-                        style: TextStyle(
-                          fontSize: 15,
-                          height: 1.5,
-                          color: Colors.grey.shade800,
-                          fontWeight: FontWeight.w500,
+                    child: Builder(
+                      builder: (context) => LaTexT(
+                        laTeXCode: ExtendedText(
+                          question,
+                          specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
+                          style: TextStyle(
+                            fontSize: 15,
+                            height: 1.5,
+                            color: Colors.grey.shade800,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                     ),
@@ -332,14 +404,16 @@ Widget _buildSection({
           border: Border.all(color: Colors.blueGrey.withOpacity(0.1)),
         ),
         child: (content?.isNotEmpty ?? false)
-            ? LaTexT(
-                laTeXCode: ExtendedText(
-                  content!,
-                  specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
-                  style: TextStyle(
-                    fontSize: 14,
-                    height: 1.6,
-                    color: Colors.grey.shade800,
+            ? Builder(
+                builder: (context) => LaTexT(
+                  laTeXCode: ExtendedText(
+                    content!,
+                    specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.6,
+                      color: Colors.grey.shade800,
+                    ),
                   ),
                 ),
               )

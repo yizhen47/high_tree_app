@@ -741,26 +741,45 @@ class QuestionBankBuilder {
     var matchf = RegExp(r'^[0-9]+ *[\.|．|、] *(?![0-9 ])');
 
     var line = '';
-    var inLatex = false;
-    for (var lineIndex = 0; lineIndex < lines.length; lineIndex++) {
-      if (!inLatex) {
-        line = lines[lineIndex];
-      } else {
-        if (line.startsWith('\$\$')) {
-          inLatex = false;
+
+    var lineIndex = -1;
+
+    lines =
+        lines.map((e) => e.trim()).toList().where((e) => e.isNotEmpty).toList();
+
+    getNextLine() {
+      if (lineIndex + 1 >= lines.length) return '-1';
+      return lines[lineIndex + 1];
+    }
+    getPrevLine() {
+      if (lineIndex - 1 < 0) return '-1';
+      return lines[lineIndex - 1];
+    }
+    String nextLine() {
+      lineIndex++;
+      if (lineIndex >= lines.length) return '-1';
+      return lines[lineIndex];
+    }
+    String getLine() {
+      return lines[lineIndex];
+    };
+
+    while (getNextLine() != '-1') {
+      line = nextLine();
+      while(getNextLine() == '\$\$') {
+        line += "\n" + nextLine();
+        nextLine();
+        while(getLine() != '\$\$') {
+          line += '\n' + getLine();
+          nextLine();
         }
-        line = line + '\n' + lines[lineIndex];
-        continue;
+        line += '\n' + getLine();
       }
+
+      // print(line);
+
       // Handle examples and exercise questions only when inside exercises section
       if (RegExp(r'[一二三四五六七八九]+、.*题').hasMatch(line) && inExercises) continue;
-
-      if (line.trim().isEmpty) continue;
-
-      if (line.startsWith('\$\$')) {
-        inLatex = true;
-        continue;
-      }
 
       if ((line.startsWith('例') || (inExercises && matchf.hasMatch(line)))) {
         stack.last.questions!.add({'q': '', 'w': ''});
