@@ -46,10 +46,11 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidth> {
           if (WrongQuestionBook.instance
               .getQuestion(filteredList[index]['id']!)
               .note
-              .isNotEmpty) {
+              != null && WrongQuestionBook.instance
+              .getQuestion(filteredList[index]['id']!).note!.isNotEmpty) {
             laTeXInputController.text = WrongQuestionBook.instance
                 .getQuestion(filteredList[index]['id']!)
-                .note;
+                .note!;
           }
 
           var latexText = laTeXInputController.text;
@@ -340,8 +341,10 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidth> {
                         description: e['description'],
                         leftIconWidget: WrongQuestionBook.instance
                                 .getQuestion(e['id'])
-                                .note
-                                .isNotEmpty
+                                .note != null && WrongQuestionBook.instance
+                                    .getQuestion(e['id'])
+                                    .note!
+                                    .isNotEmpty
                             ? Container(
                                 width: 8,
                                 height: 80,

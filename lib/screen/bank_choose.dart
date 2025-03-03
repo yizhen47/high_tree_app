@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screen/mode.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
+import 'package:flutter_application_1/tool/question_controller.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 
@@ -207,5 +208,8 @@ class _InnerState extends State<BankChooseScreen> {
       StudyData.instance.setStudyType(StudyType.testMode);
     }
     StudyData.instance.setStudySection(null);
+
+    QuestionController.updateInstance();
+
   }
 }

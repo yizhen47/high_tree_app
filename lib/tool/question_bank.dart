@@ -29,8 +29,8 @@ void mksureInit() {
 
 @JsonSerializable()
 class SingleQuestionData {
-  List<String> fromKonwledgePoint;
-  List<String> fromKonwledgeIndex;
+  List<String> fromKonwledgePoint = [];
+  List<String> fromKonwledgeIndex = [];
   Map<String, String> question;
   String fromId;
   String fromDisplayName;
@@ -39,8 +39,7 @@ class SingleQuestionData {
       _$SingleQuestionDataFromJson(json);
 
   Map<String, dynamic> toJson() => _$SingleQuestionDataToJson(this);
-  SingleQuestionData(this.fromKonwledgePoint, this.fromKonwledgeIndex,
-      this.question, this.fromId, this.fromDisplayName);
+  SingleQuestionData(this.question, this.fromId, this.fromDisplayName);
 
   String getKonwledgePoint() {
     return fromKonwledgePoint.isEmpty ? '' : fromKonwledgePoint.last;
@@ -51,12 +50,9 @@ class SingleQuestionData {
   }
 
   SingleQuestionData clone() {
-    return SingleQuestionData(
-        List.from(fromKonwledgePoint),
-        List.from(fromKonwledgeIndex),
-        Map.from(question),
-        fromId,
-        fromDisplayName);
+    return SingleQuestionData(Map.from(question), fromId, fromDisplayName)
+      ..fromKonwledgeIndex = List.from(fromKonwledgeIndex)
+      ..fromKonwledgePoint = List.from(fromKonwledgePoint);
   }
 
   XmlElement toXml() {
@@ -115,8 +111,6 @@ class SingleQuestionData {
     });
 
     return SingleQuestionData(
-      knowledgePoint,
-      knowledgeIndex,
       questionMap,
       fromId,
       fromDisplayName,
@@ -131,6 +125,9 @@ class Section {
   String? note;
   List<Section>? children;
   List<Map<String, String>>? questions;
+
+  List<String> fromKonwledgePoint = [];
+  List<String> fromKonwledgeIndex = [];
 
   factory Section.fromJson(Map<String, dynamic> json) =>
       _$SectionFromJson(json);
@@ -148,6 +145,8 @@ class Section {
       'title': title,
       'children': children!.map((child) => child.toTrimJson()).toList(),
       'note': note!.isNotEmpty ? note!.trim() : null,
+      'fromKonwledgePoint': fromKonwledgePoint,
+      'fromKonwledgeIndex': fromKonwledgeIndex,
       'questions': questions!.isNotEmpty
           ? questions!
               .map((q) => {
@@ -162,21 +161,17 @@ class Section {
         (key, value) => value == null || (value is List && value.isEmpty));
   }
 
-  SingleQuestionData randomSectionQuestion(List<String> fromKonwledgePoint,
-      List<String> fromKonwledgeIndex, String fromId, String fromName,
+  SingleQuestionData randomSectionQuestion(String fromId, String fromName,
       {retryingTimes = 20}) {
     SingleQuestionData? q;
     for (var i = 0; i < retryingTimes; i++) {
-      q = _randomSectionQuestion(List.from(fromKonwledgePoint),
-          List.from(fromKonwledgeIndex), fromId, fromName);
+      q = _randomSectionQuestion(fromId, fromName);
       if (q != null) {
         break;
       }
     }
     if (q == null) {
       return SingleQuestionData(
-          [],
-          [],
           {'q': '本章没有题目', 'w': '本章没有答案', 'id': const Uuid().v4()},
           fromId,
           fromName);
@@ -184,68 +179,48 @@ class Section {
     return q;
   }
 
-  SingleQuestionData? _randomSectionQuestion(List<String> fromKonwledgePoint,
-      List<String> fromKonwledgeIndex, String fromId, String fromName) {
+  SingleQuestionData? _randomSectionQuestion(String fromId, String fromName) {
     if (_random!.nextInt(3) == 1) {
       // ignore: unnecessary_null_comparison
       if (questions == null || questions!.isEmpty) {
         return null;
       }
-      if (fromKonwledgePoint.isEmpty || fromKonwledgePoint.last != title) {
-        fromKonwledgePoint.add(title);
-        fromKonwledgeIndex.add(index);
-      } else {}
-
       return SingleQuestionData(
-          List.from(fromKonwledgePoint),
-          List.from(fromKonwledgeIndex),
-          questions![_random!.nextInt(questions!.length)],
-          fromId,
-          fromName);
+          questions![_random!.nextInt(questions!.length)], fromId, fromName)
+        ..fromKonwledgeIndex = (List.from(fromKonwledgeIndex)..add(index))
+        ..fromKonwledgePoint = (List.from(fromKonwledgePoint)..add(title));
     } else {
       // ignore: unnecessary_null_comparison
       if (children == null || children!.isEmpty) {
         return null;
       } else {
         var sec = children![_random!.nextInt(children!.length)];
-        fromKonwledgePoint.add(title);
-        fromKonwledgeIndex.add(index);
-        return sec.randomSectionQuestion(List.from(fromKonwledgePoint),
-            List.from(fromKonwledgeIndex), fromId, fromName);
+        return sec.randomSectionQuestion(fromId, fromName);
       }
     }
   }
 
-  List<SingleQuestionData> sectionQuestion(List<String> fromKonwledgePoint,
-      List<String> fromKonwledgeIndex, String fromId, String fromName,
+  List<SingleQuestionData> sectionQuestion(String fromId, String fromName,
       {List<SingleQuestionData>? questionsList}) {
     questionsList ??= [];
-    questionsList.addAll(sectionQuestionOnly(
-        fromKonwledgePoint, fromKonwledgeIndex, fromId, fromName));
+    questionsList.addAll(sectionQuestionOnly(fromId, fromName));
     if (children != null) {
       for (var c in children!) {
-        c.sectionQuestion(List.from(fromKonwledgePoint),
-            List.from(fromKonwledgeIndex), fromId, fromName,
-            questionsList: questionsList);
+        c.sectionQuestion(fromId, fromName, questionsList: questionsList);
       }
     }
     return questionsList;
   }
 
-  List<SingleQuestionData> sectionQuestionOnly(List<String> fromKonwledgePoint,
-      List<String> fromKonwledgeIndex, String fromId, String fromName,
+  List<SingleQuestionData> sectionQuestionOnly(String fromId, String fromName,
       {List<SingleQuestionData>? questionsList}) {
     questionsList ??= [];
-    if (fromKonwledgeIndex.isNotEmpty && fromKonwledgeIndex.last == index) {
-    } else {
-      fromKonwledgePoint.add(title);
-      fromKonwledgeIndex.add(index);
-    }
     // ignore: unnecessary_null_comparison
     if (questions != null) {
       for (var q in questions!) {
-        questionsList.add(SingleQuestionData(
-            fromKonwledgePoint, fromKonwledgeIndex, q, fromId, fromName));
+        questionsList.add(SingleQuestionData(q, fromId, fromName)
+          ..fromKonwledgeIndex = List.from(fromKonwledgeIndex)
+          ..fromKonwledgePoint = List.from(fromKonwledgePoint));
       }
     }
     return questionsList;
@@ -261,6 +236,22 @@ class Section {
       if (children != null && children!.isNotEmpty)
         XmlElement(XmlName('children'), [],
             children!.map((child) => child.toXml()).toList()),
+      if (fromKonwledgeIndex != null && fromKonwledgeIndex!.isNotEmpty)
+        XmlElement(
+            XmlName('fromKonwledgeIndex'),
+            [],
+            fromKonwledgeIndex!
+                .map((index) =>
+                    XmlElement(XmlName('item'), [], [XmlText(index)]))
+                .toList()),
+      if (fromKonwledgePoint != null && fromKonwledgePoint!.isNotEmpty)
+        XmlElement(
+            XmlName('fromKonwledgePoint'),
+            [],
+            fromKonwledgePoint!
+                .map((point) =>
+                    XmlElement(XmlName('item'), [], [XmlText(point)]))
+                .toList()),
       if (questions != null && questions!.isNotEmpty)
         XmlElement(
             XmlName('questions'),
@@ -296,6 +287,23 @@ class Section {
             .toList() ??
         [];
 
+    //解析index和point
+    section.fromKonwledgeIndex = element
+            .findElements('fromKonwledgeIndex')
+            .firstOrNull
+            ?.findElements('item')
+            .map((e) => e.text)
+            .toList() ??
+        [];
+
+    section.fromKonwledgePoint = element
+            .findElements('fromKonwledgePoint')
+            .firstOrNull
+            ?.findElements('item')
+            .map((e) => e.text)
+            .toList() ??
+        [];
+
     // 解析题目
     section.questions = element
             .findElements('questions')
@@ -312,57 +320,6 @@ class Section {
         [];
 
     return section;
-  }
-}
-
-@JsonSerializable() // 使用泛型的注解
-class QuestionBankData {
-  String? displayName;
-  List<Section>? data;
-  String? id;
-  int? version;
-
-  factory QuestionBankData.fromJson(Map<String, dynamic> json) =>
-      _$QuestionBankDataFromJson(json);
-
-  Map<String, dynamic> toJson() => _$QuestionBankDataToJson(this);
-
-  QuestionBankData();
-  @override
-  String toString() {
-    return jsonEncode(this);
-  }
-
-  XmlDocument toXml() {
-    return XmlDocument([
-      XmlElement(XmlName('QuestionBankData'), [
-        if (id != null) XmlAttribute(XmlName('id'), id!),
-        if (version != null)
-          XmlAttribute(XmlName('version'), version.toString()),
-        if (displayName != null)
-          XmlAttribute(XmlName('displayName'), displayName!),
-      ], [
-        XmlElement(XmlName('data'), [],
-            data?.map((section) => section.toXml()).toList() ?? [])
-      ])
-    ]);
-  }
-
-  factory QuestionBankData.fromXml(XmlElement element) {
-    final bank = QuestionBankData();
-    bank.id = element.getAttribute('id');
-    bank.version = int.tryParse(element.getAttribute('version') ?? '');
-    bank.displayName = element.getAttribute('displayName');
-
-    bank.data = element
-            .findElements('data')
-            .firstOrNull
-            ?.findElements('Section')
-            .map((e) => Section.fromXml(e))
-            .toList() ??
-        [];
-
-    return bank;
   }
 }
 
@@ -528,6 +485,23 @@ class QuestionBank {
   static late String loadedDirPath;
 
   QuestionBank(this.filePath);
+
+  Section findSectionByQuestion(SingleQuestionData q) {
+    return findSection(q.fromKonwledgeIndex);
+  }
+
+  Section findSection(List<String> knowledgePath) {
+    var currentSection = Section("", "");
+    currentSection.children = data;
+
+    // 定位目标章节
+    for (final index in knowledgePath) {
+      currentSection =
+          currentSection.children!.firstWhere((e) => e.index == index);
+    }
+    return currentSection;
+  }
+
   Future<void> loadIntoData() async {
     mksureInit();
     var achieve = _zipDecoder!.decodeBytes(await File(filePath).readAsBytes());
@@ -661,9 +635,9 @@ class QuestionBank {
     while (q == null) {
       if (sec == null) {
         q = data![Random().nextInt(data!.length)]
-            .randomSectionQuestion([], [], id!, displayName!);
+            .randomSectionQuestion(id!, displayName!);
       } else {
-        q = sec.randomSectionQuestion([], [], id!, displayName!);
+        q = sec.randomSectionQuestion(id!, displayName!);
       }
     }
     return q;
@@ -673,7 +647,7 @@ class QuestionBank {
     mksureInit();
     List<SingleQuestionData> qList = [];
     for (var sec in data!) {
-      qList.addAll(sec.sectionQuestion([], [], id!, displayName!));
+      qList.addAll(sec.sectionQuestion(id!, displayName!));
     }
     return qList;
   }
@@ -1172,7 +1146,23 @@ class QuestionBankBuilder {
         }
       }
     }
+
+    //遍历加入路径
+    handleSection(List<String> fromKnowledgePoint, List<String> fromIndexPoint,
+        List<Section> secs) {
+      for (var sec in secs) {
+        sec.fromKonwledgePoint = fromKnowledgePoint;
+        sec.fromKonwledgeIndex = fromIndexPoint;
+        if (sec.children != null && sec.children!.isNotEmpty) {
+          handleSection([...fromKnowledgePoint, sec.title],
+              [...fromIndexPoint, sec.index], sec.children!);
+        }
+      }
+    }
+
+    handleSection([], [], root.children!);
+
     return QuestionBankBuilder(
-        data: root.children!, id: id, displayName: title, version: 3);
+        data: root.children!, id: id, displayName: title, version: 4);
   }
 }

@@ -600,14 +600,11 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
 
                 final question = sectionData.data![randomIndex];
                 final qData = question.randomSectionQuestion(
-                    [], [], sectionData.id!, sectionData.displayName!);
+                    sectionData.id!, sectionData.displayName!);
 
                 addQuestionCard(qData);
               }
-            }
-
-// 学习模式处理
-            else if (isStudyMode) {
+            } else if (isStudyMode) {
               final secList = StudyData.instance.getStudySection() ??
                   (throw Exception("需要指定学习章节"));
               Section currentSection = Section("", "")
@@ -619,7 +616,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                 cards.add(buildKnowledgeCard(context, section.index,
                     section.title, section.note ?? "暂无知识点"));
                 questionRemoved.add(false);
-                allQuestions.add(SingleQuestionData([], [], {}, "", ""));
+                allQuestions.add(SingleQuestionData({}, "", ""));
                 questionRemain++;
 
                 section.children?.forEach((child) => buildSectionTree(child));
@@ -634,8 +631,6 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
               buildSectionTree(currentSection);
               currentSection
                   .sectionQuestion(
-                    knowledgePath.map((e) => currentSection.title).toList(),
-                    knowledgePath,
                     snapshot.data!.single.id!,
                     snapshot.data!.single.displayName!,
                   )

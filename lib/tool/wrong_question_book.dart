@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_application_1/tool/question_bank.dart';
+import 'package:flutter_application_1/tool/question_controller.dart';
 import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
@@ -9,17 +10,20 @@ part 'wrong_question_book.g.dart';
 class WrongQuestionBook {
   late Box<String> wrongBox;
   late Box<QuestionUserData> questionBox;
+  late Box<SectionUserData> sectionDataBox;
   WrongQuestionBook() {
     wrongBox = Hive.box<String>("wrong_question_book");
     questionBox = Hive.box<QuestionUserData>("question_book");
+    sectionDataBox = Hive.box<SectionUserData>("section_data");
   }
   static init() async {
     Hive.init(
         path.join((await getApplicationDocumentsDirectory()).path, "hive"));
     Hive.registerAdapter(QuestionUserDataAdapter());
+    Hive.registerAdapter(SectionUserDataAdapter());
     await Hive.openBox<String>("wrong_question_book");
     await Hive.openBox<QuestionUserData>("question_book");
-
+    await Hive.openBox<SectionUserData>("section_data");
   }
 
   static WrongQuestionBook instance = WrongQuestionBook();
@@ -93,7 +97,7 @@ class QuestionUserData {
   @HiveField(0)
   int tryCompleteTimes = 0;
   @HiveField(1)
-  String note = "";
+  String? note = "";
 
   QuestionUserData(this.tryCompleteTimes);
 }

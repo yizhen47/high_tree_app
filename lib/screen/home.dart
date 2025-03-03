@@ -10,6 +10,7 @@ import 'package:flutter_application_1/screen/bank_manager.dart';
 import 'package:flutter_application_1/screen/personal.dart';
 import 'package:flutter_application_1/screen/wrong_question.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
+import 'package:flutter_application_1/tool/question_controller.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
@@ -721,15 +722,20 @@ class MainHomePage extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         CommonComponents.buildCommonCard(
-          const Padding(
-            padding: EdgeInsets.all(12),
+          Padding(
+            padding: const EdgeInsets.all(12),
             child: Column(
               children: [
-                _PlanItem(title: '微分方程', progress: 0.75),
-                SizedBox(height: 12),
-                _PlanItem(title: '矩阵运算', progress: 0.42),
-                SizedBox(height: 12),
-                _PlanItem(title: '概率基础', progress: 0.58),
+                ...(() {
+                  var arr = [];
+                  for (var e in QuestionController.instances) {
+                    for (var plan in e.getNeedLearnSection(2)) {
+                      arr.add(_PlanItem(title: plan.title, progress: 0.75));
+                      arr.add(const SizedBox(height: 12));
+                    }
+                  }
+                  return arr;
+                }()),
               ],
             ),
           ),

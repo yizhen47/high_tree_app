@@ -56,10 +56,7 @@ class _SearchScreenInnerState extends State<SearchScreen> {
             }).toList()
           : [],
       question: section.questions != null
-          ? section.questions!
-              .map((e) => SingleQuestionData(fromKonwledgePoint,
-                  fromKonwledgeIndex, e, fromId, fromDisplayName))
-              .toList()
+          ? section.sectionQuestionOnly(fromId, fromDisplayName)
           : [],
     );
   }
@@ -120,11 +117,13 @@ class _SearchScreenInnerState extends State<SearchScreen> {
                                     cells: item.question!
                                         .map((e) => TDCell(
                                               // description: e.question['id']!,
-                                              leftIconWidget: WrongQuestionBook
+                                              leftIconWidget: WrongQuestionBook.instance.getQuestion(e.question['id']!) != null
+                                              
+                                              && WrongQuestionBook
                                                       .instance
                                                       .getQuestion(
                                                           e.question['id']!)
-                                                      .note
+                                                      .note!
                                                       .isNotEmpty
                                                   ? Container(
                                                       width: 8,

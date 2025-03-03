@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_application_1/tool/question_controller.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/tool/wrong_question_book.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -13,8 +14,8 @@ import 'package:window_manager/window_manager.dart';
 
 //整个软件入口（测试用）
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
   if (Platform.isWindows) {
+  WidgetsFlutterBinding.ensureInitialized();
     await windowManager.ensureInitialized();
 
     WindowOptions windowOptions = const WindowOptions(
@@ -104,6 +105,7 @@ class _MainEnterScreenState extends State<_MainEnterScreen>
         await QuestionBankBuilder.init();
         await WrongQuestionBook.init();
         await platformInit();
+        await QuestionController.updateInstance();
         if (mounted) {
           setState(() => _initCompleted = true);
           _navigateToHome();

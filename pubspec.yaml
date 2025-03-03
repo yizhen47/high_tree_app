@@ -41,7 +41,6 @@ dependencies:
   flutter_markdown: ^0.7.6+2
   flutter_markdown_latex: ^0.3.4
   markdown: ^7.3.0
-
 dev_dependencies:
   flutter_test:
     sdk: flutter
