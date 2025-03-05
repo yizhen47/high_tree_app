@@ -791,7 +791,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                     valueListenable: restartUpdater,
                     builder: (context, _, __) => Column(
                       children: [
-                        _buildProgressIndicator(progress),
+                        _buildProgressIndicator(QuestionGroupController.instances.getDayProgress()),
                         const SizedBox(height: 16),
                         _buildRetryCounter(retryCount, context),
                       ],

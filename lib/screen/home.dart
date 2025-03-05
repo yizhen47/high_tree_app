@@ -471,16 +471,7 @@ class _MainHomePageState extends State<MainHomePage> {
   }
 
   Widget _buildProgressButton(BuildContext context) {
-    var data = QuestionGroupController.instances.controllers.map((controller) {
-      var bankData = controller.getBankLearnData();
-      return bankData.alreadyLearnSectionNum / (bankData.needLearnSectionNum);
-    });
-    var value = 1.0;
-    if (data.isNotEmpty) {
-      value = data.reduce((a, b) => a + b) /
-          QuestionGroupController.instances.controllers.length;
-    }
-    ;
+    var value = QuestionGroupController.instances.getDayProgress();
     return Stack(
       alignment: Alignment.center,
       children: [

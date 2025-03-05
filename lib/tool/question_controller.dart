@@ -164,7 +164,8 @@ class QuestionController {
 
   void _getMindMapNode(MindMapNode<Section> node, List<Section> secs) {
     for (var sec in secs) {
-      var nNode =  MindMapHelper.addChildNode(node, sec.title, id: sec.id,data: sec);
+      var nNode =
+          MindMapHelper.addChildNode(node, sec.title, id: sec.id, data: sec);
       if (sec.children != null && sec.children!.isNotEmpty) {
         _getMindMapNode(nNode, sec.children!);
       }
@@ -214,7 +215,8 @@ class QuestionGroupController {
           .forEach((sec) {
         var secController = QuestionController(action);
         secController.currentLearn = sec;
-        secController.addRandomQuestion(StudyData.instance.getNeedCompleteQuestionNum());
+        secController
+            .addRandomQuestion(StudyData.instance.getNeedCompleteQuestionNum());
         controllers.add(secController);
       });
     }
@@ -226,5 +228,29 @@ class QuestionGroupController {
       element!.alreadyLearnSectionNum = 0;
       WrongQuestionBook.instance.sectionLearnBox.put(k, element);
     }
+  }
+
+  getDayProgress() {
+    var value = 0.0;
+    var banks = QuestionBank.getAllLoadedQuestionBankIds();
+    if (banks.isEmpty) return 0.0;
+    for (var b in banks) {
+      var bankData = WrongQuestionBook.instance.sectionLearnBox.get(b)!;
+      value += bankData.alreadyLearnSectionNum /
+          bankData.needLearnSectionNum /
+          banks.length;
+    }
+
+    for (var c in controllers) {
+      var secData = c.getSectionUserData(c.currentLearn!);
+      if (secData.alreadyCompleteQuestion != secData.allNeedCompleteQuestion) {
+        value +
+            (secData.alreadyCompleteQuestion /
+                    secData.allNeedCompleteQuestion) /
+                StudyData.instance.getNeedLearnSectionNum() /
+                banks.length;
+      }
+    }
+    return value;
   }
 }
