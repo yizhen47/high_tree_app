@@ -14,8 +14,8 @@ import 'package:window_manager/window_manager.dart';
 
 //整个软件入口（测试用）
 Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   if (Platform.isWindows) {
-    WidgetsFlutterBinding.ensureInitialized();
     await windowManager.ensureInitialized();
 
     WindowOptions windowOptions = const WindowOptions(
@@ -31,6 +31,19 @@ Future<void> main() async {
       await windowManager.show();
       await windowManager.focus();
     });
+  } else if (Platform.isAndroid) {
+    List<Permission> permissionNames = [];
+    // permissionNames.add(Permission.location);
+    // permissionNames.add(Permission.camera);
+    permissionNames.add(Permission.storage);
+    for (var p in permissionNames) {
+      p.request();
+    }
+    try {
+      await FlutterDisplayMode.setHighRefreshRate();
+    } on PlatformException catch (e) {
+      print(e);
+    }
   }
   await StudyData.instance.init();
 
@@ -99,23 +112,23 @@ class _MainEnterScreenState extends State<_MainEnterScreen>
   void initState() {
     super.initState();
 
-    Future(() async {
-      await QuestionBank.init();
-      await QuestionBankBuilder.init();
-      await WrongQuestionBook.init();
-      await platformInit();
+    Future(
+      () async {
+        await QuestionBank.init();
+        await QuestionBankBuilder.init();
+        await WrongQuestionBook.init();
 
-      if(StudyData.instance.todayUpdater()){
-        QuestionGroupController.instances.toDayUpdater();
-      }
+        if (StudyData.instance.todayUpdater()) {
+          QuestionGroupController.instances.toDayUpdater();
+        }
 
-      await QuestionGroupController.instances.update();
+        await QuestionGroupController.instances.update();
 
-      if (mounted) {
-        setState(() => _initCompleted = true);
-        _navigateToHome();
-      }
-    },
+        if (mounted) {
+          setState(() => _initCompleted = true);
+          _navigateToHome();
+        }
+      },
     );
 
     // 5秒超时机制
@@ -126,23 +139,6 @@ class _MainEnterScreenState extends State<_MainEnterScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     );
-  }
-
-  Future<void> platformInit() async {
-    if (Platform.isAndroid) {
-      List<Permission> permissionNames = [];
-      // permissionNames.add(Permission.location);
-      // permissionNames.add(Permission.camera);
-      permissionNames.add(Permission.storage);
-      for (var p in permissionNames) {
-        p.request();
-      }
-      try {
-        await FlutterDisplayMode.setHighRefreshRate();
-      } on PlatformException catch (e) {
-        print(e);
-      }
-    }
   }
 
   void _navigateToHome() {

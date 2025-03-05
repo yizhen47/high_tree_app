@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_application_1/screen/about.dart';
 import 'package:flutter_application_1/screen/bank_choose.dart';
 import 'package:flutter_application_1/screen/bank_manager.dart';
@@ -141,27 +142,34 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      body: PageView(
-        controller: _pageController,
-        children: _pages,
-        onPageChanged: (index) => setState(() => _currentIndex = index),
-      ),
-      bottomNavigationBar: CurvedNavigationBar(
-        index: _currentIndex,
-        height: 60,
-        color: AppTheme.primaryColor,
-        backgroundColor: Colors.transparent,
-        animationDuration: const Duration(milliseconds: 300),
-        items: const [
-          Icon(Icons.analytics, color: Colors.white),
-          Icon(Icons.home, color: Colors.white),
-          Icon(Icons.person, color: Colors.white),
-        ],
-        onTap: _onTabTapped,
-      ),
-    );
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent, // 透明状态栏
+          statusBarIconBrightness: Brightness.light,
+          systemNavigationBarColor: AppTheme.primaryColor, // 系统导航栏背景色
+          systemNavigationBarIconBrightness: Brightness.light, // 导航键白色
+        ),
+        child: Scaffold(
+          extendBodyBehindAppBar: true,
+          body: PageView(
+            controller: _pageController,
+            children: _pages,
+            onPageChanged: (index) => setState(() => _currentIndex = index),
+          ),
+          bottomNavigationBar: CurvedNavigationBar(
+            index: _currentIndex,
+            height: 60,
+            color: AppTheme.primaryColor,
+            backgroundColor: Colors.transparent,
+            animationDuration: const Duration(milliseconds: 300),
+            items: const [
+              Icon(Icons.analytics, color: Colors.white),
+              Icon(Icons.home, color: Colors.white),
+              Icon(Icons.person, color: Colors.white),
+            ],
+            onTap: _onTabTapped,
+          ),
+        ));
   }
 }
 

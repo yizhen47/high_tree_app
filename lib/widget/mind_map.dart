@@ -1,5 +1,10 @@
+import 'dart:async';
+import 'dart:math';
+import 'dart:ui' as ui;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter_math_fork/flutter_math.dart';
 
 /// 思维导图节点数据类
 class MindMapNode<T> {
@@ -25,6 +30,9 @@ class MindMapNode<T> {
     this.data,
   }) : children = List.of(children);
 
+  bool get isLatex => text.contains(r'$$') || text.contains(r'$');
+  String get latexContent => isLatex ? text.substring(2, text.length - 2) : '';
+
   void _updateHighlight(String targetId) {
     isHighlighted = id == targetId;
     for (final child in children) {
@@ -36,49 +44,30 @@ class MindMapNode<T> {
 class MindMapController {
   WeakReference<_MindMapState>? _stateRef;
 
-  void _attach(_MindMapState state) {
-    _stateRef = WeakReference(state);
-  }
+  void _attach(_MindMapState state) => _stateRef = WeakReference(state);
+  void _detach() => _stateRef = null;
 
-  void _detach() {
-    _stateRef = null;
-  }
-
-  /// 新增：通过ID居中节点
   void centerNodeById(String nodeId,
       {Duration duration = const Duration(milliseconds: 500)}) {
     final state = _stateRef?.target;
-    if (state != null && state.mounted) {
-      final node = state._findNodeById(nodeId);
-      if (node != null) {
-        print(node.id);
-        state.centerNode(node, duration: duration);
-      }
-    }
+    state?.centerNodeById(nodeId, duration: duration);
   }
 
-  /// 新增：通过ID高亮节点
   void highlightNodeById(String nodeId) {
     final state = _stateRef?.target;
-    if (state != null && state.mounted) {
-      state.highlightNode(nodeId);
-    }
+    state?.highlightNode(nodeId);
   }
 }
 
-/// 封装好的思维导图组件
 class MindMap<T> extends StatefulWidget {
   final MindMapNode<T> rootNode;
+  final double width;
+  final double height;
   final Color lineColor;
   final double lineWidth;
   final VoidCallback? onUpdated;
   final Function(MindMapNode<T>)? onNodeTap;
-  final String? highlightedNodeId;
   final MindMapController? controller;
-
-  final double height;
-
-  final double width;
 
   const MindMap({
     super.key,
@@ -89,7 +78,6 @@ class MindMap<T> extends StatefulWidget {
     this.lineWidth = 1.5,
     this.onUpdated,
     this.onNodeTap,
-    this.highlightedNodeId,
     this.controller,
   });
 
@@ -105,24 +93,8 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
   late double _initialScale;
   late AnimationController _highlightController;
   late Animation<double> _highlightAnimation;
-
-  @override
-  void dispose() {
-    widget.controller?._detach();
-    _highlightController.stop();
-    _highlightController.dispose();
-
-    super.dispose();
-  }
-
-  // 新增高亮节点方法
-  void highlightNode(String nodeId) {
-    setState(() {
-      _highlightController.reset();
-      _highlightController.forward();
-      widget.rootNode._updateHighlight(nodeId);
-    });
-  }
+  final Map<String, ui.Image> _latexCache = {};
+  final GlobalKey _repaintBoundaryKey = GlobalKey();
 
   @override
   void initState() {
@@ -136,46 +108,87 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
       parent: _highlightController,
       curve: Curves.easeInOut,
     );
+    _precacheLatex(widget.rootNode);
   }
 
-  void _handleTap(Offset localPosition) {
-    // 调整坐标转换顺序：先减偏移，再除缩放因子
-    final tapPosition = ((localPosition - _offset) / _scale);
-    final node = _findNodeAtPosition(widget.rootNode, tapPosition);
-    if (node != null) widget.onNodeTap?.call(node);
+  @override
+  void dispose() {
+    _highlightController.dispose();
+    widget.controller?._detach();
+    super.dispose();
   }
 
-  MindMapNode<T>? _findNodeAtPosition(MindMapNode<T> node, Offset position) {
-    final rect = Rect.fromCenter(
-      center: node.position,
-      width: node.size.width,
-      height: node.size.height,
+// 修改后的_renderLatex方法
+  Future<ui.Image?> _renderLatex(String latex) async {
+    final completer = Completer<ui.Image?>();
+    final key = GlobalKey();
+    final overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        left: -5000, // 移出可视区域
+        child: RepaintBoundary(
+          key: key,
+          child: Math.tex(
+            latex,
+            textStyle: const TextStyle(fontSize: 14),
+          ),
+        ),
+      ),
     );
-    if (rect.contains(position)) return node;
-    for (final child in node.children) {
-      final found = _findNodeAtPosition(child, position);
-      if (found != null) return found;
+
+    // 延迟到帧渲染完成后执行
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) {
+        // 检查组件是否仍挂载
+        completer.complete(null);
+        return;
+      }
+
+      try {
+        // 插入Overlay
+        Overlay.of(context).insert(overlayEntry);
+
+        // 等待两帧确保布局完成
+        await Future.delayed(const Duration(milliseconds: 50));
+
+        final boundary =
+            key.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+        if (boundary == null || !boundary.hasSize) {
+          completer.complete(null);
+          return;
+        }
+
+        final image = await boundary.toImage(pixelRatio: 1.5);
+        completer.complete(image);
+      } catch (e) {
+        debugPrint('Render latex error: $e');
+        completer.complete(null);
+      } finally {
+        // 立即移除OverlayEntry
+        overlayEntry.remove();
+      }
+    });
+
+    return completer.future;
+  }
+
+// 修改预缓存调用
+  void _precacheLatex(MindMapNode node) {
+    if (node.isLatex && !_latexCache.containsKey(node.latexContent)) {
+      _renderLatex(node.latexContent).then((image) {
+        if (image != null && mounted) {
+          // 增加mounted检查
+          setState(() => _latexCache[node.latexContent] = image);
+        }
+      });
     }
-    return null;
+    node.children.forEach(_precacheLatex);
   }
 
-  /// 新增：递归查找节点
-  MindMapNode<T>? _findNodeById(String id) {
-    return _findNodeByIdRecursive(widget.rootNode, id);
-  }
-
-  MindMapNode<T>? _findNodeByIdRecursive(MindMapNode<T> node, String id) {
-    if (node.id == id) return node;
-    for (final child in node.children) {
-      final found = _findNodeByIdRecursive(child, id);
-      if (found != null) return found;
-    }
-    return null;
-  }
-
-  /// 修改后的居中方法
-  void centerNode(MindMapNode<T> node,
+  void centerNodeById(String nodeId,
       {Duration duration = const Duration(milliseconds: 500)}) {
+    final node = _findNodeById(nodeId);
+    if (node == null) return;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final screenSize = Offset(widget.width, widget.height);
@@ -201,6 +214,27 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
       controller.forward().whenComplete(controller.dispose);
     });
   }
+
+  void highlightNode(String nodeId) {
+    setState(() {
+      widget.rootNode._updateHighlight(nodeId);
+      _highlightController.reset();
+      _highlightController.forward();
+    });
+  }
+
+  MindMapNode<T>? _findNodeById(String id) =>
+      _findNodeRecursive(widget.rootNode, id);
+
+  MindMapNode<T>? _findNodeRecursive(MindMapNode<T> node, String id) {
+    if (node.id == id) return node;
+    for (final child in node.children) {
+      final found = _findNodeRecursive(child, id);
+      if (found != null) return found;
+    }
+    return null;
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -248,6 +282,7 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
                 offset: _offset,
                 child: CustomPaint(
                   painter: _MindMapPainter(
+                    latexCache: _latexCache,
                     rootNode: widget.rootNode,
                     lineColor: widget.lineColor,
                     lineWidth: widget.lineWidth,
@@ -263,15 +298,37 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
       ),
     );
   }
+  
+  void _handleTap(Offset localPosition) {
+    final tapPos = (localPosition - _offset) / _scale;
+    final node = _findNodeAtPosition(widget.rootNode, tapPos);
+    if (node != null) widget.onNodeTap?.call(node);
+  }
+
+  MindMapNode<T>? _findNodeAtPosition(MindMapNode<T> node, Offset position) {
+    final rect = Rect.fromCenter(
+      center: node.position,
+      width: node.size.width,
+      height: node.size.height,
+    );
+    return rect.contains(position)
+        ? node
+        : node.children
+            .expand((c) => [_findNodeAtPosition(c, position)])
+            .firstWhere(
+              (n) => n != null,
+              orElse: () => null,
+            );
+  }
 }
 
-/// 思维导图绘制器
 class _MindMapPainter extends CustomPainter {
   final MindMapNode rootNode;
   final Color lineColor;
   final double lineWidth;
   final double scale;
   final double highlightProgress;
+  final Map<String, ui.Image> latexCache;
 
   _MindMapPainter({
     required this.rootNode,
@@ -279,6 +336,7 @@ class _MindMapPainter extends CustomPainter {
     required this.lineWidth,
     required this.scale,
     required this.highlightProgress,
+    required this.latexCache,
   });
 
   @override
@@ -295,140 +353,142 @@ class _MindMapPainter extends CustomPainter {
       _drawNode(canvas, child);
     }
 
-    final isHighlighted = node.isHighlighted; // 修正判断逻辑
-    final highlightColor = Color.lerp(
-      node.color.withOpacity(0),
-      node.color.withOpacity(0.3),
-      highlightProgress,
-    )!;
+    final fillPaint = Paint()
+      ..color = node.color.withOpacity(0.15)
+      ..style = PaintingStyle.fill;
 
-    // 绘制背景
-    final fillColor = node.color.withOpacity(0.15);
-    final borderColor = node.color.withOpacity(0.3);
+    final borderPaint = Paint()
+      ..color = node.color.withOpacity(0.3)
+      ..strokeWidth = 0.8
+      ..style = PaintingStyle.stroke;
 
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromCenter(
+    final rect = RRect.fromRectAndRadius(
+      Rect.fromCenter(
           center: node.position,
           width: node.size.width,
-          height: node.size.height,
-        ),
-        const Radius.circular(6),
-      ),
-      Paint()
-        ..color = fillColor
-        ..style = PaintingStyle.fill,
+          height: node.size.height),
+      const Radius.circular(6),
     );
 
-    // 绘制高亮效果
-    if (isHighlighted) {
+    // 绘制背景
+    canvas.drawRRect(rect, fillPaint);
+
+    // 高亮效果
+    if (node.isHighlighted) {
       final highlightPaint = Paint()
-        ..color = highlightColor
+        ..color = Color.lerp(
+          node.color.withOpacity(0),
+          node.color.withOpacity(0.3),
+          highlightProgress,
+        )!
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
       canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromCenter(
-            center: node.position,
-            width: node.size.width + 16,
-            height: node.size.height + 16,
-          ),
-          const Radius.circular(8),
-        ),
+        rect.inflate(8),
         highlightPaint,
       );
     }
 
     // 绘制边框
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromCenter(
-          center: node.position,
-          width: node.size.width,
-          height: node.size.height,
-        ),
-        const Radius.circular(6),
-      ),
-      Paint()
-        ..color = borderColor
-        ..strokeWidth = 0.8
-        ..style = PaintingStyle.stroke,
-    );
+    canvas.drawRRect(rect, borderPaint);
 
-    // 绘制文字
-    final textStyle = TextStyle(
-      color: Colors.grey[800]!.withOpacity(0.9),
-      fontSize: 13,
-      fontWeight: FontWeight.w500,
-      letterSpacing: 0.1,
-    );
+    // 内容绘制
+    if (node.isLatex) {
+      _drawLatex(canvas, node);
+    } else {
+      _drawText(canvas, node);
+    }
+  }
 
+// 修改后的_drawLatex方法
+  void _drawLatex(Canvas canvas, MindMapNode node) {
+    final image = latexCache[node.latexContent];
+    if (image == null) return;
+
+    final aspectRatio = image.width / image.height;
+    final maxWidth = node.size.width - 10;
+    final maxHeight = node.size.height - 10;
+
+    // 计算最佳尺寸
+    double width = maxWidth;
+    double height = width / aspectRatio;
+    if (height > maxHeight) {
+      height = maxHeight;
+      width = height * aspectRatio;
+    }
+
+    final offset = node.position - Offset(width / 2, height / 2);
+
+    canvas.save();
+    canvas.translate(offset.dx, offset.dy);
+    canvas.scale(width / image.width);
+    canvas.drawImage(image, Offset.zero, Paint());
+    canvas.restore();
+  }
+
+  void _drawText(Canvas canvas, MindMapNode node) {
     final textPainter = TextPainter(
-      text: TextSpan(text: node.text, style: textStyle),
+      text: TextSpan(
+        text: node.text,
+        style: TextStyle(
+          color: Colors.grey[800]!.withOpacity(0.9),
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
       textDirection: TextDirection.ltr,
       textAlign: TextAlign.center,
-    );
+    )..layout(maxWidth: node.size.width - 20);
 
-    textPainter.layout(maxWidth: node.size.width - 20);
-    textPainter.paint(
-      canvas,
-      node.position - Offset(textPainter.width / 2, textPainter.height / 2),
-    );
+    final pos =
+        node.position - Offset(textPainter.width / 2, textPainter.height / 2);
+    textPainter.paint(canvas, pos);
   }
 
   void _drawConnection(Canvas canvas, MindMapNode parent, MindMapNode child) {
-    final parentCenter = parent.position;
-    final childCenter = child.position;
-
-    final isRight = childCenter.dx > parentCenter.dx;
-    final curveDirection = isRight ? 1.0 : -1.0;
-
     final start = Offset(
-      parentCenter.dx +
-          (isRight ? parent.size.width / 2 : -parent.size.width / 2),
-      parentCenter.dy,
+      parent.position.dx +
+          (child.position.dx > parent.position.dx ? 1 : -1) *
+              parent.size.width /
+              2,
+      parent.position.dy,
     );
-
     final end = Offset(
-      childCenter.dx + (isRight ? -child.size.width / 2 : child.size.width / 2),
-      childCenter.dy,
+      child.position.dx +
+          (child.position.dx > parent.position.dx ? -1 : 1) *
+              child.size.width /
+              2,
+      child.position.dy,
     );
-
-    final linePaint = Paint()
-      ..shader = LinearGradient(
-        colors: [
-          parent.color.withOpacity(0.6),
-          child.color.withOpacity(0.6),
-        ],
-      ).createShader(Rect.fromPoints(start, end))
-      ..strokeWidth = 1.8
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
 
     final path = Path()
       ..moveTo(start.dx, start.dy)
       ..quadraticBezierTo(
         (start.dx + end.dx) / 2,
-        (start.dy + end.dy) / 2 + 40 * curveDirection,
+        (start.dy + end.dy) / 2 +
+            40 * (child.position.dx > parent.position.dx ? 1 : -1),
         end.dx,
         end.dy,
       );
 
-    canvas.drawPath(path, linePaint);
-    // 绘制箭头
-    canvas.drawCircle(
-      end,
-      3.0,
-      Paint()..color = child.color.withOpacity(0.8),
+    canvas.drawPath(
+      path,
+      Paint()
+        ..shader = LinearGradient(
+          colors: [parent.color, child.color],
+        ).createShader(Rect.fromPoints(start, end))
+        ..strokeWidth = 1.8
+        ..strokeCap = StrokeCap.round
+        ..style = PaintingStyle.stroke,
     );
+
+    canvas.drawCircle(end, 3.0, Paint()..color = child.color);
   }
 
   @override
-  bool shouldRepaint(covariant _MindMapPainter oldDelegate) =>
-      oldDelegate.rootNode != rootNode ||
-      oldDelegate.lineColor != lineColor ||
-      oldDelegate.lineWidth != lineWidth ||
-      oldDelegate.scale != scale ||
-      oldDelegate.highlightProgress != highlightProgress;
+  bool shouldRepaint(covariant _MindMapPainter old) =>
+      old.rootNode != rootNode ||
+      old.highlightProgress != highlightProgress ||
+      old.scale != scale;
 }
 
 class MindMapHelper {
