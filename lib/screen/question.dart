@@ -1,21 +1,19 @@
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:extended_text/extended_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screen/home.dart';
 import 'package:flutter_application_1/screen/mode.dart';
+import 'package:flutter_application_1/screen/question_card.dart';
 import 'package:flutter_application_1/screen/wrong_question.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
+import 'package:flutter_application_1/tool/question_controller.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/tool/wrong_question_book.dart';
-import 'package:flutter_application_1/widget/question_text.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:flutter_markdown_latex/flutter_markdown_latex.dart';
-import 'package:latext/latext.dart';
+import 'package:flutter_application_1/widget/left_toast.dart';
+import 'package:flutter_application_1/widget/mind_map.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
-import 'package:markdown/markdown.dart' as md;
 import 'package:uuid/uuid.dart';
 
 class QuestionScreen extends StatefulWidget {
@@ -24,409 +22,6 @@ class QuestionScreen extends StatefulWidget {
 
   @override
   State<QuestionScreen> createState() => _InnerState();
-}
-
-Card buildKnowledgeCard(BuildContext context, final String index,
-    final String title, final String knowledge,
-    {final String? images}) {
-  return Card(
-    elevation: 6,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(16),
-      side: BorderSide(color: Colors.grey.shade100, width: 1),
-    ),
-    child: Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Theme.of(context).cardColor,
-            Theme.of(context).cardColor.withOpacity(0.8),
-          ],
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch, // 关键修改1：撑满横向空间
-          children: [
-            // 修复章节标题显示问题
-            _buildHeader(context, index, title), // 提取标题组件
-
-            const SizedBox(height: 20),
-
-            // 内容滚动区域
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.stretch, // 关键修改2：内容横向撑满
-                  children: [
-                    _buildMarkdownContent(knowledge), // Markdown内容
-                    if (images != null) _buildImageSection(images), // 图片部分
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-}
-
-Widget _buildHeader(BuildContext context, String index, String title) {
-  return Row(
-    children: [
-      // 左侧 index 容器
-      Container(
-        constraints: const BoxConstraints(
-          minWidth: 32, // 最小保持正方形
-          // maxWidth: 56,  // 限制最大扩展宽度
-        ),
-        height: 32,
-        padding: const EdgeInsets.symmetric(horizontal: 4), // 左右留白
-        decoration: BoxDecoration(
-          color: Theme.of(context).primaryColor,
-          borderRadius: BorderRadius.circular(4), // 圆角更美观
-        ),
-        alignment: Alignment.center,
-        child: _buildAdaptiveIndexText(index), // 智能文本组件
-      ),
-      const SizedBox(width: 12), // 缩小间距
-      // 右侧标题部分
-      Expanded(
-        child: Text(
-          title,
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: Colors.grey.shade800,
-            height: 1.2,
-          ),
-        ),
-      ),
-    ],
-  );
-}
-
-// 智能文本适配组件
-Widget _buildAdaptiveIndexText(String text) {
-  return LayoutBuilder(
-    builder: (context, constraints) {
-      // 计算文本宽度是否超出容器
-      final textSpan = TextSpan(
-          text: text, style: const TextStyle(fontWeight: FontWeight.bold));
-      final painter = TextPainter(
-        text: textSpan,
-        maxLines: 1,
-        textDirection: TextDirection.ltr,
-      )..layout();
-
-      // 根据宽度动态选择布局
-      if (painter.width > constraints.maxWidth) {
-        return FittedBox(
-          // 超长文本缩放
-          fit: BoxFit.scaleDown,
-          child: Text(text, style: const TextStyle(color: Colors.white)),
-        );
-      } else {
-        return Text(
-          // 正常显示
-          text,
-          style: const TextStyle(color: Colors.white),
-          overflow: TextOverflow.clip,
-        );
-      }
-    },
-  );
-}
-
-// Markdown内容组件
-Widget _buildMarkdownContent(String knowledge) {
-  return Container(
-    width: double.infinity,
-    child: MarkdownBody(
-      data: knowledge,
-      styleSheet: MarkdownStyleSheet(
-        p: const TextStyle(fontSize: 16, color: Colors.black87), // 统一正文字号
-        h1: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        h2: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        // 其他元素样式...
-      ),
-      builders: {
-        'latex': LatexElementBuilder(
-          textStyle: const TextStyle(
-            fontWeight: FontWeight.w100,
-            fontSize: 16, // 与普通文本一致
-          ),
-          textScaleFactor: 1.2,
-        ),
-      },
-      extensionSet: md.ExtensionSet(
-        [LatexBlockSyntax()],
-        [LatexInlineSyntax()],
-      ),
-    ),
-  );
-}
-
-// 图片组件
-Widget _buildImageSection(String images) {
-  return Padding(
-    padding: const EdgeInsets.only(top: 24),
-    child: ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        width: double.infinity, // 关键修改4：图片横向撑满
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Image.network(
-          images,
-          fit: BoxFit.cover,
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return Container(
-              height: 200,
-              alignment: Alignment.center,
-              child: CircularProgressIndicator(
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded /
-                        loadingProgress.expectedTotalBytes!
-                    : null,
-              ),
-            );
-          },
-        ),
-      ),
-    ),
-  );
-}
-
-Card buildQuestionCard(BuildContext context, final String knowledgepoint,
-    final String question, final String? answer, final String? note) {
-  final ValueNotifier<bool> isExpanded = ValueNotifier(false);
-  return Card(
-    color: Theme.of(context).cardColor,
-    elevation: 3,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(12),
-      side: BorderSide(color: Colors.grey.shade200),
-    ),
-    child: ValueListenableBuilder<bool>(
-      valueListenable: isExpanded,
-      builder: (context, expanded, _) {
-        return SizedBox(
-          height: double.infinity,
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min, // 重要：让内容决定高度
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.library_books_outlined,
-                            size: 16, color: Theme.of(context).primaryColor),
-                        const SizedBox(width: 8),
-                        Expanded(
-                            child: Builder(
-                                builder: (context) => LaTexT(
-                                      laTeXCode: ExtendedText(
-                                        knowledgepoint,
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color: Theme.of(context).primaryColor,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ))),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // 题目内容
-                  Container(
-                    padding: const EdgeInsets.only(left: 8),
-                    decoration: BoxDecoration(
-                      border: Border(
-                        left: BorderSide(
-                          color: Colors.blueGrey.withOpacity(0.3),
-                          width: 3,
-                        ),
-                      ),
-                    ),
-                    child: Builder(
-                      builder: (context) => LaTexT(
-                        laTeXCode: ExtendedText(
-                          question,
-                          specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
-                          style: TextStyle(
-                            fontSize: 15,
-                            height: 1.5,
-                            color: Colors.grey.shade800,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // 展开按钮
-
-                  // 解析切换按钮
-                  GestureDetector(
-                      onTap: () => isExpanded.value = !expanded,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              expanded ? Icons.expand_less : Icons.expand_more,
-                              color: Colors.blueGrey.shade600,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              expanded ? '收起解析' : '展开解析',
-                              style: TextStyle(
-                                color: Colors.blueGrey.shade600,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )),
-                  // 解析内容（始终保留空间）
-                  AnimatedOpacity(
-                    duration: const Duration(milliseconds: 200),
-                    opacity: expanded ? 1 : 0,
-                    child: AnimatedSize(
-                      duration: const Duration(milliseconds: 300),
-                      child: expanded
-                          ? _buildAnswerSection(answer, note, context)
-                          : const SizedBox.shrink(),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    ),
-  );
-}
-
-Widget _buildAnswerSection(String? answer, String? note, BuildContext context) {
-  final hasNote = note?.isNotEmpty ?? false;
-
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      const SizedBox(height: 16),
-      // 解析部分
-      _buildSection(
-        icon: Icons.analytics_outlined,
-        title: '题目解析',
-        content: answer,
-        defaultText: '等待老师添加解析中...',
-        context: context,
-      ),
-
-      if (hasNote) ...[
-        const SizedBox(height: 20),
-        Divider(color: Colors.grey.shade300, height: 1),
-        const SizedBox(height: 20),
-        _buildSection(
-          icon: Icons.note_alt_outlined,
-          title: '学习笔记',
-          content: note,
-          defaultText: '暂无学习笔记',
-          context: context,
-        ),
-      ],
-    ],
-  );
-}
-
-Widget _buildSection({
-  required IconData icon,
-  required String title,
-  required String? content,
-  required String defaultText,
-  required BuildContext context,
-}) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      // 标题行
-      Row(
-        children: [
-          Icon(icon, size: 18, color: Theme.of(context).primaryColor),
-          const SizedBox(width: 8),
-          Text(title,
-              style: TextStyle(
-                fontSize: 15,
-                color: Colors.grey.shade800,
-                fontWeight: FontWeight.w600,
-              )),
-        ],
-      ),
-      const SizedBox(height: 12),
-      // 内容容器
-      Container(
-        padding: const EdgeInsets.all(12),
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: Colors.blueGrey.withOpacity(0.03),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.blueGrey.withOpacity(0.1)),
-        ),
-        child: (content?.isNotEmpty ?? false)
-            ? Builder(
-                builder: (context) => LaTexT(
-                  laTeXCode: ExtendedText(
-                    content!,
-                    specialTextSpanBuilder: MathIncludeTextSpanBuilder(),
-                    style: TextStyle(
-                      fontSize: 14,
-                      height: 1.6,
-                      color: Colors.grey.shade800,
-                    ),
-                  ),
-                ),
-              )
-            : Text(defaultText,
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontStyle: FontStyle.italic,
-                )),
-      ),
-    ],
-  );
 }
 
 class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
@@ -438,7 +33,13 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
   final List<bool> questionRemoved = [];
   final List<SingleQuestionData> leftQuestions = [];
   final List<SingleQuestionData> rightQuestions = [];
+
   int questionRemain = 0;
+  int unlockedQuestionNum = StudyData.instance.getNeedCompleteQuestionNum();
+
+  var progress = 0.0;
+  var retryCount = 0;
+  BuildContext? buildContext;
 
   @override
   void initState() {
@@ -446,7 +47,6 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
   }
 
 // 构建统一风格的按钮组件
-
   _buildCompleteCard(BuildContext context) {
     return Card(
       color: Colors.white, // 使用主色作为底色
@@ -552,7 +152,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
         // 请求已结束
         if (snapshot.connectionState == ConnectionState.done) {
           if (snapshot.hasError) {
-            // 请求失败，显示错误
+            // 请求失败，                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          显示错误
             return Text("Error: ${snapshot.error}" '${snapshot.stackTrace}');
           } else {
             List<Card> cards = [];
@@ -572,6 +172,47 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                 q.question['w'],
                 WrongQuestionBook.instance.getQuestion(q.question['id']!).note,
               ));
+            }
+
+            replaceQuestion(SingleQuestionData q, int pos) {
+              allQuestions[pos] = q;
+              questionRemoved[pos] = false;
+              questionRemain++;
+
+              cards[pos] = buildQuestionCard(
+                context,
+                q.getKonwledgePoint(),
+                q.question['q']!,
+                q.question['w'],
+                WrongQuestionBook.instance.getQuestion(q.question['id']!).note,
+              );
+            }
+
+            insertQuestion(SingleQuestionData q, int pos) {
+              allQuestions.insert(pos, q);
+              questionRemoved.insert(pos, false);
+              questionRemain++;
+
+              cards.insert(
+                pos,
+                buildQuestionCard(
+                  context,
+                  q.getKonwledgePoint(),
+                  q.question['q']!,
+                  q.question['w'],
+                  WrongQuestionBook.instance
+                      .getQuestion(q.question['id']!)
+                      .note,
+                ),
+              );
+            }
+
+            isQuestionRemoved(SingleQuestionData q) {
+              return questionRemoved[allQuestions.indexOf(q)];
+            }
+
+            questionAnsWasWrong(SingleQuestionData q) {
+              return rightQuestions.contains(q);
             }
 
             // 测试模式处理
@@ -635,6 +276,13 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                     snapshot.data!.single.displayName!,
                   )
                   .forEach(addQuestionCard);
+            } else if (StudyData.instance.getStudyType() ==
+                StudyType.recommandMode) {
+              for (var c in QuestionGroupController.instances.controllers) {
+                for (var q in c.currentQuestionList) {
+                  addQuestionCard(q);
+                }
+              }
             }
             // 卡片滑动组件
             return CardSwiper(
@@ -663,10 +311,29 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                         WrongQuestionBook.instance
                             .addWrongQuestion(questionId, question);
                         idList.add(questionId); // 记录可撤销的错题ID
-                        TDToast.showSuccess("已加入错题本", context: context);
+                        showVerticalToast(
+                          context: context,
+                          title: "提示",
+                          message: "已加入错题本",
+                        );
                       } else {
-                        TDToast.showWarning("已在错题本中", context: context);
+                        showVerticalToast(
+                          context: context,
+                          title: "提示",
+                          message: "已在错题本中",
+                        );
                         idList.add(const Uuid().v4()); // 生成伪ID防止误删
+                      }
+                    } else {
+                      if (WrongQuestionBook.instance
+                          .hasWrongQuestion(questionId)) {
+                        WrongQuestionBook.instance
+                            .removeWrongQuestion(questionId);
+                        // showVerticalToast(
+                        //   context: context,
+                        //   title: "提示",
+                        //   message: "已从错题本移除",
+                        // );
                       }
                     }
                   }
@@ -677,6 +344,74 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                   direction == CardSwiperDirection.right
                       ? rightQuestions.add(question)
                       : leftQuestions.add(question);
+
+                  //推荐模式下的判断
+                  if (StudyData.instance.getStudyType() ==
+                      StudyType.recommandMode) {
+                    for (var c
+                        in QuestionGroupController.instances.controllers) {
+                      var notNeedRefresh = true;
+                      var pass = true;
+                      var progress = 0;
+                      for (var q in c.currentQuestionList) {
+                        if (questionAnsWasWrong(q)) {
+                          notNeedRefresh = false;
+                        }
+
+                        //没做完
+                        if (!isQuestionRemoved(q)) {
+                          notNeedRefresh = true;
+                          pass = false;
+                          break;
+                        } else {
+                          progress++;
+                        }
+                      }
+                      if (!notNeedRefresh) {
+                        showVerticalToast(
+                            title: "重做", message: "题目已经刷新", context: context);
+                        retryCount++;
+                        List<int> indexRecord = [];
+                        for (var q in c.currentQuestionList) {
+                          leftQuestions.remove(q);
+                          rightQuestions.remove(q);
+                          indexRecord.add(allQuestions.indexOf(q));
+                        }
+                        c.failCompleteLearn();
+                        for (var i = 0; i < c.currentQuestionList.length; i++) {
+                          replaceQuestion(
+                              c.currentQuestionList[i], indexRecord[i]);
+                        }
+                        _showMindMap(context, c.currentLearn!.id);
+                        Future.delayed(Duration(milliseconds: 800))
+                            .whenComplete(() {
+                          showKnowledgeCard(context, c.currentLearn!);
+                          controller
+                              .moveTo(indexRecord.reduce((v, e) => min(v, e)));
+                        });
+
+                        break;
+                      } else if (pass) {
+                        if (c.isNeedLearnSection(c.currentLearn!)) {
+                          retryCount = 0;
+                          showVerticalToast(
+                              title: '完成',
+                              message: c.currentLearn!.title,
+                              context: context);
+                          c.completeLearn();
+
+                          unlockedQuestionNum +=
+                              StudyData.instance.getNeedCompleteQuestionNum();
+                        }
+                      }
+
+                      c.setSectionUserData(
+                          c.currentLearn!,
+                          c.getSectionUserData(c.currentLearn!)
+                            ..alreadyCompleteQuestion = progress);
+                    }
+                  }
+                  restartUpdater.value = !restartUpdater.value;
 
                   return true;
                 }
@@ -690,6 +425,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                 } else {
                   // 记录原始索引和尝试次数防止死循环
                   int attempts = 0;
+                  int oIndex = index;
 
                   // 查找下一个未移除的卡片，最多尝试cards.length次
                   while (questionRemoved[index] && attempts < cards.length) {
@@ -702,7 +438,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                     return _buildCompleteCard(context);
                   }
 
-                  return cards[index];
+                  return cards[oIndex];
                 }
               },
               // 在 CardSwiper 的 onUndo 回调中直接实现撤销逻辑（原简写方案中缺失的部分）
@@ -720,7 +456,6 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                   if (question.fromKonwledgeIndex.isNotEmpty) {
                     final removedId = idList.removeLast();
                     if (removedId == questionId) {
-                      // 验证ID一致性
                       WrongQuestionBook.instance.removeWrongQuestion(removedId);
                     }
                   }
@@ -769,9 +504,73 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
     );
   }
 
+  MindMap _buildMindMap(BuildContext context) {
+    var width = MediaQuery.of(context).size.width;
+    var height = 400.0;
+    var mindMap = MindMap<Section>(
+        rootNode: MindMapHelper.createRoot(data: Section("", "")),
+        width: width,
+        controller: MindMapController(),
+        onNodeTap: (MindMapNode<Section> node) {
+          if (node.data == null) {
+            return;
+          }
+          showKnowledgeCard(buildContext!, node.data!);
+        },
+        height: height);
+    for (var c in QuestionGroupController.instances.controllers
+        .map((toElement) => toElement.bank)
+        .toSet()
+        .toList()
+        .map((toElement) => QuestionController(toElement))) {
+      c.getMindMapNode(
+          MindMapHelper.addChildNode(mindMap.rootNode, c.bank.displayName!));
+    }
+    MindMapHelper.organizeTree(mindMap.rootNode);
+    return mindMap;
+  }
+
+  void _showMindMap(BuildContext context, String? nodeId) {
+    final mindMap = _buildMindMap(context); // 创建实例并保存到局部变量
+    Navigator.of(context).push(
+      TDSlidePopupRoute(
+        modalBarrierColor: TDTheme.of(context).fontGyColor2,
+        slideTransitionFrom: SlideTransitionFrom.bottom,
+        builder: (context) {
+          return TDPopupBottomDisplayPanel(
+            closeClick: () {
+              Navigator.maybePop(context);
+            },
+            child: SizedBox(
+              height: 400,
+              width: double.infinity,
+              child: Scaffold(
+                body: Column(
+                  children: [
+                    Expanded(child: mindMap),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+    Future.delayed(Duration(milliseconds: 100)).then((_) {
+      if (nodeId != null) {
+        // 确保在页面打开后执行定位
+        mindMap.controller!.centerNodeById(nodeId);
+        mindMap.controller!.highlightNodeById(nodeId);
+      }
+    });
+  }
+
+  ValueNotifier<bool> restartUpdater = ValueNotifier(true);
   //这修改页面2的内容
   @override
   Widget build(BuildContext context) {
+    buildContext = context;
+
     return Scaffold(
       appBar: TDNavBar(
         title: '刷题界面',
@@ -800,7 +599,6 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
               },
             ),
             const SizedBox(height: 16),
-            // 撤回按钮
             FloatingActionButton(
               heroTag: 'undo_btn',
               mini: true,
@@ -812,147 +610,274 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
           ],
         ),
       ),
-      body: Column(
+      body: Stack(
         children: [
-          Flexible(child: _buildCardData(context)),
-          Container(
-            color: Theme.of(context).cardColor,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: InkWell(
-                    onTap: () {
-                      Navigator.of(context).push(
-                        TDSlidePopupRoute(
-                          modalBarrierColor: TDTheme.of(context).fontGyColor2,
-                          slideTransitionFrom: SlideTransitionFrom.bottom,
-                          builder: (context) {
-                            return TDPopupBottomDisplayPanel(
-                              closeClick: () {
-                                Navigator.maybePop(context);
-                              },
-                              child: const SizedBox(
-                                height: 400,
-                                width: double.infinity,
-                                child: Scaffold(
-                                  body: Column(
-                                    children: [
-                                      Expanded(child: WrongQuestionWidth()),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      );
-                    },
-                    child: const Padding(
-                      padding: EdgeInsets.only(bottom: 15, top: 15),
-                      child: Icon(Icons.class_outlined),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: InkWell(
-                    onTap: () {
-                      Navigator.of(context).push(TDSlidePopupRoute(
-                          modalBarrierColor: TDTheme.of(context).fontGyColor2,
-                          slideTransitionFrom: SlideTransitionFrom.bottom,
-                          builder: (context) {
-                            return TDPopupBottomDisplayPanel(
-                                closeClick: () {
-                                  Navigator.maybePop(context);
-                                },
-                                child: Padding(
-                                  padding: const EdgeInsets.all(15),
-                                  child: SizedBox(
-                                    height: 300,
-                                    child: GridView.builder(
-                                      gridDelegate:
-                                          const SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: 6,
-                                        crossAxisSpacing: 10.0,
-                                        mainAxisSpacing: 10.0,
+          Column(
+            children: [
+              Flexible(
+                child: Padding(
+                    padding: const EdgeInsets.only(left: 6), // 右侧留出空间
+                    child: _buildCardData(context)),
+              ),
+              Container(
+                color: Theme.of(context).cardColor,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.of(context).push(
+                            TDSlidePopupRoute(
+                              modalBarrierColor:
+                                  TDTheme.of(context).fontGyColor2,
+                              slideTransitionFrom: SlideTransitionFrom.bottom,
+                              builder: (context) {
+                                return TDPopupBottomDisplayPanel(
+                                  closeClick: () {
+                                    Navigator.maybePop(context);
+                                  },
+                                  child: const SizedBox(
+                                    height: 400,
+                                    width: double.infinity,
+                                    child: Scaffold(
+                                      body: Column(
+                                        children: [
+                                          Expanded(
+                                              child: WrongQuestionWidget()),
+                                        ],
                                       ),
-                                      itemCount: allQuestions.length,
-                                      itemBuilder: (context, index) {
-                                        var questionId =
-                                            allQuestions[index].question['id'];
-                                        return Scaffold(
-                                          body: InkWell(
-                                            onTap: () {
-                                              controller.moveTo(index);
-                                            },
-                                            child: Card(
-                                              margin: const EdgeInsets.all(2),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(10),
-                                              ),
-                                              color: (allQuestions[index]
-                                                          .fromKonwledgeIndex
-                                                          .isEmpty) ||
-                                                      questionId == null
-                                                  ? (Colors.blueAccent)
-                                                  : WrongQuestionBook.instance
-                                                          .hasWrongQuestion(
-                                                              questionId)
-                                                      ? Colors.redAccent
-                                                      : (WrongQuestionBook
-                                                                  .instance
-                                                                  .getQuestion(
-                                                                      questionId)
-                                                                  .tryCompleteTimes >
-                                                              0
-                                                          ? (Colors.greenAccent)
-                                                          : Theme.of(context)
-                                                              .cardColor),
-                                              child: Center(
-                                                child: Text('${index + 1}'),
-                                              ),
-                                            ),
-                                          ),
-                                        );
-                                      },
                                     ),
                                   ),
-                                ));
-                          }));
-                    },
-                    child: const Padding(
-                      padding: EdgeInsets.only(bottom: 15, top: 15),
-                      child: Icon(Icons.notes),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: InkWell(
-                    onTap: () {
-                      showGeneralDialog(
-                        context: context,
-                        pageBuilder: (BuildContext buildContext,
-                            Animation<double> animation,
-                            Animation<double> secondaryAnimation) {
-                          return const TDConfirmDialog(
-                            title: "帮助",
-                            content: '''右滑加入错题本，左滑表示已掌握。上下滑稍后再看''',
+                                );
+                              },
+                            ),
                           );
                         },
-                      );
-                    },
-                    child: const Padding(
-                      padding: EdgeInsets.only(bottom: 15, top: 15),
-                      child: Icon(Icons.quiz_outlined),
+                        child: const Padding(
+                          padding: EdgeInsets.only(bottom: 15, top: 15),
+                          child: Icon(Icons.class_outlined),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.of(context).push(TDSlidePopupRoute(
+                              modalBarrierColor:
+                                  TDTheme.of(context).fontGyColor2,
+                              slideTransitionFrom: SlideTransitionFrom.bottom,
+                              builder: (context) {
+                                return TDPopupBottomDisplayPanel(
+                                    closeClick: () {
+                                      Navigator.maybePop(context);
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(15),
+                                      child: SizedBox(
+                                        height: 300,
+                                        child: GridView.builder(
+                                          gridDelegate:
+                                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                            crossAxisCount: 6,
+                                            crossAxisSpacing: 10.0,
+                                            mainAxisSpacing: 10.0,
+                                          ),
+                                          itemCount: allQuestions.length,
+                                          itemBuilder: (context, index) {
+                                            var questionId = allQuestions[index]
+                                                .question['id'];
+                                            return Scaffold(
+                                              body: InkWell(
+                                                onTap: () {
+                                                  if (index <
+                                                          unlockedQuestionNum ||
+                                                      StudyData.instance
+                                                              .getStudyType() !=
+                                                          StudyType
+                                                              .recommandMode) {
+                                                    controller.moveTo(index);
+                                                  }
+                                                },
+                                                child: Card(
+                                                  margin:
+                                                      const EdgeInsets.all(2),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  color: (index >= unlockedQuestionNum &&
+                                                          StudyData.instance
+                                                                  .getStudyType() ==
+                                                              StudyType
+                                                                  .recommandMode)
+                                                      ? Colors.grey.shade300
+                                                      : (allQuestions[index]
+                                                                  .fromKonwledgeIndex
+                                                                  .isEmpty) ||
+                                                              questionId == null
+                                                          ? (Colors.blueAccent)
+                                                          : WrongQuestionBook
+                                                                  .instance
+                                                                  .hasWrongQuestion(
+                                                                      questionId)
+                                                              ? Colors.redAccent
+                                                              : (WrongQuestionBook
+                                                                          .instance
+                                                                          .getQuestion(
+                                                                              questionId)
+                                                                          .tryCompleteTimes >
+                                                                      0
+                                                                  ? (Colors
+                                                                      .greenAccent)
+                                                                  : Theme.of(
+                                                                          context)
+                                                                      .cardColor),
+                                                  child: Center(
+                                                    child: Text('${index + 1}'),
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    ));
+                              }));
+                        },
+                        child: const Padding(
+                          padding: EdgeInsets.only(bottom: 15, top: 15),
+                          child: Icon(Icons.notes),
+                        ),
+                      ),
+                    ),
+                    ...(() {
+                      if (StudyData.instance.getStudyType() !=
+                          StudyType.testMode) {
+                        return [
+                          Expanded(
+                            child: InkWell(
+                              onTap: () {
+                                _showMindMap(context, null);
+                              },
+                              child: const Padding(
+                                padding: EdgeInsets.only(bottom: 15, top: 15),
+                                child: Icon(Icons.map),
+                              ),
+                            ),
+                          )
+                        ];
+                      }
+                      return [];
+                    })(),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          // Windows风格左侧状态栏
+          Positioned(
+            left: 6,
+            top: 32,
+            bottom: 16,
+            child: SizedBox(
+              width: 16,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // 进度系统
+                  ValueListenableBuilder(
+                    valueListenable: restartUpdater,
+                    builder: (context, _, __) => Column(
+                      children: [
+                        _buildProgressIndicator(progress),
+                        const SizedBox(height: 16),
+                        _buildRetryCounter(retryCount, context),
+                      ],
                     ),
                   ),
-                )
-              ],
+
+                  // 通知区域占位
+                  Container(),
+                ],
+              ),
             ),
           ),
         ],
       ),
     );
   }
+}
+
+// 现代简约进度条
+Widget _buildProgressIndicator(double progress) {
+  return Container(
+    width: 8,
+    height: 120,
+    decoration: BoxDecoration(
+      color: Colors.grey.withOpacity(0.15),
+      borderRadius: BorderRadius.circular(3),
+    ),
+    child: Stack(
+      children: [
+        AnimatedContainer(
+          duration: Duration(milliseconds: 500),
+          curve: Curves.easeInOutQuart,
+          height: 120 * progress,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blueAccent.shade100, Colors.lightBlue.shade200],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+            borderRadius: BorderRadius.circular(3),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.blue.withOpacity(0.1),
+                blurRadius: 8,
+                offset: Offset(0, 2),
+              )
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+// 立体感计数器
+Widget _buildRetryCounter(int count, BuildContext context) {
+  return Container(
+    padding: EdgeInsets.symmetric(horizontal: 0, vertical: 6),
+    decoration: BoxDecoration(
+      color: Colors.blue.shade50,
+      borderRadius: BorderRadius.circular(6),
+      border: Border.all(
+        color: Colors.blue.shade200.withOpacity(0.6),
+        width: 0.6,
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.blue.shade100.withOpacity(0.2),
+          blurRadius: 8,
+          offset: Offset(0, 2),
+        )
+      ],
+    ),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.replay, size: 14, color: Colors.blue.shade600),
+        const SizedBox(height: 4),
+        Text(
+          '$count',
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: Colors.blue.shade900,
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+      ],
+    ),
+  );
 }

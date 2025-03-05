@@ -8,10 +8,12 @@ import 'package:flutter_application_1/screen/about.dart';
 import 'package:flutter_application_1/screen/bank_choose.dart';
 import 'package:flutter_application_1/screen/bank_manager.dart';
 import 'package:flutter_application_1/screen/personal.dart';
+import 'package:flutter_application_1/screen/question.dart';
 import 'package:flutter_application_1/screen/wrong_question.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:flutter_application_1/tool/question_controller.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
+import 'package:flutter_application_1/tool/wrong_question_book.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 
@@ -434,9 +436,14 @@ class _PlanItem extends StatelessWidget {
 }
 
 // 主界面
-class MainHomePage extends StatelessWidget {
+class MainHomePage extends StatefulWidget {
   const MainHomePage({super.key});
 
+  @override
+  State<StatefulWidget> createState() => _MainHomePageState();
+}
+
+class _MainHomePageState extends State<MainHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -450,7 +457,7 @@ class MainHomePage extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                _buildPracticeSection(), // 修改后的练习入口模块
+                _buildPracticeSection(context), // 修改后的练习入口模块
                 const SizedBox(height: 16),
                 _buildQuickActions(context),
                 const SizedBox(height: 8),
@@ -463,7 +470,17 @@ class MainHomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildProgressButton() {
+  Widget _buildProgressButton(BuildContext context) {
+    var data = QuestionGroupController.instances.controllers.map((controller) {
+      var bankData = controller.getBankLearnData();
+      return bankData.alreadyLearnSectionNum / (bankData.needLearnSectionNum);
+    });
+    var value = 1.0;
+    if (data.isNotEmpty) {
+      value = data.reduce((a, b) => a + b) /
+          QuestionGroupController.instances.controllers.length;
+    }
+    ;
     return Stack(
       alignment: Alignment.center,
       children: [
@@ -471,7 +488,7 @@ class MainHomePage extends StatelessWidget {
           width: 100,
           height: 100,
           child: CircularProgressIndicator(
-            value: 0.65,
+            value: value,
             strokeWidth: 6,
             backgroundColor: Colors.grey.withOpacity(0.2),
             valueColor: const AlwaysStoppedAnimation(AppTheme.primaryColor),
@@ -482,7 +499,28 @@ class MainHomePage extends StatelessWidget {
           shape: const CircleBorder(),
           child: InkWell(
             borderRadius: BorderRadius.circular(40),
-            onTap: () {},
+            onTap: () {
+              if (QuestionGroupController.instances.controllers.isEmpty) {
+                TDToast.showSuccess("已完成今日计划", context: context);
+              } else {
+                StudyData.instance.setStudyType(StudyType.recommandMode);
+                Navigator.push(
+                  context,
+                  PageTransition(
+                    type: PageTransitionType.rightToLeftPop,
+                    childCurrent: widget,
+                    alignment: const Alignment(10, 20),
+                    child: const QuestionScreen(
+                      title: '',
+                    ),
+                    duration: const Duration(milliseconds: 400),
+                    curve: Curves.easeInOut,
+                  ),
+                ).whenComplete(() => QuestionGroupController.instances
+                    .update()
+                    .whenComplete(() => setState(() {})));
+              }
+            },
             child: Container(
               width: 72,
               height: 72,
@@ -507,7 +545,7 @@ class MainHomePage extends StatelessWidget {
   }
 
 // 修改后的练习入口模块
-  Widget _buildPracticeSection() {
+  Widget _buildPracticeSection(BuildContext context) {
     return CommonComponents.buildCommonCard(
       Padding(
         padding: const EdgeInsets.fromLTRB(0, 10, 0, 10),
@@ -515,7 +553,7 @@ class MainHomePage extends StatelessWidget {
           children: [
             Expanded(
               flex: 1,
-              child: _buildProgressButton(),
+              child: _buildProgressButton(context),
             ),
             Container(
               height: 80,
@@ -553,7 +591,7 @@ class MainHomePage extends StatelessWidget {
 // 更新后的统计行组件
   Widget _buildStatRow(
       IconData icon, String title, String value, String subText) {
-    return Container(
+    return SizedBox(
       width: 180, // 固定统计项宽度
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -672,7 +710,7 @@ class MainHomePage extends StatelessWidget {
               context,
               PageTransition(
                 type: PageTransitionType.rightToLeftPop,
-                childCurrent: this,
+                childCurrent: widget,
                 alignment: const Alignment(10, 20),
                 child: const BankChooseScreen(),
                 duration: const Duration(milliseconds: 400),
@@ -689,7 +727,7 @@ class MainHomePage extends StatelessWidget {
               context,
               PageTransition(
                 type: PageTransitionType.rightToLeftPop,
-                childCurrent: this,
+                childCurrent: widget,
                 alignment: const Alignment(10, 20),
                 child: const WrongQuestionScreen(),
                 duration: const Duration(milliseconds: 400),
@@ -727,13 +765,36 @@ class MainHomePage extends StatelessWidget {
             child: Column(
               children: [
                 ...(() {
-                  var arr = [];
-                  for (var e in QuestionController.instances) {
-                    for (var plan in e.getNeedLearnSection(2)) {
-                      arr.add(_PlanItem(title: plan.title, progress: 0.75));
-                      arr.add(const SizedBox(height: 12));
-                    }
+                  if (QuestionGroupController.instances.controllers.isEmpty) {
+                    return [
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 20),
+                        child: Center(
+                          child: Text(
+                            '🎉 恭喜你，所有学习计划已完成！\n继续保持哦~',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppTheme.textPrimary,
+                              height: 1.6,
+                            ),
+                          ),
+                        ),
+                      )
+                    ];
                   }
+
+                  var arr = [];
+                  for (var c in QuestionGroupController.instances.controllers) {
+                    var data = c.getSectionUserData(c.currentLearn!);
+                    arr.add(_PlanItem(
+                        title: c.currentLearn!.title,
+                        progress: data.alreadyCompleteQuestion /
+                            data.allNeedCompleteQuestion));
+                    arr.add(const SizedBox(height: 12));
+                  }
+                  // 移除最后一个间距
+                  if (arr.isNotEmpty) arr.removeLast();
                   return arr;
                 }()),
               ],
@@ -929,6 +990,7 @@ class ProfilePage extends StatelessWidget {
               _buildCompactListTile(
                 onTap: () {
                   QuestionBank.clearAllCache();
+                  WrongQuestionBook.instance.clearData();
                   TDToast.showSuccess("清理完毕", context: context);
                 },
                 icon: Icons.cached_outlined,

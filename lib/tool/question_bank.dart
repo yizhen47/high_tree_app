@@ -129,6 +129,8 @@ class Section {
   List<String> fromKonwledgePoint = [];
   List<String> fromKonwledgeIndex = [];
 
+  String get id => fromKonwledgeIndex.join('/') + '/' + index;
+
   factory Section.fromJson(Map<String, dynamic> json) =>
       _$SectionFromJson(json);
 
@@ -162,10 +164,10 @@ class Section {
   }
 
   SingleQuestionData randomSectionQuestion(String fromId, String fromName,
-      {retryingTimes = 20}) {
+      {int retryingTimes = 20, bool onlyLayer = false}) {
     SingleQuestionData? q;
     for (var i = 0; i < retryingTimes; i++) {
-      q = _randomSectionQuestion(fromId, fromName);
+      q = _randomSectionQuestion(fromId, fromName, onlyLayer);
       if (q != null) {
         break;
       }
@@ -179,25 +181,112 @@ class Section {
     return q;
   }
 
-  SingleQuestionData? _randomSectionQuestion(String fromId, String fromName) {
-    if (_random!.nextInt(3) == 1) {
-      // ignore: unnecessary_null_comparison
-      if (questions == null || questions!.isEmpty) {
-        return null;
+  SingleQuestionData? _randomSectionQuestion(
+      String fromId, String fromName, bool onlyLayer) {
+    if (onlyLayer) {
+      if (questions == null || questions!.isEmpty) return null;
+      var selectedQuestion = questions![_random!.nextInt(questions!.length)];
+      return SingleQuestionData(selectedQuestion, fromId, fromName)
+        ..fromKonwledgeIndex = (List.from(fromKonwledgeIndex)..add(index))
+        ..fromKonwledgePoint = (List.from(fromKonwledgePoint)..add(title));
+    }
+
+    int currentQ = questions?.length ?? 0;
+    List<int> childQs = [];
+    int childTotal = 0;
+
+    if (children != null) {
+      for (var child in children!) {
+        int total = child.getTotalQuestions();
+        childQs.add(total);
+        childTotal += total;
       }
-      return SingleQuestionData(
-          questions![_random!.nextInt(questions!.length)], fromId, fromName)
+    }
+
+    int total = currentQ + childTotal;
+    if (total == 0) return null;
+
+    int rand = _random!.nextInt(total);
+    if (rand < currentQ) {
+      if (questions == null || questions!.isEmpty) return null;
+      var selectedQuestion = questions![_random!.nextInt(questions!.length)];
+      return SingleQuestionData(selectedQuestion, fromId, fromName)
         ..fromKonwledgeIndex = (List.from(fromKonwledgeIndex)..add(index))
         ..fromKonwledgePoint = (List.from(fromKonwledgePoint)..add(title));
     } else {
-      // ignore: unnecessary_null_comparison
-      if (children == null || children!.isEmpty) {
-        return null;
-      } else {
-        var sec = children![_random!.nextInt(children!.length)];
-        return sec.randomSectionQuestion(fromId, fromName);
+      if (children == null || children!.isEmpty) return null;
+      int target = rand - currentQ;
+      int accumulated = 0;
+      for (int i = 0; i < children!.length; i++) {
+        accumulated += childQs[i];
+        if (target < accumulated) {
+          return children![i]
+              .randomSectionQuestion(fromId, fromName, onlyLayer: false);
+        }
       }
     }
+    return null;
+  }
+
+// 添加方法以递归获取题目总数
+  int getTotalQuestions({bool onlyLayer = false}) {
+    int total = questions?.length ?? 0;
+    if (!onlyLayer) {
+      for (Section child in (children ?? [])) {
+        total += child.getTotalQuestions();
+      }
+    }
+    return total;
+  }
+
+  List<SingleQuestionData> randomMultipleSectionQuestions(
+    String fromId,
+    String fromName,
+    int count, {
+    int totalRetryTimes = 100,
+    bool onlyLayer = false,
+  }) {
+    final Set<String> usedIds = {};
+    final List<SingleQuestionData> result = [];
+
+    for (int i = 0; i < count; i++) {
+      SingleQuestionData? question;
+      int retryCount = 0;
+
+      // 尝试获取新问题的循环
+      while (retryCount < totalRetryTimes) {
+        final candidate = randomSectionQuestion(
+          fromId,
+          fromName,
+          retryingTimes: 20,
+          onlyLayer: onlyLayer,
+        );
+
+        // 检查是否重复且不是空问题
+        if (!usedIds.contains(candidate.question['id']) &&
+            candidate.question['q'] != '本章没有题目') {
+          question = candidate;
+          usedIds.add(candidate.question['id']!);
+          break;
+        }
+
+        retryCount++;
+      }
+
+      // 最终仍未找到新问题时的处理
+      result.add(question ??
+          SingleQuestionData(
+            {'q': '本章没有题目', 'w': '本章没有答案', 'id': const Uuid().v4()},
+            fromId,
+            fromName,
+          ));
+    }
+
+    // 最终校验是否所有问题都有效
+    final validCount = result
+        .where((q) => q.question != '问题不足' && q.question != '本章没有题目')
+        .length;
+    return validCount >= count ? result : [];
   }
 
   List<SingleQuestionData> sectionQuestion(String fromId, String fromName,
@@ -219,8 +308,8 @@ class Section {
     if (questions != null) {
       for (var q in questions!) {
         questionsList.add(SingleQuestionData(q, fromId, fromName)
-          ..fromKonwledgeIndex = List.from(fromKonwledgeIndex)
-          ..fromKonwledgePoint = List.from(fromKonwledgePoint));
+          ..fromKonwledgeIndex = (List.from(fromKonwledgeIndex)..add(index))
+          ..fromKonwledgePoint = (List.from(fromKonwledgePoint)..add(title)));
       }
     }
     return questionsList;

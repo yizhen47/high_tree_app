@@ -209,7 +209,7 @@ class _InnerState extends State<BankChooseScreen> {
     }
     StudyData.instance.setStudySection(null);
 
-    QuestionController.updateInstance();
+    QuestionGroupController.instances.update();
 
   }
 }

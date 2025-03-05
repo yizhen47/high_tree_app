@@ -2,25 +2,27 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 /// 思维导图节点数据类
-class MindMapNode {
+class MindMapNode<T> {
   final String id;
   String text;
   Offset position;
-  final List<MindMapNode> children;
+  final List<MindMapNode<T>> children;
   Size size;
   MindMapNode? parent;
   Color color;
   double childHeight = 0.0;
   bool isHighlighted = false;
+  T? data;
 
   MindMapNode({
     required this.id,
     required this.text,
     required this.position,
-    Iterable<MindMapNode> children = const [],
+    Iterable<MindMapNode<T>> children = const [],
     this.size = const Size(120, 48),
     this.color = Colors.blue,
     this.parent,
+    this.data,
   }) : children = List.of(children);
 
   void _updateHighlight(String targetId) {
@@ -32,33 +34,45 @@ class MindMapNode {
 }
 
 class MindMapController {
-  _MindMapState? _state;
+  WeakReference<_MindMapState>? _stateRef;
 
   void _attach(_MindMapState state) {
-    _state = state;
+    _stateRef = WeakReference(state);
   }
 
   void _detach() {
-    _state = null;
+    _stateRef = null;
   }
 
-  void centerNode(MindMapNode node,
+  /// 新增：通过ID居中节点
+  void centerNodeById(String nodeId,
       {Duration duration = const Duration(milliseconds: 500)}) {
-    _state?.centerNode(node, duration: duration);
+    final state = _stateRef?.target;
+    if (state != null && state.mounted) {
+      final node = state._findNodeById(nodeId);
+      if (node != null) {
+        print(node.id);
+        state.centerNode(node, duration: duration);
+      }
+    }
   }
 
-  void highlightNode(String nodeId) {
-    _state?.highlightNode(nodeId);
+  /// 新增：通过ID高亮节点
+  void highlightNodeById(String nodeId) {
+    final state = _stateRef?.target;
+    if (state != null && state.mounted) {
+      state.highlightNode(nodeId);
+    }
   }
 }
 
 /// 封装好的思维导图组件
-class MindMap extends StatefulWidget {
-  final MindMapNode rootNode;
+class MindMap<T> extends StatefulWidget {
+  final MindMapNode<T> rootNode;
   final Color lineColor;
   final double lineWidth;
   final VoidCallback? onUpdated;
-  final Function(MindMapNode)? onNodeTap;
+  final Function(MindMapNode<T>)? onNodeTap;
   final String? highlightedNodeId;
   final MindMapController? controller;
 
@@ -80,24 +94,10 @@ class MindMap extends StatefulWidget {
   });
 
   @override
-  State<MindMap> createState() => _MindMapState();
-
-  void centerNodeById(String nodeId) {
-    final node = _findNodeById(rootNode, nodeId);
-    if (node != null) _MindMapState().centerNode(node);
-  }
-
-  MindMapNode? _findNodeById(MindMapNode root, String id) {
-    if (root.id == id) return root;
-    for (final child in root.children) {
-      final found = _findNodeById(child, id);
-      if (found != null) return found;
-    }
-    return null;
-  }
+  State<MindMap<T>> createState() => _MindMapState<T>();
 }
 
-class _MindMapState extends State<MindMap> with TickerProviderStateMixin {
+class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
   double _scale = 1.0;
   Offset _offset = Offset.zero;
   late Offset _initialFocalPoint;
@@ -109,7 +109,9 @@ class _MindMapState extends State<MindMap> with TickerProviderStateMixin {
   @override
   void dispose() {
     widget.controller?._detach();
+    _highlightController.stop();
     _highlightController.dispose();
+
     super.dispose();
   }
 
@@ -138,12 +140,12 @@ class _MindMapState extends State<MindMap> with TickerProviderStateMixin {
 
   void _handleTap(Offset localPosition) {
     // 调整坐标转换顺序：先减偏移，再除缩放因子
-    final tapPosition = (localPosition / _scale) - _offset;
+    final tapPosition = ((localPosition - _offset) / _scale);
     final node = _findNodeAtPosition(widget.rootNode, tapPosition);
     if (node != null) widget.onNodeTap?.call(node);
   }
 
-  MindMapNode? _findNodeAtPosition(MindMapNode node, Offset position) {
+  MindMapNode<T>? _findNodeAtPosition(MindMapNode<T> node, Offset position) {
     final rect = Rect.fromCenter(
       center: node.position,
       width: node.size.width,
@@ -157,13 +159,29 @@ class _MindMapState extends State<MindMap> with TickerProviderStateMixin {
     return null;
   }
 
-  void centerNode(MindMapNode node,
+  /// 新增：递归查找节点
+  MindMapNode<T>? _findNodeById(String id) {
+    return _findNodeByIdRecursive(widget.rootNode, id);
+  }
+
+  MindMapNode<T>? _findNodeByIdRecursive(MindMapNode<T> node, String id) {
+    if (node.id == id) return node;
+    for (final child in node.children) {
+      final found = _findNodeByIdRecursive(child, id);
+      if (found != null) return found;
+    }
+    return null;
+  }
+
+  /// 修改后的居中方法
+  void centerNode(MindMapNode<T> node,
       {Duration duration = const Duration(milliseconds: 500)}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final screenSize = context.size!;
+      if (!mounted) return;
+      final screenSize = Offset(widget.width, widget.height);
       final targetOffset = Offset(
-        screenSize.width / 2 - node.position.dx * _scale,
-        screenSize.height / 2 - node.position.dy * _scale,
+        screenSize.dx / 2 - node.position.dx * _scale,
+        screenSize.dy / 2 - node.position.dy * _scale,
       );
 
       final controller = AnimationController(
@@ -180,7 +198,7 @@ class _MindMapState extends State<MindMap> with TickerProviderStateMixin {
       ));
 
       animation.addListener(() => setState(() => _offset = animation.value));
-      controller.forward();
+      controller.forward().whenComplete(controller.dispose);
     });
   }
 
@@ -226,21 +244,17 @@ class _MindMapState extends State<MindMap> with TickerProviderStateMixin {
           child: AnimatedBuilder(
             animation: _highlightAnimation,
             builder: (context, child) {
-              return Transform.scale(
-                scale: _scale,
-                alignment: Alignment.center,
-                child: Transform.translate(
-                  offset: _offset,
-                  child: CustomPaint(
-                    painter: _MindMapPainter(
-                      rootNode: widget.rootNode,
-                      lineColor: widget.lineColor,
-                      lineWidth: widget.lineWidth,
-                      scale: _scale,
-                      highlightProgress: _highlightAnimation.value,
-                    ),
-                    size: Size.infinite,
+              return Transform.translate(
+                offset: _offset,
+                child: CustomPaint(
+                  painter: _MindMapPainter(
+                    rootNode: widget.rootNode,
+                    lineColor: widget.lineColor,
+                    lineWidth: widget.lineWidth,
+                    scale: _scale,
+                    highlightProgress: _highlightAnimation.value,
                   ),
+                  size: Size.infinite,
                 ),
               );
             },
@@ -424,34 +438,34 @@ class MindMapHelper {
   static const int _verticalSpacing = 10;
 
   /// 创建根节点
-  static MindMapNode createRoot({
-    String? id,
-    String text = 'Root',
-    Offset position = Offset.zero,
-  }) {
-    return MindMapNode(
-      id: id ?? DateTime.now().microsecondsSinceEpoch.toString(),
-      text: text,
-      position: position,
-    );
+  static MindMapNode<T> createRoot<T>(
+      {String? id,
+      String text = 'Root',
+      Offset position = Offset.zero,
+      T? data}) {
+    return MindMapNode<T>(
+        id: id ?? DateTime.now().microsecondsSinceEpoch.toString(),
+        text: text,
+        position: position,
+        data: data);
   }
 
   /// 添加子节点到指定父节点，自动计算位置
-  static MindMapNode addChildNode(MindMapNode parent, String text,
-      {bool left = false,String? id}) {
+  static MindMapNode<T> addChildNode<T>(MindMapNode<T> parent, String text,
+      {bool left = false, String? id, T? data}) {
     final newPosition = _calculateChildPosition(parent, left);
-    var node = MindMapNode(
-      id: id ?? DateTime.now().microsecondsSinceEpoch.toString(),
-      text: text,
-      position: newPosition,
-      parent: parent,
-    );
+    var node = MindMapNode<T>(
+        id: id ?? DateTime.now().microsecondsSinceEpoch.toString(),
+        text: text,
+        position: newPosition,
+        parent: parent,
+        data: data);
     parent.children.add(node);
     return node;
   }
 
   /// 计算子节点位置
-  static Offset _calculateChildPosition(MindMapNode parent, bool left) {
+  static Offset _calculateChildPosition<T>(MindMapNode<T> parent, bool left) {
     final childCount = parent.children.length;
 
     // 水平方向：左侧或右侧
@@ -469,8 +483,8 @@ class MindMapHelper {
     );
   }
 
-  static MindMapNode addAutoChild(MindMapNode parent, String text) {
-    final node = MindMapNode(
+  static MindMapNode<T> addAutoChild<T>(MindMapNode<T> parent, String text) {
+    final node = MindMapNode<T>(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       text: text,
       position: _calculateChildPosition(parent, false),
@@ -481,13 +495,13 @@ class MindMapHelper {
 
   static const double _minNodeHeight = 30.0; // 节点最小高度
 
-  static void organizeTree(MindMapNode root) {
+  static void organizeTree<T>(MindMapNode<T> root) {
     _calculateTreeHeight(root);
     _layoutSubtree(root, root.position);
   }
 
   // 计算树深度（后序遍历）
-  static double _calculateTreeHeight(MindMapNode node) {
+  static double _calculateTreeHeight<T>(MindMapNode<T> node) {
     if (node.children.isEmpty) {
       node.size = Size(node.size.width, _minNodeHeight);
       node.childHeight = node.size.height;
@@ -501,7 +515,7 @@ class MindMapHelper {
   }
 
   // 递归布局子树
-  static void _layoutSubtree(MindMapNode node, Offset parentPosition) {
+  static void _layoutSubtree<T>(MindMapNode<T> node, Offset parentPosition) {
     if (node.children.isEmpty) return;
 
     // 计算子节点总高度（包含动态间距）

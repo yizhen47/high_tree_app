@@ -61,8 +61,8 @@ class _MindMapExampleState extends State<MindMapExample> {
 
       MindMapHelper.organizeTree(rootNode);
 
-      _controller.centerNode(n);
-      _controller.highlightNode(n.id);
+      _controller.centerNodeById(n.id);
+      _controller.highlightNodeById(n.id);
     });
   }
 
@@ -78,7 +78,7 @@ class _MindMapExampleState extends State<MindMapExample> {
         controller: _controller,
         onNodeTap: (node) {
           print("点击了节点: ${node.text}");
-          _controller.highlightNode(node.id);
+          _controller.highlightNodeById(node.id);
         },
       ),
       floatingActionButton: Column(

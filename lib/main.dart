@@ -15,7 +15,7 @@ import 'package:window_manager/window_manager.dart';
 //整个软件入口（测试用）
 Future<void> main() async {
   if (Platform.isWindows) {
-  WidgetsFlutterBinding.ensureInitialized();
+    WidgetsFlutterBinding.ensureInitialized();
     await windowManager.ensureInitialized();
 
     WindowOptions windowOptions = const WindowOptions(
@@ -100,21 +100,23 @@ class _MainEnterScreenState extends State<_MainEnterScreen>
     super.initState();
 
     Future(() async {
-      try {
-        await QuestionBank.init();
-        await QuestionBankBuilder.init();
-        await WrongQuestionBook.init();
-        await platformInit();
-        await QuestionController.updateInstance();
-        if (mounted) {
-          setState(() => _initCompleted = true);
-          _navigateToHome();
-        }
-      } catch (e) {
-        print("初始化失败: $e");
-        _navigateToHome(); // 即使失败也跳转
+      await QuestionBank.init();
+      await QuestionBankBuilder.init();
+      await WrongQuestionBook.init();
+      await platformInit();
+
+      if(StudyData.instance.todayUpdater()){
+        QuestionGroupController.instances.toDayUpdater();
       }
-    });
+
+      await QuestionGroupController.instances.update();
+
+      if (mounted) {
+        setState(() => _initCompleted = true);
+        _navigateToHome();
+      }
+    },
+    );
 
     // 5秒超时机制
     Future.delayed(const Duration(seconds: 5), _navigateToHome);

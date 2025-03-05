@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui';
 
 import 'package:flutter_application_1/tool/question_bank.dart';
@@ -12,11 +13,10 @@ class QuestionController {
   QuestionBank bank;
   List<SingleQuestionData> currentQuestionList = [];
 
-  late Box<SectionUserData> learnMap;
+  Box<SectionUserData> get learnMap =>
+      WrongQuestionBook.instance.sectionDataBox;
 
-  QuestionController(this.bank) {
-    learnMap = WrongQuestionBook.instance.sectionDataBox;
-  }
+  QuestionController(this.bank) {}
 
   Iterable<Section> getAllNeedLearnSection() sync* {
     yield* _getAllNeedLearnSection(bank.data!, []);
@@ -25,7 +25,7 @@ class QuestionController {
   Iterable<Section> _getAllNeedLearnSection(
       List<Section> secs, List<String> indexId) sync* {
     for (var sec in secs) {
-      if (isNeedLearnSection([...indexId, sec.index].join("/"))) {
+      if (isNeedLearnSection(sec)) {
         yield sec;
       }
 
@@ -35,6 +35,8 @@ class QuestionController {
     }
   }
 
+  Section? currentLearn;
+
   List<Section> getNeedLearnSection(int num) {
     var list = getAllNeedLearnSection().toList();
     if (list.length < num) {
@@ -43,31 +45,98 @@ class QuestionController {
     return list.sublist(0, num);
   }
 
-  bool isNeedLearnSection(String secId) {
-    return !learnMap.containsKey(secId);
+  bool isNeedLearnSection(Section sec) {
+    return getSectionUserData(sec).learnTimes < 1;
   }
 
-  void completeLearn(List<String> secIdList) {
-    var secId = secIdList.join("/");
-    var learnKey = bank.id! + "/" + secId;
-    if (learnMap.containsKey(learnKey)) {
-      learnMap.get(learnKey)!.learnTimes++;
-      learnMap.get(learnKey)!.lastLearnTime =
-          DateTime.now().millisecondsSinceEpoch;
-    } else {
-      learnMap.put(
-          learnKey,
-          SectionUserData()
-            ..learnTimes = 1
-            ..lastLearnTime = DateTime.now().millisecondsSinceEpoch);
+  void completeLearn() {
+    if (currentLearn == null) {
+      throw "currentLearn is null";
     }
+    var secData = getSectionUserData(currentLearn!);
+    secData.learnTimes++;
+    secData.lastLearnTime = DateTime.now().millisecondsSinceEpoch;
+    setSectionUserData(currentLearn!, secData);
+
+    var learn = getBankLearnData();
+    learn.alreadyLearnSectionNum =
+        min(learn.alreadyLearnSectionNum + 1, learn.needLearnSectionNum);
+    updateBankLearnData(learn);
   }
 
-  QuestionController addSimilarQuestion(SingleQuestionData question) {
-    currentQuestionList.addAll(bank
-        .findSectionByQuestion(question)
-        .sectionQuestionOnly(question.fromId, question.fromDisplayName));
+  void failCompleteLearn() {
+    if (currentLearn == null) {
+      throw "currentLearn is null";
+    }
+    var secData = getSectionUserData(currentLearn!);
+    // addSimilarQuestion();
+    replaceAllQuestions();
+
+    secData.allNeedCompleteQuestion = currentQuestionList.length;
+  }
+
+  QuestionController replaceAllQuestions() {
+    if (currentLearn == null) {
+      throw "currentLearn is null";
+    }
+
+    var nArray = currentLearn!.randomMultipleSectionQuestions(
+        bank.id!, bank.displayName!, 2,
+        onlyLayer: true);
+    for (var i = 0; i < currentQuestionList.length; i++) {
+      currentQuestionList[i] = nArray[i];
+    }
+    return this;
+  }
+
+  QuestionController addSimilarQuestion() {
+    if (currentLearn == null) {
+      throw "currentLearn is null";
+    }
+    currentQuestionList
+        .addAll(currentLearn!.sectionQuestionOnly(bank.id!, bank.displayName!));
     return removeSameQuestion();
+  }
+
+  QuestionController addRandomQuestion(int num) {
+    if (currentLearn == null) {
+      throw "currentLearn is null";
+    }
+
+    currentQuestionList.addAll(currentLearn!.randomMultipleSectionQuestions(
+        bank.id!, bank.displayName!, num,
+        onlyLayer: true));
+
+    return this;
+  }
+
+  SectionUserData getSectionUserData(Section sec) {
+    // sec ??= currentLearn;
+    var secId = bank.id! + "/" + sec.id;
+    if (!learnMap.containsKey(secId)) {
+      learnMap.put(secId, SectionUserData());
+    }
+    return learnMap.get(secId)!;
+  }
+
+  void setSectionUserData(Section sec, SectionUserData data) {
+    var secId = bank.id! + "/" + sec.id;
+
+    learnMap.put(secId, data);
+  }
+
+  BankLearnData getBankLearnData() {
+    var bankId = bank.id!;
+    if (!WrongQuestionBook.instance.sectionLearnBox.containsKey(bankId)) {
+      WrongQuestionBook.instance.sectionLearnBox.put(bankId, BankLearnData());
+    }
+
+    return WrongQuestionBook.instance.sectionLearnBox.get(bankId)!
+      ..needLearnSectionNum = StudyData.instance.getNeedLearnSectionNum();
+  }
+
+  void updateBankLearnData(BankLearnData data) {
+    WrongQuestionBook.instance.sectionLearnBox.put(bank.id, data);
   }
 
   QuestionController removeSameQuestion() {
@@ -82,11 +151,10 @@ class QuestionController {
     for (var element in aList) {
       currentQuestionList.remove(element);
     }
-
     return this;
   }
 
-  void getMindMapNode(MindMapNode node) {
+  void getMindMapNode(MindMapNode<Section> node) {
     _getMindMapNode(node, bank.data!);
   }
 
@@ -94,23 +162,13 @@ class QuestionController {
     return bank.findSection(id.split("/"));
   }
 
-  void _getMindMapNode(MindMapNode node, List<Section> secs) {
+  void _getMindMapNode(MindMapNode<Section> node, List<Section> secs) {
     for (var sec in secs) {
-      MindMapHelper.addChildNode(node, sec.title,
-          id: sec.fromKonwledgeIndex.join("/"));
+      var nNode =  MindMapHelper.addChildNode(node, sec.title, id: sec.id,data: sec);
       if (sec.children != null && sec.children!.isNotEmpty) {
-        _getMindMapNode(node, sec.children!);
+        _getMindMapNode(nNode, sec.children!);
       }
     }
-  }
-
-  static List<QuestionController> instances = [];
-
-  static updateInstance() async {
-    instances.clear();
-    instances = (await QuestionBank.getAllLoadedQuestionBanks())
-        .map((e) => QuestionController(e))
-        .toList();
   }
 }
 
@@ -121,4 +179,52 @@ class SectionUserData {
 
   @HiveField(1)
   int learnTimes = 0;
+
+  @HiveField(2)
+  int alreadyCompleteQuestion = 0;
+
+  @HiveField(3)
+  int allNeedCompleteQuestion = 2;
+}
+
+@HiveType(typeId: 3)
+class BankLearnData {
+  @HiveField(0)
+  int needLearnSectionNum = 0;
+
+  @HiveField(1)
+  int alreadyLearnSectionNum = 0;
+}
+
+class QuestionGroupController {
+  List<QuestionController> controllers = [];
+
+  Box get sectionData => WrongQuestionBook.instance.sectionDataBox;
+
+  QuestionGroupController() {}
+  static QuestionGroupController instances = QuestionGroupController();
+
+  Future<void> update() async {
+    controllers.clear();
+    for (var action in (await QuestionBank.getAllLoadedQuestionBanks())) {
+      var ctrl = QuestionController(action);
+      ctrl
+          .getNeedLearnSection(ctrl.getBankLearnData().needLearnSectionNum -
+              ctrl.getBankLearnData().alreadyLearnSectionNum)
+          .forEach((sec) {
+        var secController = QuestionController(action);
+        secController.currentLearn = sec;
+        secController.addRandomQuestion(StudyData.instance.getNeedCompleteQuestionNum());
+        controllers.add(secController);
+      });
+    }
+  }
+
+  toDayUpdater() {
+    for (String k in WrongQuestionBook.instance.sectionLearnBox.keys) {
+      var element = WrongQuestionBook.instance.sectionLearnBox.get(k);
+      element!.alreadyLearnSectionNum = 0;
+      WrongQuestionBook.instance.sectionLearnBox.put(k, element);
+    }
+  }
 }

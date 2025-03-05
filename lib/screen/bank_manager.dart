@@ -356,7 +356,7 @@ class _InnerState extends State<BankManagerScreen> {
     }
     StudyData.instance.setStudySection(null);
 
-    QuestionController.updateInstance();
+    QuestionGroupController.instances.update();
   }
 }
 

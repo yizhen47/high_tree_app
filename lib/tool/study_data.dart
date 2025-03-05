@@ -154,4 +154,36 @@ class StudyData {
   setNightMode(bool nightMode) async {
     await sharedPreferences!.setBool("nightMode", nightMode);
   }
+
+
+  int getToday() {
+    return sharedPreferences!.getInt("today") ?? 0;
+  }
+  void setToday(int today) {
+    sharedPreferences!.setInt("today", today);
+  }
+  bool todayUpdater() {
+    var today = DateTime.now().day;
+    if (getToday() != today) {
+      setToday(today);
+      return true;
+    }
+    return false;
+  }
+
+  int getNeedLearnSectionNum(){
+    return sharedPreferences?.getInt('needLearnSectionNum') ?? 5;
+  }
+
+  void setNeedLearnSectionNum(int num){
+    sharedPreferences?.setInt('needLearnSectionNum',num);
+  }
+
+  int getNeedCompleteQuestionNum(){
+    return sharedPreferences?.getInt('needCompleteQuestionNum') ?? 2;
+  }
+
+  void setNeedCompleteQuestionNum(int num){
+    sharedPreferences?.setInt('needCompleteQuestionNum',num);
+  }
 }

@@ -11,19 +11,23 @@ class WrongQuestionBook {
   late Box<String> wrongBox;
   late Box<QuestionUserData> questionBox;
   late Box<SectionUserData> sectionDataBox;
+  late Box<BankLearnData> sectionLearnBox;
   WrongQuestionBook() {
     wrongBox = Hive.box<String>("wrong_question_book");
     questionBox = Hive.box<QuestionUserData>("question_book");
     sectionDataBox = Hive.box<SectionUserData>("section_data");
+    sectionLearnBox = Hive.box<BankLearnData>("bank_learn_data");
   }
   static init() async {
     Hive.init(
         path.join((await getApplicationDocumentsDirectory()).path, "hive"));
     Hive.registerAdapter(QuestionUserDataAdapter());
     Hive.registerAdapter(SectionUserDataAdapter());
+    Hive.registerAdapter(BankLearnDataAdapter());
     await Hive.openBox<String>("wrong_question_book");
     await Hive.openBox<QuestionUserData>("question_book");
     await Hive.openBox<SectionUserData>("section_data");
+    await Hive.openBox<BankLearnData>("bank_learn_data");
   }
 
   static WrongQuestionBook instance = WrongQuestionBook();
@@ -85,10 +89,24 @@ class WrongQuestionBook {
   QuestionUserData getQuestion(String questionId) {
     return questionBox.get(questionId) ?? QuestionUserData(0);
   }
+
+  void updateQuestion(String questionId, QuestionUserData questionUserData){
+    questionBox.put(questionId, questionUserData);
+  }
+
+
   mksureQuestion(String questionId) {
     if (!questionBox.containsKey(questionId)) {
       questionBox.put(questionId, QuestionUserData(0));
     }
+  }
+
+  clearData(){
+    questionBox.clear();
+    sectionDataBox.clear();
+    sectionLearnBox.clear();
+    wrongBox.clear();
+    
   }
 }
 

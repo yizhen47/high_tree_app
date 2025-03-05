@@ -1,6 +1,7 @@
 import 'package:extended_text/extended_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screen/question.dart';
+import 'package:flutter_application_1/screen/question_card.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:flutter_application_1/tool/text_string_handle.dart';
 import 'package:flutter_application_1/tool/wrong_question_book.dart';
@@ -19,17 +20,17 @@ class _WrongQuestionScreenInnerState extends State<WrongQuestionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: TDNavBar(title: '错题查看', onBack: () {}),
-        body: const WrongQuestionWidth());
+        body: const WrongQuestionWidget());
   }
 }
 
-class WrongQuestionWidth extends StatefulWidget {
-  const WrongQuestionWidth({super.key});
+class WrongQuestionWidget extends StatefulWidget {
+  const WrongQuestionWidget({super.key});
   @override
-  State<WrongQuestionWidth> createState() => _WrongQuestionWidthInnerState();
+  State<WrongQuestionWidget> createState() => _WrongQuestionWidthInnerState();
 }
 
-class _WrongQuestionWidthInnerState extends State<WrongQuestionWidth> {
+class _WrongQuestionWidthInnerState extends State<WrongQuestionWidget> {
   writeNote({filteredList, index, screenWidth, screenHeight, context}) {
     Navigator.of(context).push(
       TDSlidePopupRoute(
@@ -44,10 +45,13 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidth> {
 
           // 初始化逻辑保持不变
           if (WrongQuestionBook.instance
-              .getQuestion(filteredList[index]['id']!)
-              .note
-              != null && WrongQuestionBook.instance
-              .getQuestion(filteredList[index]['id']!).note!.isNotEmpty) {
+                      .getQuestion(filteredList[index]['id']!)
+                      .note !=
+                  null &&
+              WrongQuestionBook.instance
+                  .getQuestion(filteredList[index]['id']!)
+                  .note!
+                  .isNotEmpty) {
             laTeXInputController.text = WrongQuestionBook.instance
                 .getQuestion(filteredList[index]['id']!)
                 .note!;
@@ -222,9 +226,11 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidth> {
                                         filteredList[index]['id'];
                                     WrongQuestionBook.instance
                                         .mksureQuestion(questionId);
-                                    WrongQuestionBook.instance
-                                        .getQuestion(questionId)
-                                        .note = latexText;
+                                    WrongQuestionBook.instance.updateQuestion(
+                                        questionId,
+                                        WrongQuestionBook.instance
+                                            .getQuestion(questionId)
+                                          ..note = latexText);
                                     setState(() {});
                                     Navigator.pop(context);
                                   },
@@ -247,37 +253,6 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidth> {
             },
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildActionButton(
-      {required String text,
-      required Color color,
-      required IconData icon,
-      required Function onTap}) {
-    return Material(
-      borderRadius: BorderRadius.circular(10),
-      color: color,
-      child: InkWell(
-        onTap: () => onTap(),
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          height: 48,
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: Colors.white, size: 20),
-              const SizedBox(width: 8),
-              Text(text,
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600)),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -340,8 +315,10 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidth> {
                         note: hideText('${(e['note'])}', maxLen: 10),
                         description: e['description'],
                         leftIconWidget: WrongQuestionBook.instance
-                                .getQuestion(e['id'])
-                                .note != null && WrongQuestionBook.instance
+                                        .getQuestion(e['id'])
+                                        .note !=
+                                    null &&
+                                WrongQuestionBook.instance
                                     .getQuestion(e['id'])
                                     .note!
                                     .isNotEmpty
