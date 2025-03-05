@@ -5,6 +5,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
+import 'package:latext/latext.dart';
 
 /// 思维导图节点数据类
 class MindMapNode<T> {
@@ -31,7 +32,7 @@ class MindMapNode<T> {
   }) : children = List.of(children);
 
   bool get isLatex => text.contains(r'$$') || text.contains(r'$');
-  String get latexContent => isLatex ? text.substring(2, text.length - 2) : '';
+  String get latexContent => isLatex ? text : '';
 
   void _updateHighlight(String targetId) {
     isHighlighted = id == targetId;
@@ -127,9 +128,19 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
         left: -5000, // 移出可视区域
         child: RepaintBoundary(
           key: key,
-          child: Math.tex(
-            latex,
-            textStyle: const TextStyle(fontSize: 14),
+          child: LaTexT(
+            laTeXCode: Text(
+              latex,
+              style: TextStyle(
+                color: Colors.grey[800]!.withOpacity(0.9),
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                decoration: null,
+                decorationStyle: null,
+                decorationColor: null,
+                decorationThickness: 0.0,
+              ),
+            ),
           ),
         ),
       ),
@@ -235,7 +246,6 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
     return null;
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Listener(
@@ -298,7 +308,7 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
       ),
     );
   }
-  
+
   void _handleTap(Offset localPosition) {
     final tapPos = (localPosition - _offset) / _scale;
     final node = _findNodeAtPosition(widget.rootNode, tapPos);

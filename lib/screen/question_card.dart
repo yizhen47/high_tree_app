@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
@@ -83,7 +82,8 @@ Widget _buildHeader(BuildContext context, String index, String title) {
       const SizedBox(width: 12), // 缩小间距
       // 右侧标题部分
       Expanded(
-        child: Text(
+          child: LaTexT(
+        laTeXCode: Text(
           title,
           style: TextStyle(
             fontSize: 20,
@@ -92,7 +92,7 @@ Widget _buildHeader(BuildContext context, String index, String title) {
             height: 1.2,
           ),
         ),
-      ),
+      )),
     ],
   );
 }

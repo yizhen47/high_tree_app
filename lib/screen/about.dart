@@ -118,6 +118,8 @@ class _LogoSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Tilt(
+      fps: 120,
+      tiltConfig: TiltConfig(angle: 60, direction: [TiltDirection.left,TiltDirection.right]),
       // tilt: 0.02,
       child: Stack(
         alignment: Alignment.center,
@@ -187,24 +189,6 @@ class _AnimatedGradientBackground extends StatelessWidget {
     );
   }
 }
-
-class _FloatingDecoration extends StatelessWidget {
-  final _DecorationItem item;
-
-  const _FloatingDecoration({required this.item});
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedPositioned(
-      duration: const Duration(seconds: 10),
-      curve: Curves.easeInOut,
-      left: item.alignment.x * MediaQuery.of(context).size.width,
-      top: item.alignment.y * MediaQuery.of(context).size.height,
-      child: Icon(item.icon, color: item.color, size: item.size),
-    );
-  }
-}
-
 // 优化后的菜单项组件
 class _SettingCard extends StatelessWidget {
   final _MenuItem item;
