@@ -8,13 +8,17 @@ import 'package:flutter/services.dart';
 import 'package:flutter_application_1/screen/about.dart';
 import 'package:flutter_application_1/screen/bank_choose.dart';
 import 'package:flutter_application_1/screen/bank_manager.dart';
+import 'package:flutter_application_1/screen/intelligent_setting.dart';
+import 'package:flutter_application_1/screen/mode.dart';
 import 'package:flutter_application_1/screen/personal.dart';
 import 'package:flutter_application_1/screen/question.dart';
 import 'package:flutter_application_1/screen/wrong_question.dart';
+import 'package:flutter_application_1/tool/page_intent_trans.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:flutter_application_1/tool/question_controller.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/tool/wrong_question_book.dart';
+import 'package:latext/latext.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 
@@ -426,11 +430,15 @@ class _PlanItem extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title,
+        LaTexT(
+          laTeXCode: Text(
+            title,
             style: const TextStyle(
               fontSize: 14,
               color: AppTheme.textPrimary,
-            )),
+            ),
+          ),
+        ),
         const SizedBox(height: 6),
         LinearProgressIndicator(
           value: progress,
@@ -499,25 +507,47 @@ class _MainHomePageState extends State<MainHomePage> {
           child: InkWell(
             borderRadius: BorderRadius.circular(40),
             onTap: () {
-              if (QuestionGroupController.instances.controllers.isEmpty) {
+              var banksIsds = QuestionBank.getAllLoadedQuestionBankIds();
+              print(banksIsds);
+              if (QuestionGroupController.instances.controllers.isEmpty &&
+                  banksIsds.isNotEmpty) {
                 TDToast.showSuccess("已完成今日计划", context: context);
               } else {
                 StudyData.instance.setStudyType(StudyType.recommandMode);
-                Navigator.push(
-                  context,
-                  PageTransition(
-                    type: PageTransitionType.rightToLeftPop,
-                    childCurrent: widget,
-                    alignment: const Alignment(10, 20),
-                    child: const QuestionScreen(
-                      title: '',
+                if (banksIsds.isEmpty) {
+                  PageIntentTrans.map[PageIntentTrans.bankChooseTarget] =
+                      () => const QuestionScreen(title: '');
+                  Navigator.push(
+                    context,
+                    PageTransition(
+                      type: PageTransitionType.rightToLeftPop,
+                      childCurrent: widget,
+                      alignment: const Alignment(10, 20),
+                      child: const BankChooseScreen(),
+                      duration: const Duration(milliseconds: 400),
+                      curve: Curves.easeInOut,
                     ),
-                    duration: const Duration(milliseconds: 400),
-                    curve: Curves.easeInOut,
-                  ),
-                ).whenComplete(() => QuestionGroupController.instances
-                    .update()
-                    .whenComplete(() => setState(() {})));
+                  ).whenComplete(() => QuestionGroupController.instances
+                      .update()
+                      .whenComplete(() => setState(() {})));
+                  return;
+                } else {
+                  Navigator.push(
+                    context,
+                    PageTransition(
+                      type: PageTransitionType.rightToLeftPop,
+                      childCurrent: widget,
+                      alignment: const Alignment(10, 20),
+                      child: const QuestionScreen(
+                        title: '',
+                      ),
+                      duration: const Duration(milliseconds: 400),
+                      curve: Curves.easeInOut,
+                    ),
+                  ).whenComplete(() => QuestionGroupController.instances
+                      .update()
+                      .whenComplete(() => setState(() {})));
+                }
               }
             },
             child: Container(
@@ -699,12 +729,30 @@ class _MainHomePageState extends State<MainHomePage> {
         CommonComponents.buildIconButton(
           icon: Icons.auto_awesome_motion,
           label: '智能刷题',
-          onPressed: () {},
+          onPressed: () {
+            Navigator.push(
+              context,
+              PageTransition(
+                type: PageTransitionType.rightToLeftPop,
+                childCurrent: widget,
+                alignment: const Alignment(10, 20),
+                child: const IntelligentSettingScreen(),
+                duration: const Duration(milliseconds: 400),
+                curve: Curves.easeInOut,
+              ),
+            ).whenComplete(() => QuestionGroupController.instances
+                .update()
+                .whenComplete(() => setState(() {})));
+          },
         ),
         CommonComponents.buildIconButton(
           icon: Icons.play_circle_outline,
           label: '顺序练习',
           onPressed: () {
+            PageIntentTrans.map[PageIntentTrans.bankChooseTarget] =
+                () => const ModeScreen(
+                      title: '',
+                    );
             Navigator.push(
               context,
               PageTransition(
@@ -715,7 +763,9 @@ class _MainHomePageState extends State<MainHomePage> {
                 duration: const Duration(milliseconds: 400),
                 curve: Curves.easeInOut,
               ),
-            );
+            ).whenComplete(() => QuestionGroupController.instances
+                .update()
+                .whenComplete(() => setState(() {})));
           },
         ),
         CommonComponents.buildIconButton(
@@ -877,12 +927,14 @@ class ProfilePage extends StatelessWidget {
       children: [
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          child: Text('账户设置',
-              style: TextStyle(
-                fontSize: 15, // 调小标题字体
-                color: AppTheme.textPrimary,
-                fontWeight: FontWeight.w500,
-              )),
+          child: Text(
+            '账户设置',
+            style: TextStyle(
+              fontSize: 15, // 调小标题字体
+              color: AppTheme.textPrimary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ),
         CommonComponents.buildCommonCard(
           Column(

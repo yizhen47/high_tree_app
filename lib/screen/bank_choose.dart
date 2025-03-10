@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screen/mode.dart';
+import 'package:flutter_application_1/tool/page_intent_trans.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:flutter_application_1/tool/question_controller.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
@@ -32,11 +33,15 @@ class _InnerState extends State<BankChooseScreen> {
                   TDToast.showLoadingWithoutText(context: context);
                   await saveLoadedOption();
                   TDToast.dismissLoading();
-                  Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const ModeScreen(title: '')),
-                      (route) => route.isFirst);
+                  if (PageIntentTrans.map
+                      .containsKey(PageIntentTrans.bankChooseTarget)) {
+                    Function widthGetter = PageIntentTrans.map[PageIntentTrans.bankChooseTarget];
+                    Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => widthGetter()),
+                        (route) => route.isFirst);
+                  }
                 } else {
                   TDToast.showWarning('题库未选择',
                       direction: IconTextDirection.vertical, context: context);
@@ -90,9 +95,7 @@ class _InnerState extends State<BankChooseScreen> {
                           }))),
                           onCheckBoxGroupChange: (List<String> selectIds) {
                             this.selectIds = selectIds;
-                            setState(() {
-                              
-                            });
+                            setState(() {});
                           },
                         ),
                       ],
@@ -210,6 +213,5 @@ class _InnerState extends State<BankChooseScreen> {
     StudyData.instance.setStudySection(null);
 
     QuestionGroupController.instances.update();
-
   }
 }

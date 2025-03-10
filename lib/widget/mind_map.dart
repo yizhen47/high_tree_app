@@ -34,8 +34,8 @@ class MindMapNode<T> {
   bool get isLatex => text.contains(r'$$') || text.contains(r'$');
   String get latexContent => isLatex ? text : '';
 
-  void _updateHighlight(String targetId) {
-    isHighlighted = id == targetId;
+  void _updateHighlight(List<String> targetId) {
+    isHighlighted = (targetId.contains(id));
     for (final child in children) {
       child._updateHighlight(targetId);
     }
@@ -54,7 +54,7 @@ class MindMapController {
     state?.centerNodeById(nodeId, duration: duration);
   }
 
-  void highlightNodeById(String nodeId) {
+  void highlightNodeById(List<String> nodeId) {
     final state = _stateRef?.target;
     state?.highlightNode(nodeId);
   }
@@ -226,7 +226,7 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
     });
   }
 
-  void highlightNode(String nodeId) {
+  void highlightNode(List<String> nodeId) {
     setState(() {
       widget.rootNode._updateHighlight(nodeId);
       _highlightController.reset();
@@ -522,13 +522,14 @@ class MindMapHelper {
 
   /// 添加子节点到指定父节点，自动计算位置
   static MindMapNode<T> addChildNode<T>(MindMapNode<T> parent, String text,
-      {bool left = false, String? id, T? data}) {
+      {bool left = false, String? id, T? data,Color? color}) {
     final newPosition = _calculateChildPosition(parent, left);
     var node = MindMapNode<T>(
         id: id ?? DateTime.now().microsecondsSinceEpoch.toString(),
         text: text,
         position: newPosition,
         parent: parent,
+        color: color ?? Colors.blue ,
         data: data);
     parent.children.add(node);
     return node;

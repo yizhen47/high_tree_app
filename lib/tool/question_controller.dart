@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:ui';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_application_1/tool/question_bank.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/tool/wrong_question_book.dart';
@@ -25,12 +26,12 @@ class QuestionController {
   Iterable<Section> _getAllNeedLearnSection(
       List<Section> secs, List<String> indexId) sync* {
     for (var sec in secs) {
-      if (isNeedLearnSection(sec)) {
-        yield sec;
-      }
 
       if (sec.children != null && sec.children!.isNotEmpty) {
         yield* _getAllNeedLearnSection(sec.children!, [...indexId, sec.index]);
+      }
+      if (isNeedLearnSection(sec)) {
+        yield sec;
       }
     }
   }
@@ -165,7 +166,7 @@ class QuestionController {
   void _getMindMapNode(MindMapNode<Section> node, List<Section> secs) {
     for (var sec in secs) {
       var nNode =
-          MindMapHelper.addChildNode(node, sec.title, id: sec.id, data: sec);
+          MindMapHelper.addChildNode(node, sec.title, id: sec.id, data: sec,color:isNeedLearnSection(sec) ? null : Colors.greenAccent.shade400);
       if (sec.children != null && sec.children!.isNotEmpty) {
         _getMindMapNode(nNode, sec.children!);
       }
@@ -199,6 +200,7 @@ class BankLearnData {
 
 class QuestionGroupController {
   List<QuestionController> controllers = [];
+  List<QuestionBank> banksCache = [];
 
   Box get sectionData => WrongQuestionBook.instance.sectionDataBox;
 
@@ -207,7 +209,9 @@ class QuestionGroupController {
 
   Future<void> update() async {
     controllers.clear();
-    for (var action in (await QuestionBank.getAllLoadedQuestionBanks())) {
+    banksCache.clear();
+    banksCache.addAll(await QuestionBank.getAllLoadedQuestionBanks());
+    for (var action in banksCache) {
       var ctrl = QuestionController(action);
       ctrl
           .getNeedLearnSection(ctrl.getBankLearnData().needLearnSectionNum -
@@ -220,6 +224,9 @@ class QuestionGroupController {
         controllers.add(secController);
       });
     }
+  }
+  List<QuestionBank> getRemainNeedBanks(){
+    return controllers.map((toElement) => toElement.bank).toSet().toList();
   }
 
   toDayUpdater() {

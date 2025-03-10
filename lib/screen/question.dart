@@ -518,10 +518,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
           showKnowledgeCard(buildContext!, node.data!);
         },
         height: height);
-    for (var c in QuestionGroupController.instances.controllers
-        .map((toElement) => toElement.bank)
-        .toSet()
-        .toList()
+    for (var c in QuestionGroupController.instances.banksCache
         .map((toElement) => QuestionController(toElement))) {
       c.getMindMapNode(
           MindMapHelper.addChildNode(mindMap.rootNode, c.bank.displayName!));
@@ -560,7 +557,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
       if (nodeId != null) {
         // 确保在页面打开后执行定位
         mindMap.controller!.centerNodeById(nodeId);
-        mindMap.controller!.highlightNodeById(nodeId);
+        mindMap.controller!.highlightNodeById([nodeId]);
       }
     });
   }
