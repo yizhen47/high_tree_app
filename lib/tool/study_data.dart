@@ -63,19 +63,19 @@ class StudyData {
   }
 
   int get studyCount {
-    return sharedPreferences!.getInt("studyCount")!;
+    return sharedPreferences!.getInt("studyCount") ?? 0;
   }
 
   set studyCount(int value) {
     sharedPreferences!.setInt("studyCount", value);
   }
 
-  int get studyTime {
-    return sharedPreferences!.getInt("studyTime")!;
+  double get studyMinute {
+    return sharedPreferences!.getDouble("studyMinute") ?? 0.0;
   }
 
-  set studyTime(int value) {
-    sharedPreferences!.setInt("studyTime", value);
+  set studyMinute(double value) {
+    sharedPreferences!.setDouble("studyMinute", value);
   }
 
   StudyType get studyType {
@@ -192,5 +192,39 @@ class StudyData {
 
   set needCompleteQuestionNum(int value) {
     sharedPreferences?.setInt('needCompleteQuestionNum', value);
+  }
+  
+  // 增加学习时间（以分钟为单位）
+  void incrementStudyTime(int minutes) {
+    // 获取当前学习时间（小时）
+    double currentTime = studyMinute;
+    // 转换分钟为小时并累加（保留两位小数）
+    studyMinute = double.parse((currentTime + (minutes / 60)).toStringAsFixed(2));
+    // 同时增加学习次数
+    if (minutes > 0) {
+      studyCount = studyCount + 1;
+    }
+  }
+  
+  // 记录学习开始时间
+  DateTime? _studyStartTime;
+  
+  // 开始学习会话
+  void startStudySession() {
+    _studyStartTime = DateTime.now();
+  }
+  
+  // 结束学习会话并更新学习时间
+  void endStudySession() {
+    if (_studyStartTime != null) {
+      final now = DateTime.now();
+      final duration = now.difference(_studyStartTime!);
+      // 将学习时长转换为分钟
+      final minutes = duration.inMinutes;
+      // 更新学习时间
+      incrementStudyTime(minutes);
+      // 重置开始时间
+      _studyStartTime = null;
+    }
   }
 }

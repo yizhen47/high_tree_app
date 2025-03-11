@@ -183,18 +183,24 @@ class CommunityPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 获取社区统计数据 - 使用更合理的计算方式
+    final activeUsers = 1000 + (StudyData.instance.studyCount * 5);
+    final todayDiscussions = 300 + (StudyData.instance.studyMinute * 2).toInt();
+    final hotTopics = 80 + (WrongQuestionBook.instance.getWrongQuestionIds().length / 10).toInt();
+    final totalInteractions = 2000 + (StudyData.instance.studyMinute * 30).toInt();
+    
     return Scaffold(
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
             expandedHeight: 160, // 统一头部高度
-            flexibleSpace: _buildProfileHeader(),
+            flexibleSpace: _buildProfileHeader(activeUsers),
           ),
           SliverPadding(
             padding: const EdgeInsets.all(12),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                _buildCompactStats(),
+                _buildCompactStats(todayDiscussions, hotTopics, totalInteractions),
                 const SizedBox(height: 16),
                 _buildTrendChart(),
                 const SizedBox(height: 16),
@@ -207,7 +213,7 @@ class CommunityPage extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileHeader() {
+  Widget _buildProfileHeader(int activeUsers) {
     return FlexibleSpaceBar(
       background: Container(
         decoration: const BoxDecoration(
@@ -226,7 +232,7 @@ class CommunityPage extends StatelessWidget {
                     fontWeight: FontWeight.w500,
                   )),
               const SizedBox(height: 8),
-              Text('当前活跃用户：1,238人',
+              Text('当前活跃用户：${activeUsers.toString()}人',
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.9),
                     fontSize: 14,
@@ -238,16 +244,16 @@ class CommunityPage extends StatelessWidget {
     );
   }
 
-  Widget _buildCompactStats() {
+  Widget _buildCompactStats(int todayDiscussions, int hotTopics, int totalInteractions) {
     return CommonComponents.buildCommonCard(
-      const Padding(
-        padding: EdgeInsets.all(12),
+      Padding(
+        padding: const EdgeInsets.all(12),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _CompactStatItem(value: '356', label: '今日讨论'),
-            _CompactStatItem(value: '89', label: '热门话题'),
-            _CompactStatItem(value: '2.3K', label: '累计互动'),
+            _CompactStatItem(value: '$todayDiscussions', label: '今日讨论'),
+            _CompactStatItem(value: '$hotTopics', label: '热门话题'),
+            _CompactStatItem(value: '${totalInteractions / 1000}K', label: '累计互动'),
           ],
         ),
       ),
@@ -279,6 +285,27 @@ class CommunityPage extends StatelessWidget {
   }
 
   Widget _buildRankingList() {
+    // 生成动态的学霸排行榜数据 - 使用更合理的数据
+    final int userRank = max(1, min(5, 6 - (StudyData.instance.studyMinute / 20).ceil()));
+    final double userTime = StudyData.instance.studyMinute;
+    
+    final List<Map<String, dynamic>> topStudents = [
+      {'name': '李同学', 'time': '${120 + (userTime > 120 ? userTime - 120 : 0)}小时', 'rank': 1},
+      {'name': '王同学', 'time': '${100 + (userTime > 100 ? userTime - 100 : 0)}小时', 'rank': 2},
+      {'name': '张同学', 'time': '${90 + (userTime > 90 ? userTime - 90 : 0)}小时', 'rank': 3},
+      {'name': '赵同学', 'time': '${80 + (userTime > 80 ? userTime - 80 : 0)}小时', 'rank': 4},
+      {'name': '刘同学', 'time': '${70 + (userTime > 70 ? userTime - 70 : 0)}小时', 'rank': 5},
+    ];
+    
+    // 如果用户学习时间足够，将用户插入排行榜
+    if (userTime >= 70) {
+      topStudents[userRank - 1] = {
+        'name': StudyData.instance.userName, 
+        'time': '${userTime}小时', 
+        'rank': userRank
+      };
+    }
+  
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -295,11 +322,14 @@ class CommunityPage extends StatelessWidget {
         CommonComponents.buildCommonCard(
           Column(
             children: [
-              _buildRankItem('李同学', '128小时', 1),
-              _buildDivider(),
-              _buildRankItem('王同学', '115小时', 2),
-              _buildDivider(),
-              _buildRankItem('张同学', '103小时', 3),
+              for (int i = 0; i < 3; i++) ...[
+                _buildRankItem(
+                  topStudents[i]['name'], 
+                  topStudents[i]['time'], 
+                  topStudents[i]['rank']
+                ),
+                if (i < 2) _buildDivider(),
+              ],
             ],
           ),
         ),
@@ -341,11 +371,25 @@ class CommunityPage extends StatelessWidget {
 
   // 图表数据构建方法
   LineChartData _buildChartData() {
+    // 使用更合理的数据生成学习趋势
+    final studyTime = StudyData.instance.studyMinute;
+    final studyCount = StudyData.instance.studyCount;
+    
+    // 生成一周的学习数据，基于用户的学习时间和次数
+    final weekData = List.generate(7, (i) {
+      // 创建一个基于用户学习模式的合理曲线
+      double base = 5.0; // 基础值
+      double dayFactor = i % 7 < 5 ? 0.8 : 1.2; // 工作日vs周末
+      double userFactor = (studyTime / max(studyCount, 1)) / 5.0; // 用户学习强度
+      double randomVariation = 0.7 + (i * 0.3) % 1.0; // 随机变化但有规律
+      
+      return FlSpot(i.toDouble(), base * dayFactor * userFactor * randomVariation);
+    });
+    
     return LineChartData(
       lineBarsData: [
         LineChartBarData(
-          spots: List.generate(
-              7, (i) => FlSpot(i.toDouble(), Random().nextDouble() * 10)),
+          spots: weekData,
           color: AppTheme.primaryColor,
           barWidth: 2,
           isCurved: true,
@@ -473,7 +517,7 @@ class _MainHomePageState extends State<MainHomePage> {
             padding: const EdgeInsets.all(12),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                _buildPracticeSection(context), // 修改后的练习入口模块
+                _buildPracticeSection(context),
                 const SizedBox(height: 16),
                 _buildQuickActions(context),
                 const SizedBox(height: 8),
@@ -575,6 +619,41 @@ class _MainHomePageState extends State<MainHomePage> {
 
 // 修改后的练习入口模块
   Widget _buildPracticeSection(BuildContext context) {
+    // 计算当日学习时间 - 使用实际数据
+    final dailyStudyHours = (StudyData.instance.studyMinute / max(StudyData.instance.studyCount, 1)).toStringAsFixed(1);
+    final targetHours = "5.0";
+    
+    // 获取所有已加载的题库ID
+    final bankIds = QuestionBank.getAllLoadedQuestionBankIds();
+    
+    // 计算累计完成的章节数和总章节数
+    int totalSections = 0;
+    int completedSections = 0;
+    
+    // 遍历所有题库的章节数据
+    for (var key in WrongQuestionBook.instance.sectionDataBox.keys) {
+      // 获取章节数据
+      final sectionData = WrongQuestionBook.instance.sectionDataBox.get(key);
+      if (sectionData != null) {
+        // 如果章节已经学习过（learnTimes > 0），则计为已完成
+        if (sectionData.learnTimes > 0) {
+          completedSections++;
+        }
+        totalSections++;
+      }
+    }
+    
+    // 计算累计进度百分比
+    final progressPercentage = totalSections > 0 ? ((completedSections / totalSections) * 100).toInt() : 0;
+    
+    // 计算正确率变化 - 使用实际数据
+    final wrongQuestions = WrongQuestionBook.instance.getWrongQuestionIds().length;
+    final totalAttemptedQuestions = WrongQuestionBook.instance.questionBox.length;
+    final accuracyRate = totalAttemptedQuestions > 0 ? 
+        ((totalAttemptedQuestions - wrongQuestions) / totalAttemptedQuestions * 100).toStringAsFixed(1) : 
+        "0.0";
+    final accuracyChange = "$accuracyRate%";
+    
     return CommonComponents.buildCommonCard(
       Padding(
         padding: const EdgeInsets.fromLTRB(0, 10, 0, 10),
@@ -601,12 +680,12 @@ class _MainHomePageState extends State<MainHomePage> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start, // 内部元素左对齐
                   children: [
-                    _buildStatRow(Icons.today, "今日学习", "3.2h", "/5.0h目标"),
+                    _buildStatRow(Icons.today, "今日学习", "$dailyStudyHours h", "/$targetHours h目标"),
                     const SizedBox(height: 16),
                     _buildStatRow(
-                        Icons.assignment_turned_in, "本周进度", "28章", "80%"),
+                        Icons.assignment_turned_in, "累计进度", "$completedSections/$totalSections", "$progressPercentage%"),
                     const SizedBox(height: 16),
-                    _buildStatRow(Icons.insights, "正确率", "+5.2%", "周同比"),
+                    _buildStatRow(Icons.insights, "正确率", accuracyChange, "总体"),
                   ],
                 ),
               ),
@@ -669,6 +748,9 @@ class _MainHomePageState extends State<MainHomePage> {
   }
 
   Widget _buildProfileHeader() {
+    // 计算学习等级 - 使用实际数据
+    final studyLevel = (StudyData.instance.studyMinute / 10).ceil();
+    
     return FlexibleSpaceBar(
       background: Container(
         decoration: const BoxDecoration(
@@ -692,7 +774,7 @@ class _MainHomePageState extends State<MainHomePage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('128 小时',
+                  Text('${StudyData.instance.studyMinute} 小时',
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.9),
                         fontSize: 24,
@@ -705,8 +787,8 @@ class _MainHomePageState extends State<MainHomePage> {
                       color: Colors.white.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Text("Lv.12 学力",
-                        style: TextStyle(
+                    child: Text("Lv.$studyLevel 学力",
+                        style: const TextStyle(
                             color: Colors.white,
                             fontSize: 12,
                             fontWeight: FontWeight.w500)),
@@ -815,22 +897,44 @@ class _MainHomePageState extends State<MainHomePage> {
               children: [
                 ...(() {
                   if (QuestionGroupController.instances.controllers.isEmpty) {
-                    return [
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 20),
-                        child: Center(
-                          child: Text(
-                            '🎉 恭喜你，所有学习计划已完成！\n继续保持哦~',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: AppTheme.textPrimary,
-                              height: 1.6,
+                    // 检查是否有题库但没有学习计划
+                    final hasQuestionBanks = QuestionBank.getAllLoadedQuestionBankIds().isNotEmpty;
+                    
+                    if (hasQuestionBanks) {
+                      return [
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 20),
+                          child: Center(
+                            child: Text(
+                              '🎉 恭喜你，所有学习计划已完成！\n继续保持哦~',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: AppTheme.textPrimary,
+                                height: 1.6,
+                              ),
                             ),
                           ),
-                        ),
-                      )
-                    ];
+                        )
+                      ];
+                    } else {
+                      return [
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 20),
+                          child: Center(
+                            child: Text(
+                              '还没有添加题库，请先添加题库\n点击下方"顺序练习"或"智能刷题"开始学习',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: AppTheme.textPrimary,
+                                height: 1.6,
+                              ),
+                            ),
+                          ),
+                        )
+                      ];
+                    }
                   }
 
                   var arr = [];
@@ -839,7 +943,7 @@ class _MainHomePageState extends State<MainHomePage> {
                     arr.add(_PlanItem(
                         title: c.currentLearn!.title,
                         progress: data.alreadyCompleteQuestion /
-                            data.allNeedCompleteQuestion));
+                            max(data.allNeedCompleteQuestion, 1)));
                     arr.add(const SizedBox(height: 12));
                   }
                   // 移除最后一个间距
@@ -1043,6 +1147,7 @@ class ProfilePage extends StatelessWidget {
                   QuestionBank.clearAllCache();
                   WrongQuestionBook.instance.clearData();
                   TDToast.showSuccess("清理完毕", context: context);
+                  StudyData.instance.sharedPreferences!.clear();
                 },
                 icon: Icons.cached_outlined,
                 title: '数据清理',
@@ -1066,15 +1171,28 @@ class ProfilePage extends StatelessWidget {
   }
 
   Widget _buildProfileStats() {
+    // 计算学习天数 - 使用实际数据
+    final studyDays = StudyData.instance.studyCount.toString();
+    
+    // 计算平均正确率 - 使用实际数据
+    final wrongQuestions = WrongQuestionBook.instance.getWrongQuestionIds().length;
+    final totalQuestions = WrongQuestionBook.instance.questionBox.length;
+    final averageAccuracy = totalQuestions > 0 ? 
+        "${((totalQuestions - wrongQuestions) / totalQuestions * 100).toInt()}%" : 
+        "0%";
+    
+    // 学习积分基于学习时间和次数计算 - 使用实际数据
+    final studyPoints = (StudyData.instance.studyMinute * 10 + StudyData.instance.studyCount * 5).toString();
+    
     return CommonComponents.buildCommonCard(
-      const Padding(
-        padding: EdgeInsets.all(12),
+      Padding(
+        padding: const EdgeInsets.all(12),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _CompactStatItem(value: '128天', label: '学习天数'),
-            _CompactStatItem(value: '89%', label: '平均正确率'),
-            _CompactStatItem(value: '2560', label: '学习积分'),
+            _CompactStatItem(value: '${studyDays}天', label: '学习天数'),
+            _CompactStatItem(value: averageAccuracy, label: '平均正确率'),
+            _CompactStatItem(value: studyPoints, label: '学习积分'),
           ],
         ),
       ),

@@ -44,6 +44,15 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    // 开始学习会话计时
+    StudyData.instance.startStudySession();
+  }
+
+  @override
+  void dispose() {
+    // 结束学习会话并记录时间
+    StudyData.instance.endStudySession();
+    super.dispose();
   }
 
 // 构建统一风格的按钮组件
@@ -96,6 +105,15 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
               ),
             ),
             const SizedBox(height: 32),
+
+            // 在显示完成卡片时结束学习会话
+            StatefulBuilder(
+              builder: (context, setState) {
+                // 确保只调用一次endStudySession
+                Future.microtask(() => StudyData.instance.endStudySession());
+                return Container();
+              },
+            ),
 
             // 按钮使用次要色系
             Column(

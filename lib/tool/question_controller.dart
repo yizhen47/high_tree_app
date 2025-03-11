@@ -241,6 +241,8 @@ class QuestionGroupController {
     var value = 0.0;
     var banks = QuestionBank.getAllLoadedQuestionBankIds();
     if (banks.isEmpty) return 0.0;
+    
+    // Calculate progress from completed sections
     for (var b in banks) {
       var bankData = WrongQuestionBook.instance.sectionLearnBox.get(b)!;
       value += bankData.alreadyLearnSectionNum /
@@ -248,16 +250,17 @@ class QuestionGroupController {
           banks.length;
     }
 
+    // Calculate progress from partially completed questions
     for (var c in controllers) {
       var secData = c.getSectionUserData(c.currentLearn!);
       if (secData.alreadyCompleteQuestion != secData.allNeedCompleteQuestion) {
-        value +
-            (secData.alreadyCompleteQuestion /
-                    secData.allNeedCompleteQuestion) /
-                StudyData.instance.needLearnSectionNum /
-                banks.length;
+        value += (secData.alreadyCompleteQuestion /
+                secData.allNeedCompleteQuestion) /
+            StudyData.instance.needLearnSectionNum /
+            banks.length;
       }
     }
+    
     return value;
   }
 }
