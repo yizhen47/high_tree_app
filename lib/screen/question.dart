@@ -35,7 +35,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
   final List<SingleQuestionData> rightQuestions = [];
 
   int questionRemain = 0;
-  int unlockedQuestionNum = StudyData.instance.getNeedCompleteQuestionNum();
+  int unlockedQuestionNum = StudyData.instance.needCompleteQuestionNum;
 
   var progress = 0.0;
   var retryCount = 0;
@@ -152,11 +152,11 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
         // 请求已结束
         if (snapshot.connectionState == ConnectionState.done) {
           if (snapshot.hasError) {
-            // 请求失败，                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          显示错误
+            // 请求失败，显示错误
             return Text("Error: ${snapshot.error}" '${snapshot.stackTrace}');
           } else {
             List<Card> cards = [];
-            final studyType = StudyData.instance.getStudyType();
+            final studyType = StudyData.instance.studyType;
             final isTestMode = studyType == StudyType.testMode;
             final isStudyMode = studyType == StudyType.studyMode;
 
@@ -217,7 +217,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
 
             // 测试模式处理
             if (isTestMode) {
-              final secList = StudyData.instance.getStudySection();
+              final secList = StudyData.instance.studySection;
               Map<String, List<int>> dtype = {};
 
               if (secList != null) {
@@ -230,7 +230,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
               final sectionKeys = List<String>.from(dtype.keys);
 
               for (int i = 0;
-                  i < StudyData.instance.getStudyQuestionNum();
+                  i < StudyData.instance.studyQuestionNum;
                   i++) {
                 final randomKey =
                     sectionKeys[Random().nextInt(sectionKeys.length)];
@@ -246,7 +246,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                 addQuestionCard(qData);
               }
             } else if (isStudyMode) {
-              final secList = StudyData.instance.getStudySection() ??
+              final secList = StudyData.instance.studySection ??
                   (throw Exception("需要指定学习章节"));
               Section currentSection = Section("", "")
                 ..children = snapshot.data!.single.data;
@@ -276,7 +276,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                     snapshot.data!.single.displayName!,
                   )
                   .forEach(addQuestionCard);
-            } else if (StudyData.instance.getStudyType() ==
+            } else if (StudyData.instance.studyType ==
                 StudyType.recommandMode) {
               for (var c in QuestionGroupController.instances.controllers) {
                 for (var q in c.currentQuestionList) {
@@ -346,7 +346,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                       : leftQuestions.add(question);
 
                   //推荐模式下的判断
-                  if (StudyData.instance.getStudyType() ==
+                  if (StudyData.instance.studyType ==
                       StudyType.recommandMode) {
                     for (var c
                         in QuestionGroupController.instances.controllers) {
@@ -401,7 +401,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                           c.completeLearn();
 
                           unlockedQuestionNum +=
-                              StudyData.instance.getNeedCompleteQuestionNum();
+                              StudyData.instance.needCompleteQuestionNum;
                         }
                       }
 
@@ -690,7 +690,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                                                   if (index <
                                                           unlockedQuestionNum ||
                                                       StudyData.instance
-                                                              .getStudyType() !=
+                                                              .studyType !=
                                                           StudyType
                                                               .recommandMode) {
                                                     controller.moveTo(index);
@@ -706,7 +706,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                                                   ),
                                                   color: (index >= unlockedQuestionNum &&
                                                           StudyData.instance
-                                                                  .getStudyType() ==
+                                                                  .studyType ==
                                                               StudyType
                                                                   .recommandMode)
                                                       ? Colors.grey.shade300
@@ -750,7 +750,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                       ),
                     ),
                     ...(() {
-                      if (StudyData.instance.getStudyType() !=
+                      if (StudyData.instance.studyType !=
                           StudyType.testMode) {
                         return [
                           Expanded(

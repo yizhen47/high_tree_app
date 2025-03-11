@@ -513,7 +513,7 @@ class _MainHomePageState extends State<MainHomePage> {
                   banksIsds.isNotEmpty) {
                 TDToast.showSuccess("已完成今日计划", context: context);
               } else {
-                StudyData.instance.setStudyType(StudyType.recommandMode);
+                StudyData.instance.studyType = StudyType.recommandMode;
                 if (banksIsds.isEmpty) {
                   PageIntentTrans.map[PageIntentTrans.bankChooseTarget] =
                       () => const QuestionScreen(title: '');
@@ -900,16 +900,16 @@ class ProfilePage extends StatelessWidget {
               CircleAvatar(
                 radius: 32, // 调整头像尺寸
                 backgroundImage:
-                    FileImage(File(StudyData.instance.getAvatar() ?? '')),
+                    FileImage(File(StudyData.instance.avatar ?? '')),
               ),
               const SizedBox(height: 12), // 减少间距
-              Text(StudyData.instance.getUserName(),
+              Text(StudyData.instance.userName,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 20, // 调小字体
                     fontWeight: FontWeight.w500,
                   )),
-              Text(StudyData.instance.getSign(),
+              Text(StudyData.instance.sign,
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.9),
                     fontSize: 14, // 调小字体

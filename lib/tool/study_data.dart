@@ -46,144 +46,151 @@ class StudyData {
     }
   }
 
-  String getUserName() {
+  String get userName {
     return sharedPreferences!.getString("userName") ?? "未命名";
   }
 
-  setSign(String sign) {
-    sharedPreferences!.setString("sign", sign);
+  set userName(String value) {
+    sharedPreferences!.setString("userName", value);
   }
 
-  String getSign() {
+  String get sign {
     return sharedPreferences!.getString("sign") ?? "这个人很懒，没有设置签名";
   }
 
-  setUserName(String userName) {
-    sharedPreferences!.setString("userName", userName);
+  set sign(String value) {
+    sharedPreferences!.setString("sign", value);
   }
 
-  int getStudyCount() {
+  int get studyCount {
     return sharedPreferences!.getInt("studyCount")!;
   }
 
-  setStudyCount(int studyCount) {
-    sharedPreferences!.setInt("studyCount", studyCount);
+  set studyCount(int value) {
+    sharedPreferences!.setInt("studyCount", value);
   }
 
-  int getStudyTime() {
+  int get studyTime {
     return sharedPreferences!.getInt("studyTime")!;
   }
 
-  setStudyTime(int studyTime) {
-    sharedPreferences!.setInt("studyTime", studyTime);
+  set studyTime(int value) {
+    sharedPreferences!.setInt("studyTime", value);
   }
 
-  StudyType getStudyType() {
+  StudyType get studyType {
     return StudyType.values[
         sharedPreferences!.getInt("studyType") ?? StudyType.testMode.index];
   }
 
-  setStudyType(StudyType studyType) {
-    sharedPreferences!.setInt("studyType", studyType.index);
+  set studyType(StudyType value) {
+    sharedPreferences!.setInt("studyType", value.index);
   }
 
-  StudyDifficulty getStudyDifficulty() {
+  StudyDifficulty get studyDifficulty {
     return StudyDifficulty.values[
         sharedPreferences!.getInt("studyDifficulty") ??
             StudyDifficulty.normal.index];
   }
 
-  setStudyDifficulty(StudyDifficulty studyDifficulty) {
-    sharedPreferences!.setInt("studyDifficulty", studyDifficulty.index);
+  set studyDifficulty(StudyDifficulty value) {
+    sharedPreferences!.setInt("studyDifficulty", value.index);
   }
 
-  String? getStudySection() {
+  String? get studySection {
     return sharedPreferences!.getString("studySection");
   }
 
-  setStudySection(String? studySection) {
-    if (studySection == null) {
+  set studySection(String? value) {
+    if (value == null) {
       sharedPreferences!.remove("studySection");
     } else {
-      sharedPreferences!.setString("studySection", studySection);
+      sharedPreferences!.setString("studySection", value);
     }
   }
 
-  int getStudyQuestionNum() {
+  int get studyQuestionNum {
     return sharedPreferences!.getInt("sStudyQuestionNum") ?? 5;
   }
 
-  setStudyQuestionNum(int studyQuestionNum) {
-    sharedPreferences!.setInt("sStudyQuestionNum", studyQuestionNum);
+  set studyQuestionNum(int value) {
+    sharedPreferences!.setInt("sStudyQuestionNum", value);
   }
 
-  String? getAvatar() {
+  String? get avatar {
     return sharedPreferences!.getString("avatar") == null
         ? null
         : path.join(dataDir!, "avatar");
   }
 
-  setAvatar(String avatar) async {
-    await sharedPreferences!.setString("avatar", avatar);
-    await File(avatar).copy(path.join(dataDir!, "avatar"));
+  // Fixed: Removed async and matched parameter type with getter return type
+  set avatar(String? value) {
+    if (value != null) {
+      sharedPreferences!.setString("avatar", value);
+      File(value).copy(path.join(dataDir!, "avatar"));
+    }
   }
 
-  Color getThemeColor() {
+  Color get themeColor {
     return Color(
         sharedPreferences!.getInt("themeColor") ?? Colors.blueAccent.value);
   }
 
-  setThemeColor(Color color) async {
-    await sharedPreferences!.setInt("themeColor", color.value);
+  // Fixed: Removed async
+  set themeColor(Color value) {
+    sharedPreferences!.setInt("themeColor", value.value);
   }
 
-  bool getNightModeFollowSystem() {
+  bool get nightModeFollowSystem {
     return sharedPreferences!.getBool("nightModeFollowSystem") ?? false;
   }
 
-  setNightModeFollowSystem(bool followSystem) async {
-    await sharedPreferences!.setBool("nightModeFollowSystem", followSystem);
+  // Fixed: Removed async
+  set nightModeFollowSystem(bool value) {
+    sharedPreferences!.setBool("nightModeFollowSystem", value);
   }
 
-  bool getNightMode() {
-    return getNightModeFollowSystem()
+  bool get nightMode {
+    return nightModeFollowSystem
         ? true
         : sharedPreferences!.getBool("nightMode") ?? false;
   }
 
-  setNightMode(bool nightMode) async {
-    await sharedPreferences!.setBool("nightMode", nightMode);
+  // Fixed: Removed async
+  set nightMode(bool value) {
+    sharedPreferences!.setBool("nightMode", value);
   }
 
-
-  int getToday() {
+  int get today {
     return sharedPreferences!.getInt("today") ?? 0;
   }
-  void setToday(int today) {
-    sharedPreferences!.setInt("today", today);
+  
+  set today(int value) {
+    sharedPreferences!.setInt("today", value);
   }
+  
   bool todayUpdater() {
     var today = DateTime.now().day;
-    if (getToday() != today) {
-      setToday(today);
+    if (this.today != today) {
+      this.today = today;
       return true;
     }
     return false;
   }
 
-  int getNeedLearnSectionNum(){
+  int get needLearnSectionNum {
     return sharedPreferences?.getInt('needLearnSectionNum') ?? 5;
   }
 
-  void setNeedLearnSectionNum(int num){
-    sharedPreferences?.setInt('needLearnSectionNum',num);
+  set needLearnSectionNum(int value) {
+    sharedPreferences?.setInt('needLearnSectionNum', value);
   }
 
-  int getNeedCompleteQuestionNum(){
+  int get needCompleteQuestionNum {
     return sharedPreferences?.getInt('needCompleteQuestionNum') ?? 2;
   }
 
-  void setNeedCompleteQuestionNum(int num){
-    sharedPreferences?.setInt('needCompleteQuestionNum',num);
+  set needCompleteQuestionNum(int value) {
+    sharedPreferences?.setInt('needCompleteQuestionNum', value);
   }
 }

@@ -16,7 +16,7 @@ class ModeScreen extends StatefulWidget {
 
 class _InnerState extends State<ModeScreen> {
   final ValueNotifier<int> counter = ValueNotifier<int>(0);
-  var desc = StudyData.instance.getStudySection() ?? "未选择";
+  var desc = StudyData.instance.studySection ?? "未选择";
   Future<Widget> _buildStudyTreeSelect(BuildContext context) async {
     var data = (await QuestionBank.getAllLoadedQuestionBanks()).single;
     List<Map<dynamic, dynamic>> analyzeSeletion(List<Section> sections,
@@ -93,7 +93,7 @@ class _InnerState extends State<ModeScreen> {
                 .replaceAll("/99", '')
                 .replaceAll("/-1", "");
             // var descS = selectData.map((toElement) => toElement.value).join("/").replaceAll("/-1", "");
-            StudyData.instance.setStudySection(desc);
+            StudyData.instance.studySection = desc;
           });
         }, onClose: () {
           Navigator.of(context).pop();
@@ -115,7 +115,7 @@ class _InnerState extends State<ModeScreen> {
             label: hideText('${sec.index}: ${sec.title}'), value: j));
       }
     }
-    String? secList = StudyData.instance.getStudySection();
+    String? secList = StudyData.instance.studySection;
     Map<String, dynamic>? d;
     Map<String, List<int>>? dtype = {};
     if (secList != null) {
@@ -133,7 +133,7 @@ class _InnerState extends State<ModeScreen> {
       defaultBackValue: dtype,
       // defaultValue: values3,
       onChange: (val, level) {
-        StudyData.instance.setStudySection(json.encode(val));
+        StudyData.instance.studySection = json.encode(val);
         counter.value++;
       },
     );
@@ -248,16 +248,15 @@ class _InnerState extends State<ModeScreen> {
               ),
             ),
             TDRadioGroup(
-              selectId: '${StudyData.instance.getStudyType().index}',
+              selectId: '${StudyData.instance.studyType.index}',
               cardMode: true,
               direction: Axis.horizontal,
               rowCount: 3,
               onRadioGroupChange: (selectedId) {
                 if (selectedId != null) {
-                  StudyData.instance
-                      .setStudyType(StudyType.values[int.parse(selectedId)]);
+                  StudyData.instance.studyType = StudyType.values[int.parse(selectedId)];
                 }
-                StudyData.instance.setStudySection(null);
+                StudyData.instance.studySection = null;
                 setState(() {});
               },
               directionalTdRadios: [
@@ -281,7 +280,7 @@ class _InnerState extends State<ModeScreen> {
               ],
             ),
             (() {
-              if (StudyData.instance.getStudyType() == StudyType.studyMode) {
+              if (StudyData.instance.studyType == StudyType.studyMode) {
                 return FutureBuilder(
                   future: _buildStudyTreeSelect(context),
                   builder: (context, snapshot) {
@@ -329,7 +328,7 @@ class _InnerState extends State<ModeScreen> {
                     }
                   },
                 );
-              } else if (StudyData.instance.getStudyType() ==
+              } else if (StudyData.instance.studyType ==
                   StudyType.testMode) {
                 return FutureBuilder(
                   future: _buildTestTreeSelect(context),
@@ -363,11 +362,11 @@ class _InnerState extends State<ModeScreen> {
                             ),
                             TDStepper(
                               size: TDStepperSize.large,
-                              value: StudyData.instance.getStudyQuestionNum(),
+                              value: StudyData.instance.studyQuestionNum,
                               max: 20,
                               min: 2,
                               onChange: (qnum) {
-                                StudyData.instance.setStudyQuestionNum(qnum);
+                                StudyData.instance.studyQuestionNum = qnum;
                               },
                             ),
                             const Padding(
@@ -415,7 +414,7 @@ class _InnerState extends State<ModeScreen> {
 }
 
 bool sectionIsEmpty() {
-  var sec = StudyData.instance.getStudySection();
+  var sec = StudyData.instance.studySection;
   if (sec == null) {
     return true;
   }

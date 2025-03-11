@@ -36,8 +36,7 @@ class _InnerState extends State<PersonalScreen> {
                 );
                 if (result != null) {
                   if (result.files.single.path != null) {
-                    await StudyData.instance
-                        .setAvatar(result.files.single.path!);
+                    StudyData.instance.avatar = result.files.single.path!;
                   }
                   setState(() {});
                 }
@@ -45,9 +44,9 @@ class _InnerState extends State<PersonalScreen> {
               rightIconWidget: ClipRRect(
                 borderRadius: BorderRadius.circular(25.0),
                 child: Image(
-                  image: StudyData.instance.getAvatar() == null
+                  image: StudyData.instance.avatar == null
                       ? const AssetImage("assets/logo.png")
-                      : FileImage(File(StudyData.instance.getAvatar()!)),
+                      : FileImage(File(StudyData.instance.avatar!)),
                   width: 50,
                   height: 50,
                 ),
@@ -56,10 +55,10 @@ class _InnerState extends State<PersonalScreen> {
             TDCell(
               arrow: true,
               title: '昵称',
-              note: StudyData.instance.getUserName(),
+              note: StudyData.instance.userName,
               onClick: (_) {
                 var ctrl = TextEditingController(
-                    text: StudyData.instance.getUserName());
+                    text: StudyData.instance.userName);
                 showGeneralDialog(
                   context: context,
                   pageBuilder: (BuildContext buildContext, Animation<double> a,
@@ -69,7 +68,7 @@ class _InnerState extends State<PersonalScreen> {
                       rightBtn: TDDialogButtonOptions(
                           title: "确认",
                           action: () {
-                            StudyData.instance.setUserName(ctrl.text);
+                            StudyData.instance.userName = ctrl.text;
                             Navigator.of(context).pop();
                             setState(() {});
                           }),
@@ -83,10 +82,10 @@ class _InnerState extends State<PersonalScreen> {
             TDCell(
               arrow: true,
               title: '签名',
-              note: StudyData.instance.getSign(),
+              note: StudyData.instance.sign,
               onClick: (_) {
                 var ctrl =
-                    TextEditingController(text: StudyData.instance.getSign());
+                    TextEditingController(text: StudyData.instance.sign);
                 showGeneralDialog(
                   context: context,
                   pageBuilder: (BuildContext buildContext, Animation<double> a,
@@ -96,7 +95,7 @@ class _InnerState extends State<PersonalScreen> {
                       rightBtn: TDDialogButtonOptions(
                           title: "确认",
                           action: () {
-                            StudyData.instance.setSign(ctrl.text);
+                            StudyData.instance.sign = ctrl.text;
                             Navigator.of(context).pop();
                             setState(() {});
                           }),

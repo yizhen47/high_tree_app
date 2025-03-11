@@ -95,7 +95,7 @@ class _InnerState extends State<SettingScreen> {
               title: "重启",
               content: "重启应用以应用主题色",
               rightBtnAction: () {
-                StudyData.instance.setThemeColor(dialogPickerColor);
+                StudyData.instance.themeColor = dialogPickerColor;
 
                 // ignore: use_build_context_synchronously
                 WidgetRebirth.createRebirth(context: context);
@@ -135,9 +135,9 @@ class _InnerState extends State<SettingScreen> {
                       leftIcon: Icons.sunny,
                       title: "白天与黑夜",
                       rightIconWidget: YakoThemeSwitch(
-                        enabled: !StudyData.instance.getNightMode(),
+                        enabled: !StudyData.instance.nightMode,
                         onChanged: ({bool? changed}) {
-                          StudyData.instance.setNightMode(!(changed ?? false));
+                          StudyData.instance.nightMode = !(changed ?? false);
                           setState(() {
                             
                           });
@@ -151,10 +151,9 @@ class _InnerState extends State<SettingScreen> {
                         leftIcon: Icons.mode_night_outlined,
                         title: "跟随系统",
                         rightIconWidget: TDSwitch(
-                          isOn: StudyData.instance.getNightModeFollowSystem(),
+                          isOn: StudyData.instance.nightModeFollowSystem,
                           onChanged: (bool changed) {
-                            StudyData.instance
-                                .setNightModeFollowSystem(changed);
+                            StudyData.instance.nightModeFollowSystem = changed;
                             setState(() {});
                             return false;
                           },

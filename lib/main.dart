@@ -60,16 +60,16 @@ class MainEnterScreen extends StatelessWidget {
     //入口，一般不用改
     return MaterialApp(
       title: '高数',
-      themeMode: StudyData.instance.getNightModeFollowSystem()
+    themeMode: StudyData.instance.nightModeFollowSystem
           ? ThemeMode.system
-          : StudyData.instance.getNightMode()
+          : StudyData.instance.nightMode
               ? ThemeMode.dark
               : ThemeMode.light,
       darkTheme: ThemeData(
-        primaryColor: StudyData.instance.getThemeColor(),
+        primaryColor: StudyData.instance.themeColor,
         extensions: [
           TDTheme.defaultData()
-            ..colorMap['brandColor7'] = StudyData.instance.getThemeColor()
+            ..colorMap['brandColor7'] = StudyData.instance.themeColor
         ],
         scaffoldBackgroundColor: const Color.fromARGB(255, 24, 24, 24),
         cardColor: const Color.fromRGBO(50, 50, 50, 1),
@@ -77,10 +77,10 @@ class MainEnterScreen extends StatelessWidget {
       ),
       theme: ThemeData(
         fontFamily: Platform.isWindows ? "微软雅黑" : null,
-        primaryColor: StudyData.instance.getThemeColor(),
+        primaryColor: StudyData.instance.themeColor,
         extensions: [
           TDTheme.defaultData()
-            ..colorMap['brandColor7'] = StudyData.instance.getThemeColor()
+            ..colorMap['brandColor7'] = StudyData.instance.themeColor
         ],
         scaffoldBackgroundColor: const Color.fromRGBO(250, 250, 250, 1),
         cardColor: Colors.white,
@@ -162,7 +162,7 @@ class _MainEnterScreenState extends State<_MainEnterScreen>
 
   @override
   Widget build(BuildContext context) {
-    final themeColor = StudyData.instance.getThemeColor();
+    final themeColor = StudyData.instance.themeColor;
 
     return Scaffold(
       body: AnimatedBuilder(

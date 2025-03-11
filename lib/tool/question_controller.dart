@@ -133,7 +133,7 @@ class QuestionController {
     }
 
     return WrongQuestionBook.instance.sectionLearnBox.get(bankId)!
-      ..needLearnSectionNum = StudyData.instance.getNeedLearnSectionNum();
+      ..needLearnSectionNum = StudyData.instance.needLearnSectionNum;
   }
 
   void updateBankLearnData(BankLearnData data) {
@@ -220,7 +220,7 @@ class QuestionGroupController {
         var secController = QuestionController(action);
         secController.currentLearn = sec;
         secController
-            .addRandomQuestion(StudyData.instance.getNeedCompleteQuestionNum());
+            .addRandomQuestion(StudyData.instance.needCompleteQuestionNum);
         controllers.add(secController);
       });
     }
@@ -254,7 +254,7 @@ class QuestionGroupController {
         value +
             (secData.alreadyCompleteQuestion /
                     secData.allNeedCompleteQuestion) /
-                StudyData.instance.getNeedLearnSectionNum() /
+                StudyData.instance.needLearnSectionNum /
                 banks.length;
       }
     }

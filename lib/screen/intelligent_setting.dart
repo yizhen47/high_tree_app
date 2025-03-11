@@ -110,11 +110,11 @@ class _InnerState extends State<IntelligentSettingScreen> {
       }
     }
     await Future.wait(futures);
-    if (StudyData.instance.getStudyType() == StudyType.studyMode &&
+    if (StudyData.instance.studyType == StudyType.studyMode &&
         selectIds.length > 1) {
-      StudyData.instance.setStudyType(StudyType.testMode);
+      StudyData.instance.studyType = StudyType.testMode;
     }
-    StudyData.instance.setStudySection(null);
+    StudyData.instance.studySection = null;
 
     QuestionGroupController.instances.update();
   }
