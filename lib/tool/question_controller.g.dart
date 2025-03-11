@@ -6,6 +6,43 @@ part of 'question_controller.dart';
 // TypeAdapterGenerator
 // **************************************************************************
 
+class ManualSectionEntryAdapter extends TypeAdapter<ManualSectionEntry> {
+  @override
+  final int typeId = 4;
+
+  @override
+  ManualSectionEntry read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return ManualSectionEntry(
+      fields[0] as String,
+      fields[1] as String,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, ManualSectionEntry obj) {
+    writer
+      ..writeByte(2)
+      ..writeByte(0)
+      ..write(obj.bankId)
+      ..writeByte(1)
+      ..write(obj.sectionId);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ManualSectionEntryAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
 class SectionUserDataAdapter extends TypeAdapter<SectionUserData> {
   @override
   final int typeId = 2;

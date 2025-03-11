@@ -585,6 +585,7 @@ class QuestionBank {
 
     // 定位目标章节
     for (final index in knowledgePath) {
+      if(index.isEmpty) continue;
       currentSection =
           currentSection.children!.firstWhere((e) => e.index == index);
     }

@@ -56,6 +56,7 @@ class MindMapController {
 
   void highlightNodeById(List<String> nodeId) {
     final state = _stateRef?.target;
+    print(state);
     state?.highlightNode(nodeId);
   }
 }
@@ -118,6 +119,16 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
     widget.controller?._detach();
     super.dispose();
   }
+
+  @override
+  void didUpdateWidget(MindMap<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller?._detach();
+      widget.controller?._attach(this);
+    }
+  }
+
 
 // 修改后的_renderLatex方法
   Future<ui.Image?> _renderLatex(String latex) async {

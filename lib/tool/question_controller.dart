@@ -10,6 +10,18 @@ import 'package:hive/hive.dart';
 
 part 'question_controller.g.dart';
 
+// Hive model for manual section entries
+@HiveType(typeId: 4)
+class ManualSectionEntry {
+  @HiveField(0)
+  String bankId;
+
+  @HiveField(1)
+  String sectionId;
+
+  ManualSectionEntry(this.bankId, this.sectionId);
+}
+
 class QuestionController {
   QuestionBank bank;
   List<SingleQuestionData> currentQuestionList = [];
@@ -26,7 +38,6 @@ class QuestionController {
   Iterable<Section> _getAllNeedLearnSection(
       List<Section> secs, List<String> indexId) sync* {
     for (var sec in secs) {
-
       if (sec.children != null && sec.children!.isNotEmpty) {
         yield* _getAllNeedLearnSection(sec.children!, [...indexId, sec.index]);
       }
@@ -63,6 +74,8 @@ class QuestionController {
     learn.alreadyLearnSectionNum =
         min(learn.alreadyLearnSectionNum + 1, learn.needLearnSectionNum);
     updateBankLearnData(learn);
+
+    
   }
 
   void failCompleteLearn() {
@@ -131,9 +144,11 @@ class QuestionController {
     if (!WrongQuestionBook.instance.sectionLearnBox.containsKey(bankId)) {
       WrongQuestionBook.instance.sectionLearnBox.put(bankId, BankLearnData());
     }
-
-    return WrongQuestionBook.instance.sectionLearnBox.get(bankId)!
-      ..needLearnSectionNum = StudyData.instance.needLearnSectionNum;
+    var data = WrongQuestionBook.instance.sectionLearnBox.get(bankId)!;
+    if (data.needLearnSectionNum == 0) {
+      data.needLearnSectionNum = StudyData.instance.needLearnSectionNum;
+    }
+    return data;
   }
 
   void updateBankLearnData(BankLearnData data) {
@@ -165,8 +180,10 @@ class QuestionController {
 
   void _getMindMapNode(MindMapNode<Section> node, List<Section> secs) {
     for (var sec in secs) {
-      var nNode =
-          MindMapHelper.addChildNode(node, sec.title, id: sec.id, data: sec,color:isNeedLearnSection(sec) ? null : Colors.greenAccent.shade400);
+      var nNode = MindMapHelper.addChildNode(node, sec.title,
+          id: sec.id,
+          data: sec,
+          color: isNeedLearnSection(sec) ? null : Colors.greenAccent.shade400);
       if (sec.children != null && sec.children!.isNotEmpty) {
         _getMindMapNode(nNode, sec.children!);
       }
@@ -201,16 +218,110 @@ class BankLearnData {
 class QuestionGroupController {
   List<QuestionController> controllers = [];
   List<QuestionBank> banksCache = [];
+  // 存储手动添加到学习计划的章节ID
+  Map<String, Section> manuallyAddedSections = {};
 
   Box get sectionData => WrongQuestionBook.instance.sectionDataBox;
+  Box<BankLearnData> get sectionLearnData =>
+      WrongQuestionBook.instance.sectionLearnBox;
+  Box<String> get manualSectionsBox => 
+      WrongQuestionBook.instance.manualSectionsBox;
 
-  QuestionGroupController() {}
+  QuestionGroupController() {
+    // 加载之前保存的手动添加的章节
+    _loadManualSections();
+  }
+  
+  // 从持久化存储加载手动添加的章节
+  void _loadManualSections() async {
+    try {
+      // 首先加载题库
+      banksCache = await QuestionBank.getAllLoadedQuestionBanks();
+      
+      // 获取保存的手动章节ID
+      final keys = manualSectionsBox.keys;
+      for (var key in keys) {
+        // 格式: bankId:sectionId
+        final value = manualSectionsBox.get(key);
+        if (value != null) {
+          final parts = value.split(':');
+          if (parts.length == 2) {
+            final bankId = parts[0];
+            final sectionId = parts[1];
+            
+            // 查找对应的题库和章节
+            for (var bank in banksCache) {
+              if (bank.id == bankId) {
+                Section section = bank.findSection(sectionId.split('/'));
+                if (section != null) {
+                  // 恢复到内存中的Map
+                  manuallyAddedSections[key.toString()] = section;
+                }
+                break;
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      print('加载手动添加的章节时出错: $e');
+    }
+  }
   static QuestionGroupController instances = QuestionGroupController();
 
+  // 将章节添加到手动学习计划中
+  bool addSectionToManualLearningPlan(Section section, QuestionBank bank) {
+    String key = bank.id! + "/" + section.id;
+
+    // 如果已经存在，直接返回
+    if (manuallyAddedSections.containsKey(key)) {
+      return false;
+    }
+
+    // 添加到手动选择集合
+    manuallyAddedSections[key] = section;
+    
+    // 保存到持久化存储
+    manualSectionsBox.put(key, "${bank.id!}:${section.id}");
+
+    // 创建控制器并添加到当前控制器列表
+    QuestionController controller = QuestionController(bank);
+    controller.currentLearn = section;
+    controller.addRandomQuestion(StudyData.instance.needCompleteQuestionNum);
+
+    // 只有在不存在时才添加
+    if (!controllers.any((c) => c.currentLearn?.id == section.id)) {
+      controllers.add(controller);
+
+      controller.updateBankLearnData(
+          controller.getBankLearnData()..needLearnSectionNum += 1);
+    }
+
+    return true;
+  }
+
+  // 清除手动添加的学习计划
+  void clearManuallyAddedSections() {
+    manuallyAddedSections.clear();
+    // 同时清除持久化存储
+    manualSectionsBox.clear();
+  }
+
   Future<void> update() async {
+    // 保存手动添加的节点
+    Map<String, Section> savedManualSections = Map.from(manuallyAddedSections);
+    Map<String, QuestionBank> savedBanks = {};
+
     controllers.clear();
     banksCache.clear();
     banksCache.addAll(await QuestionBank.getAllLoadedQuestionBanks());
+
+    // 为每个题库创建映射，便于后续查找
+    for (var bank in banksCache) {
+      savedBanks[bank.id!] = bank;
+    }
+
+    // 首先添加自动选择的章节
     for (var action in banksCache) {
       var ctrl = QuestionController(action);
       ctrl
@@ -224,8 +335,33 @@ class QuestionGroupController {
         controllers.add(secController);
       });
     }
+
+    // 然后添加手动选择的章节
+    for (var entry in savedManualSections.entries) {
+      String fullId = entry.key;
+      Section section = entry.value;
+
+      // 提取题库ID
+      String bankId = fullId.substring(0, fullId.indexOf("/"));
+
+      // 查找对应的题库
+      if (savedBanks.containsKey(bankId)) {
+        QuestionBank bank = savedBanks[bankId]!;
+
+        QuestionController controller = QuestionController(bank);
+        controller.currentLearn = section;
+        // 确保章节不重复
+        if (!controllers.any((c) => c.currentLearn?.id == section.id) &&
+            controller.isNeedLearnSection(controller.currentLearn!)) {
+          controller
+              .addRandomQuestion(StudyData.instance.needCompleteQuestionNum);
+          controllers.add(controller);
+        }
+      }
+    }
   }
-  List<QuestionBank> getRemainNeedBanks(){
+
+  List<QuestionBank> getRemainNeedBanks() {
     return controllers.map((toElement) => toElement.bank).toSet().toList();
   }
 
@@ -233,6 +369,7 @@ class QuestionGroupController {
     for (String k in WrongQuestionBook.instance.sectionLearnBox.keys) {
       var element = WrongQuestionBook.instance.sectionLearnBox.get(k);
       element!.alreadyLearnSectionNum = 0;
+      element.needLearnSectionNum = StudyData.instance.needLearnSectionNum;
       WrongQuestionBook.instance.sectionLearnBox.put(k, element);
     }
   }
@@ -241,7 +378,7 @@ class QuestionGroupController {
     var value = 0.0;
     var banks = QuestionBank.getAllLoadedQuestionBankIds();
     if (banks.isEmpty) return 0.0;
-    
+
     // Calculate progress from completed sections
     for (var b in banks) {
       var bankData = WrongQuestionBook.instance.sectionLearnBox.get(b)!;
@@ -253,14 +390,15 @@ class QuestionGroupController {
     // Calculate progress from partially completed questions
     for (var c in controllers) {
       var secData = c.getSectionUserData(c.currentLearn!);
+      var bankData = WrongQuestionBook.instance.sectionLearnBox.get(c.bank.id)!;
       if (secData.alreadyCompleteQuestion != secData.allNeedCompleteQuestion) {
         value += (secData.alreadyCompleteQuestion /
                 secData.allNeedCompleteQuestion) /
-            StudyData.instance.needLearnSectionNum /
+            bankData.needLearnSectionNum /
             banks.length;
       }
     }
-    
+
     return value;
   }
 }

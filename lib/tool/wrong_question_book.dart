@@ -12,11 +12,15 @@ class WrongQuestionBook {
   late Box<QuestionUserData> questionBox;
   late Box<SectionUserData> sectionDataBox;
   late Box<BankLearnData> sectionLearnBox;
+  // We'll use Map<String, String> for manual sections until the adapter is generated
+  late Box<String> manualSectionsBox;
+  
   WrongQuestionBook() {
     wrongBox = Hive.box<String>("wrong_question_book");
     questionBox = Hive.box<QuestionUserData>("question_book");
     sectionDataBox = Hive.box<SectionUserData>("section_data");
     sectionLearnBox = Hive.box<BankLearnData>("bank_learn_data");
+    manualSectionsBox = Hive.box<String>("manual_sections");
   }
   static init() async {
     Hive.init(
@@ -24,10 +28,13 @@ class WrongQuestionBook {
     Hive.registerAdapter(QuestionUserDataAdapter());
     Hive.registerAdapter(SectionUserDataAdapter());
     Hive.registerAdapter(BankLearnDataAdapter());
+    // We'll need to run code generation to create this adapter
+    // For now, we'll remove this line until the adapter is generated
     await Hive.openBox<String>("wrong_question_book");
     await Hive.openBox<QuestionUserData>("question_book");
     await Hive.openBox<SectionUserData>("section_data");
     await Hive.openBox<BankLearnData>("bank_learn_data");
+    await Hive.openBox<String>("manual_sections");
   }
 
   static WrongQuestionBook instance = WrongQuestionBook();
@@ -106,7 +113,7 @@ class WrongQuestionBook {
     sectionDataBox.clear();
     sectionLearnBox.clear();
     wrongBox.clear();
-    
+    manualSectionsBox.clear();
   }
 }
 

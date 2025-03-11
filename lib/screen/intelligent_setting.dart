@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';  
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screen/mode.dart';
 import 'package:flutter_application_1/tool/page_intent_trans.dart';
@@ -37,8 +37,9 @@ class _InnerState extends State<IntelligentSettingScreen> {
   }
 
   buildMindMap(BuildContext context) {
-    var ids = QuestionGroupController.instances.controllers.map((toElement) => toElement.currentLearn
-    !.id).toList();
+    var ids = QuestionGroupController.instances.controllers
+        .map((toElement) => toElement.currentLearn!.id)
+        .toList();
     var width = MediaQuery.of(context).size.width;
     var layout = LayoutBuilder(builder: (context, constraints) {
       var mindMap = MindMap<Section>(
@@ -49,7 +50,8 @@ class _InnerState extends State<IntelligentSettingScreen> {
             if (node.data == null) {
               return;
             }
-            print(node.data!);
+            // 显示节点点击弹窗
+            _showNodeActionDialog(context, node);
           },
           height: constraints.maxHeight);
       for (var c in QuestionGroupController.instances.banksCache
@@ -58,7 +60,9 @@ class _InnerState extends State<IntelligentSettingScreen> {
             MindMapHelper.addChildNode(mindMap.rootNode, c.bank.displayName!));
       }
       MindMapHelper.organizeTree(mindMap.rootNode);
-      mindMap.controller!.highlightNodeById(ids);
+      Future.delayed(const Duration(milliseconds: 100)).then((_) {
+        mindMap.controller!.highlightNodeById(ids);
+      });
       return mindMap;
     });
     return layout;
@@ -73,11 +77,9 @@ class _InnerState extends State<IntelligentSettingScreen> {
           Expanded(
             child: InkWell(
               onTap: () {
-                QuestionGroupController.instances.toDayUpdater();                          
+                QuestionGroupController.instances.toDayUpdater();
                 TDToast.showSuccess("计划刷新", context: context);
-                setState(() {
-                  
-                });
+                setState(() {});
               },
               child: Padding(
                 padding: EdgeInsets.only(bottom: 15, top: 15),
@@ -88,34 +90,149 @@ class _InnerState extends State<IntelligentSettingScreen> {
               ),
             ),
           ),
-                                                                                                                                                                                                                                                                                                                                                                                                               
         ],
       ),
     );
   }
 
-  Future<void> saveLoadedOption() async {
-    List<Future> futures = [];
-    var lastSelectIds = QuestionBank.getAllLoadedQuestionBankIds();
-    for (var id in lastSelectIds) {
-      if (!selectIds.contains(id)) {
-        futures
-            .add((await QuestionBank.getQuestionBankById(id)).removeFromData());
-      }
-    }
-    for (var id in selectIds) {
-      if (!lastSelectIds.contains(id)) {
-        futures
-            .add((await QuestionBank.getQuestionBankById(id)).loadIntoData());
-      }
-    }
-    await Future.wait(futures);
-    if (StudyData.instance.studyType == StudyType.studyMode &&
-        selectIds.length > 1) {
-      StudyData.instance.studyType = StudyType.testMode;
-    }
-    StudyData.instance.studySection = null;
+  void _showNodeActionDialog(BuildContext context, MindMapNode<Section> node) {
+    bool isAlreadyInPlan = QuestionGroupController.instances.controllers
+        .any((controller) => controller.currentLearn?.id == node.data!.id);
 
-    QuestionGroupController.instances.update();
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.0),
+        ),
+        elevation: 4,
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                node.text,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1565C0),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Divider(height: 1, color: Color(0xFFE0E0E0)),
+              const SizedBox(height: 16),
+              Text(
+                '知识点 ID: ${node.data!.id}',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[700],
+                  letterSpacing: 0.2,
+                ),
+              ),
+              Text(
+                '上次完成时间: ${
+                  DateTime.fromMillisecondsSinceEpoch(QuestionController(findBank(node.data!)!).getSectionUserData(node.data!).lastLearnTime).toString()
+                }',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[700],
+                  letterSpacing: 0.2,
+                ),
+              ),
+              const SizedBox(height: 12),
+              if (isAlreadyInPlan)
+                Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.blue[800], size: 16),
+                    const SizedBox(width: 8),
+                    Text(
+                      '已加入学习计划',
+                      style: TextStyle(
+                          color: Colors.blue[800],
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.blueAccent,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        side: const BorderSide(color: Color(0xFFE0E0E0)),
+                      ),
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('关闭'),
+                  ),
+                  if (!isAlreadyInPlan) const SizedBox(width: 12),
+                  if (!isAlreadyInPlan)
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blueAccent,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      onPressed: () {
+                        _addToLearningPlan(node.data!);
+                        Navigator.pop(context);
+                      },
+                      child: const Text('加入今日计划'),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 将节点添加到今日学习计划
+  void _addToLearningPlan(Section section) {
+    bool added = false;
+    var bank = findBank(section);
+    if (bank != null) {
+      // 使用新方法将节点添加到手动学习计划中
+      added = QuestionGroupController.instances
+          .addSectionToManualLearningPlan(section!, bank!);
+    }
+
+    // 更新UI
+    setState(() {});
+
+    // 显示相应提示
+    if (added) {
+      TDToast.showSuccess('已添加到计划', context: context);
+    } else {
+      TDToast.showWarning('无法添加', context: context);
+    }
+  }
+
+  QuestionBank? findBank(Section section) {
+    for (var bank in QuestionGroupController.instances.banksCache) {
+      Section bankSection = bank.findSection(section.id.split('/'));
+
+      if (bankSection != null) {
+        return bank;
+      }
+    }
+    return null;
   }
 }

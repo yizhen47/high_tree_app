@@ -923,7 +923,7 @@ class _MainHomePageState extends State<MainHomePage> {
                           padding: EdgeInsets.symmetric(vertical: 20),
                           child: Center(
                             child: Text(
-                              '还没有添加题库，请先添加题库\n点击下方"顺序练习"或"智能刷题"开始学习',
+                              '还没有添加题库，请先添加题库\n点击"顺序练习"或"开始"开始学习',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 14,
