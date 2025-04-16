@@ -6,10 +6,10 @@ import 'package:flutter_application_1/screen/home.dart';
 import 'package:flutter_application_1/screen/mode.dart';
 import 'package:flutter_application_1/screen/question_card.dart';
 import 'package:flutter_application_1/screen/wrong_question.dart';
-import 'package:flutter_application_1/tool/question_bank.dart';
-import 'package:flutter_application_1/tool/question_controller.dart';
+import 'package:flutter_application_1/tool/question/question_bank.dart';
+import 'package:flutter_application_1/tool/question/question_controller.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
-import 'package:flutter_application_1/tool/wrong_question_book.dart';
+import 'package:flutter_application_1/tool/question/wrong_question_book.dart';
 import 'package:flutter_application_1/widget/left_toast.dart';
 import 'package:flutter_application_1/widget/mind_map.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
@@ -296,8 +296,8 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                   .forEach(addQuestionCard);
             } else if (StudyData.instance.studyType ==
                 StudyType.recommandMode) {
-              for (var c in QuestionGroupController.instances.controllers) {
-                for (var q in c.currentQuestionList) {
+              for (var c in LearningPlanManager.instance.learningPlanItems) {
+                for (var q in c.questionList) {
                   addQuestionCard(q);
                 }
               }
@@ -367,11 +367,11 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                   if (StudyData.instance.studyType ==
                       StudyType.recommandMode) {
                     for (var c
-                        in QuestionGroupController.instances.controllers) {
+                        in LearningPlanManager.instance.learningPlanItems) {
                       var notNeedRefresh = true;
                       var pass = true;
                       var progress = 0;
-                      for (var q in c.currentQuestionList) {
+                      for (var q in c.questionList) {
                         if (questionAnsWasWrong(q)) {
                           notNeedRefresh = false;
                         }
@@ -390,43 +390,42 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                             title: "重做", message: "题目已经刷新", context: context);
                         retryCount++;
                         List<int> indexRecord = [];
-                        for (var q in c.currentQuestionList) {
+                        for (var q in c.questionList) {
                           leftQuestions.remove(q);
                           rightQuestions.remove(q);
                           indexRecord.add(allQuestions.indexOf(q));
                         }
-                        c.failCompleteLearn();
-                        for (var i = 0; i < c.currentQuestionList.length; i++) {
+                        c.failSection();
+                        for (var i = 0; i < c.questionList.length; i++) {
                           replaceQuestion(
-                              c.currentQuestionList[i], indexRecord[i]);
+                              c.questionList[i], indexRecord[i]);
                         }
-                        _showMindMap(context, c.currentLearn!.id);
+                        _showMindMap(context, c.targetSection!.id);
                         Future.delayed(Duration(milliseconds: 800))
                             .whenComplete(() {
-                          showKnowledgeCard(context, c.currentLearn!);
+                          showKnowledgeCard(context, c.targetSection!);
                           controller
                               .moveTo(indexRecord.reduce((v, e) => min(v, e)));
                         });
 
                         break;
                       } else if (pass) {
-                        if (c.isNeedLearnSection(c.currentLearn!)) {
+                        if (c.needsToLearn(c.targetSection!)) {
                           retryCount = 0;
                           showVerticalToast(
                               title: '完成',
-                              message: c.currentLearn!.title,
+                              message: c.targetSection!.title,
                               context: context);
-                          c.completeLearn();
+                          c.completeSection();
 
                           unlockedQuestionNum +=
                               StudyData.instance.needCompleteQuestionNum;
                         }
                       }
 
-                      c.setSectionUserData(
-                          c.currentLearn!,
-                          c.getSectionUserData(c.currentLearn!)
-                            ..alreadyCompleteQuestion = progress);
+                      var sectionData = c.getSectionLearningData(c.targetSection!);
+                      sectionData.alreadyCompleteQuestion = progress;
+                      c.saveSectionLearningData(c.targetSection!, sectionData);
                     }
                   }
                   restartUpdater.value = !restartUpdater.value;
@@ -536,9 +535,9 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
           showKnowledgeCard(buildContext!, node.data!);
         },
         height: height);
-    for (var c in QuestionGroupController.instances.banksCache
-        .map((toElement) => QuestionController(toElement))) {
-      c.getMindMapNode(
+    for (var c in LearningPlanManager.instance.questionBanks
+        .map((toElement) => LearningPlanItem(toElement))) {
+      c.buildMindMapNodes(
           MindMapHelper.addChildNode(mindMap.rootNode, c.bank.displayName!));
     }
     MindMapHelper.organizeTree(mindMap.rootNode);
@@ -806,7 +805,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                     valueListenable: restartUpdater,
                     builder: (context, _, __) => Column(
                       children: [
-                        _buildProgressIndicator(QuestionGroupController.instances.getDayProgress()),
+                        _buildProgressIndicator(LearningPlanManager.instance.getDailyProgress()),
                         const SizedBox(height: 16),
                         _buildRetryCounter(retryCount, context),
                       ],

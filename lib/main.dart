@@ -1,15 +1,15 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_application_1/tool/question_controller.dart';
+import 'package:flutter_application_1/tool/question/question_controller.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
-import 'package:flutter_application_1/tool/wrong_question_book.dart';
+import 'package:flutter_application_1/tool/question/wrong_question_book.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:rebirth/rebirth.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'screen/home.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
-import 'tool/question_bank.dart';
+import 'tool/question/question_bank.dart';
 import 'package:window_manager/window_manager.dart';
 
 //整个软件入口（测试用）
@@ -119,10 +119,10 @@ class _MainEnterScreenState extends State<_MainEnterScreen>
         await WrongQuestionBook.init();
 
         if (StudyData.instance.todayUpdater()) {
-          QuestionGroupController.instances.toDayUpdater();
+          LearningPlanManager.instance.resetDailyProgress();
         }
 
-        await QuestionGroupController.instances.update();
+        await LearningPlanManager.instance.updateLearningPlan();
 
         if (mounted) {
           setState(() => _initCompleted = true);

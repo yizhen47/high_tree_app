@@ -4,8 +4,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screen/mode.dart';
 import 'package:flutter_application_1/tool/page_intent_trans.dart';
-import 'package:flutter_application_1/tool/question_bank.dart';
-import 'package:flutter_application_1/tool/question_controller.dart';
+import 'package:flutter_application_1/tool/question/question_bank.dart';
+import 'package:flutter_application_1/tool/question/question_controller.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/widget/mind_map.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
@@ -37,8 +37,8 @@ class _InnerState extends State<IntelligentSettingScreen> {
   }
 
   buildMindMap(BuildContext context) {
-    var ids = QuestionGroupController.instances.controllers
-        .map((toElement) => toElement.currentLearn!.id)
+    var ids = LearningPlanManager.instance.learningPlanItems
+        .map((item) => item.targetSection!.id)
         .toList();
     var width = MediaQuery.of(context).size.width;
     var layout = LayoutBuilder(builder: (context, constraints) {
@@ -54,10 +54,10 @@ class _InnerState extends State<IntelligentSettingScreen> {
             _showNodeActionDialog(context, node);
           },
           height: constraints.maxHeight);
-      for (var c in QuestionGroupController.instances.banksCache
-          .map((toElement) => QuestionController(toElement))) {
-        c.getMindMapNode(
-            MindMapHelper.addChildNode(mindMap.rootNode, c.bank.displayName!));
+      for (var bank in LearningPlanManager.instance.questionBanks) {
+        var planItem = LearningPlanItem(bank);
+        planItem.buildMindMapNodes(
+            MindMapHelper.addChildNode(mindMap.rootNode, bank.displayName!));
       }
       MindMapHelper.organizeTree(mindMap.rootNode);
       Future.delayed(const Duration(milliseconds: 100)).then((_) {
@@ -77,7 +77,7 @@ class _InnerState extends State<IntelligentSettingScreen> {
           Expanded(
             child: InkWell(
               onTap: () {
-                QuestionGroupController.instances.toDayUpdater();
+                LearningPlanManager.instance.resetDailyProgress();
                 TDToast.showSuccess("计划刷新", context: context);
                 setState(() {});
               },
@@ -96,8 +96,8 @@ class _InnerState extends State<IntelligentSettingScreen> {
   }
 
   void _showNodeActionDialog(BuildContext context, MindMapNode<Section> node) {
-    bool isAlreadyInPlan = QuestionGroupController.instances.controllers
-        .any((controller) => controller.currentLearn?.id == node.data!.id);
+    bool isAlreadyInPlan = LearningPlanManager.instance.learningPlanItems
+        .any((item) => item.targetSection?.id == node.data!.id);
 
     showDialog(
       context: context,
@@ -137,7 +137,9 @@ class _InnerState extends State<IntelligentSettingScreen> {
               ),
               Text(
                 '上次完成时间: ${
-                  DateTime.fromMillisecondsSinceEpoch(QuestionController(findBank(node.data!)!).getSectionUserData(node.data!).lastLearnTime).toString()
+                  DateTime.fromMillisecondsSinceEpoch(
+                    LearningPlanItem(findBank(node.data!)!).getSectionLearningData(node.data!).lastLearnTime
+                  ).toString()
                 }',
                 style: TextStyle(
                   fontSize: 14,
@@ -210,8 +212,8 @@ class _InnerState extends State<IntelligentSettingScreen> {
     var bank = findBank(section);
     if (bank != null) {
       // 使用新方法将节点添加到手动学习计划中
-      added = QuestionGroupController.instances
-          .addSectionToManualLearningPlan(section!, bank!);
+      added = LearningPlanManager.instance
+          .addSectionToManualLearningPlan(section, bank);
     }
 
     // 更新UI
@@ -226,11 +228,14 @@ class _InnerState extends State<IntelligentSettingScreen> {
   }
 
   QuestionBank? findBank(Section section) {
-    for (var bank in QuestionGroupController.instances.banksCache) {
-      Section bankSection = bank.findSection(section.id.split('/'));
-
-      if (bankSection != null) {
-        return bank;
+    for (var bank in LearningPlanManager.instance.questionBanks) {
+      try {
+        Section bankSection = bank.findSection(section.id.split('/'));
+        if (bankSection != null) {
+          return bank;
+        }
+      } catch (e) {
+        // Ignore exceptions for banks that don't have this section
       }
     }
     return null;

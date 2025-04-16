@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:flutter_application_1/tool/question_bank.dart';
-import 'package:flutter_application_1/tool/question_controller.dart';
+import 'package:flutter_application_1/tool/question/question_bank.dart';
+import 'package:flutter_application_1/tool/question/question_controller.dart';
 import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;

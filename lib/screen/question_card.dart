@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/tool/question_bank.dart';
+import 'package:flutter_application_1/tool/question/question_bank.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 
 import 'package:extended_text/extended_text.dart';

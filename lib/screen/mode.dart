@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screen/question.dart';
-import 'package:flutter_application_1/tool/question_bank.dart';
+import 'package:flutter_application_1/tool/question/question_bank.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/tool/text_string_handle.dart';
 import 'package:flutter_application_1/widget/itd_tree_select.dart';

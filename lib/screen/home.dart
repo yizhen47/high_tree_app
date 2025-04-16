@@ -13,11 +13,12 @@ import 'package:flutter_application_1/screen/mode.dart';
 import 'package:flutter_application_1/screen/personal.dart';
 import 'package:flutter_application_1/screen/question.dart';
 import 'package:flutter_application_1/screen/wrong_question.dart';
+import 'package:flutter_application_1/screen/learning_report.dart';
 import 'package:flutter_application_1/tool/page_intent_trans.dart';
-import 'package:flutter_application_1/tool/question_bank.dart';
-import 'package:flutter_application_1/tool/question_controller.dart';
+import 'package:flutter_application_1/tool/question/question_bank.dart';
+import 'package:flutter_application_1/tool/question/question_controller.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
-import 'package:flutter_application_1/tool/wrong_question_book.dart';
+import 'package:flutter_application_1/tool/question/wrong_question_book.dart';
 import 'package:latext/latext.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
@@ -531,7 +532,7 @@ class _MainHomePageState extends State<MainHomePage> {
   }
 
   Widget _buildProgressButton(BuildContext context) {
-    var value = QuestionGroupController.instances.getDayProgress();
+    var value = LearningPlanManager.instance.getDailyProgress();
     return Stack(
       alignment: Alignment.center,
       children: [
@@ -553,7 +554,7 @@ class _MainHomePageState extends State<MainHomePage> {
             onTap: () {
               var banksIsds = QuestionBank.getAllLoadedQuestionBankIds();
               print(banksIsds);
-              if (QuestionGroupController.instances.controllers.isEmpty &&
+              if (LearningPlanManager.instance.learningPlanItems.isEmpty &&
                   banksIsds.isNotEmpty) {
                 TDToast.showSuccess("已完成今日计划", context: context);
               } else {
@@ -571,8 +572,8 @@ class _MainHomePageState extends State<MainHomePage> {
                       duration: const Duration(milliseconds: 400),
                       curve: Curves.easeInOut,
                     ),
-                  ).whenComplete(() => QuestionGroupController.instances
-                      .update()
+                  ).whenComplete(() => LearningPlanManager.instance
+                      .updateLearningPlan()
                       .whenComplete(() => setState(() {})));
                   return;
                 } else {
@@ -588,8 +589,8 @@ class _MainHomePageState extends State<MainHomePage> {
                       duration: const Duration(milliseconds: 400),
                       curve: Curves.easeInOut,
                     ),
-                  ).whenComplete(() => QuestionGroupController.instances
-                      .update()
+                  ).whenComplete(() => LearningPlanManager.instance
+                      .updateLearningPlan()
                       .whenComplete(() => setState(() {})));
                 }
               }
@@ -822,8 +823,8 @@ class _MainHomePageState extends State<MainHomePage> {
                 duration: const Duration(milliseconds: 400),
                 curve: Curves.easeInOut,
               ),
-            ).whenComplete(() => QuestionGroupController.instances
-                .update()
+            ).whenComplete(() => LearningPlanManager.instance
+                .updateLearningPlan()
                 .whenComplete(() => setState(() {})));
           },
         ),
@@ -845,8 +846,8 @@ class _MainHomePageState extends State<MainHomePage> {
                 duration: const Duration(milliseconds: 400),
                 curve: Curves.easeInOut,
               ),
-            ).whenComplete(() => QuestionGroupController.instances
-                .update()
+            ).whenComplete(() => LearningPlanManager.instance
+                .updateLearningPlan()
                 .whenComplete(() => setState(() {})));
           },
         ),
@@ -870,7 +871,19 @@ class _MainHomePageState extends State<MainHomePage> {
         CommonComponents.buildIconButton(
           icon: Icons.bar_chart,
           label: '学习报告',
-          onPressed: () {},
+          onPressed: () {
+            Navigator.push(
+              context,
+              PageTransition(
+                type: PageTransitionType.rightToLeftPop,
+                childCurrent: widget,
+                alignment: const Alignment(10, 20),
+                child: const LearningReportScreen(title: ''),
+                duration: const Duration(milliseconds: 400),
+                curve: Curves.easeInOut,
+              ),
+            );
+          },
         ),
       ],
     );
@@ -896,7 +909,7 @@ class _MainHomePageState extends State<MainHomePage> {
             child: Column(
               children: [
                 ...(() {
-                  if (QuestionGroupController.instances.controllers.isEmpty) {
+                  if (LearningPlanManager.instance.learningPlanItems.isEmpty) {
                     // 检查是否有题库但没有学习计划
                     final hasQuestionBanks = QuestionBank.getAllLoadedQuestionBankIds().isNotEmpty;
                     
@@ -938,10 +951,10 @@ class _MainHomePageState extends State<MainHomePage> {
                   }
 
                   var arr = [];
-                  for (var c in QuestionGroupController.instances.controllers) {
-                    var data = c.getSectionUserData(c.currentLearn!);
+                  for (var planItem in LearningPlanManager.instance.learningPlanItems) {
+                    var data = planItem.getSectionLearningData(planItem.targetSection!);
                     arr.add(_PlanItem(
-                        title: c.currentLearn!.title,
+                        title: planItem.targetSection!.title,
                         progress: data.alreadyCompleteQuestion /
                             max(data.allNeedCompleteQuestion, 1)));
                     arr.add(const SizedBox(height: 12));
