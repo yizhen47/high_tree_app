@@ -222,6 +222,14 @@ class StudyData {
     sharedPreferences?.setInt('needCompleteQuestionNum', value);
   }
   
+  int get currentPlanId {
+    return sharedPreferences?.getInt('currentPlanId') ?? -1;
+  }
+  
+  set currentPlanId(int value) {
+    sharedPreferences?.setInt('currentPlanId', value);
+  }
+  
   // 增加学习时间（以分钟为单位）
   void incrementStudyTime(int minutes) {
     // 获取当前学习时间（小时）

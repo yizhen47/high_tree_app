@@ -24,7 +24,7 @@ class _InnerState extends State<IntelligentSettingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: TDNavBar(
-        title: '智能刷题',
+        title: '智能学习',
         onBack: () {},
       ),
       body: Column(

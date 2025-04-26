@@ -3,7 +3,6 @@ import 'dart:math';
 import 'dart:typed_data';
 import 'package:archive/archive.dart';
 import 'package:flutter_application_1/tool/question/question_bank.dart';
-import 'package:flutter_application_1/widget/question_text.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:xml/xml.dart' as xml;
@@ -858,8 +857,6 @@ class QuestionBank {
         (await getApplicationCacheDirectory()).path, "questionBankLoaded");
     await Directory(QuestionBank.importedDirPath).create();
     await Directory(QuestionBank.loadedDirPath).create();
-
-    setCurMathImgPath(QuestionBank.loadedDirPath);
     // await clean();
   }
 

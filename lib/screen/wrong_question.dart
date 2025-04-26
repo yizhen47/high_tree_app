@@ -5,7 +5,6 @@ import 'package:flutter_application_1/screen/question_card.dart';
 import 'package:flutter_application_1/tool/question/question_bank.dart';
 import 'package:flutter_application_1/tool/text_string_handle.dart';
 import 'package:flutter_application_1/tool/question/wrong_question_book.dart';
-import 'package:flutter_application_1/widget/question_text.dart';
 import 'package:latext/latext.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 
@@ -366,8 +365,6 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidget> {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               softWrap: true,
-                              specialTextSpanBuilder:
-                                  MathIncludeTextSpanBuilder(),
                               style: TextStyle(
                                 fontSize: 16,
                                 color: TDTheme.of(context).fontGyColor1,

@@ -433,22 +433,17 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
     final List<BarChartGroupData> barGroups = [];
     final days = ['一', '二', '三', '四', '五', '六', '日'];
     
-    // Get daily activity data
+    // Get daily activity data - this is already in chronological order
+    // where index 0 = 6 days ago, index 6 = today
     final dailyData = _statsManager.getDailyStudyData();
     
     // Find the maximum value for proper scaling
     final maxValue = dailyData.fold(0.0, (max, value) => value > max ? value : max);
     
-    // Get today's weekday (1-7 where 1 is Monday)
-    final todayWeekday = DateTime.now().weekday;
-    
     for (int i = 0; i < 7; i++) {
-      // Calculate the correct weekday index for this position
-      // Reorder the data to show the days in sequence ending with today
-      final dataIndex = (i + todayWeekday) % 7;
-      
-      // Ensure minimum bar height for visibility even with small values
-      final value = dailyData[dataIndex];
+      // The dailyData is already in the right order (last 7 days in chronological order)
+      // so we can use i directly as the index
+      final value = dailyData[i];
       final displayValue = value > 0 && value < 5 ? 5.0 : value;
       
       barGroups.add(
@@ -465,8 +460,8 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
               ),
             ),
           ],
-          // Show the actual minute value above the bar
-          showingTooltipIndicators: value > 0 ? [0] : [],
+          // Remove tooltip indicators completely
+          showingTooltipIndicators: [],
         ),
       );
     }
@@ -516,13 +511,17 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
             getTitlesWidget: (value, meta) {
               final index = value.toInt();
               if (index >= 0 && index < 7) {
-                // Calculate the correct weekday index for the label
-                // Reorder the weekday labels to match the reordered data
-                final weekdayIndex = (index + todayWeekday) % 7;
+                // This index corresponds to a date that is (6-index) days ago
+                // Calculate the actual date for this bar
+                final daysAgo = 6 - index;
+                final date = DateTime.now().subtract(Duration(days: daysAgo));
+                
+                // Get weekday (1-7, where 1 is Monday) and convert to 0-based index for days array
+                final weekdayIndex = date.weekday - 1; 
                 final day = days[weekdayIndex];
                 
                 // Mark today's label differently
-                final isToday = index == 6;
+                final isToday = daysAgo == 0;
                 
                 return Padding(
                   padding: const EdgeInsets.only(top: 8),
@@ -542,7 +541,7 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
         ),
       ),
       barTouchData: BarTouchData(
-        enabled: true,
+        enabled: false, // Disable all touch interactions with the chart
       ),
       borderData: FlBorderData(show: false),
     );
@@ -1526,15 +1525,18 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
     }
     
     // 缓存计算结果
-    node['_cachedMastery'] = mastery.clamp(0.0, 1.0);
+    node['_cachedMastery'] = mastery.clamp(0.1, 1.0);
     
     // 确保掌握度在有效范围内
-    return mastery.clamp(0.0, 1.0);
+    return mastery.clamp(0.1, 1.0);
   }
   
   // 计算节点自身的掌握度（不考虑子节点）
   double _calculateNodeSelfMastery(Map<String, dynamic> node, List<String> topics) {
     double mastery = 0.5; // 默认值
+    DateTime? lastStudyTime;
+    int studyCount = 0;
+    final String? sectionId = node['id'] as String?;
     
     // 从节点进度信息获取掌握度
     if (node.containsKey('progress') && node['progress'] is Map) {
@@ -1557,6 +1559,16 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
                    progress['allNeedCompleteQuestion'];
         }
       }
+      
+      // 获取学习次数
+      if (progress.containsKey('learnTimes')) {
+        studyCount = progress['learnTimes'] as int;
+      }
+      
+      // 获取最后学习时间
+      if (progress.containsKey('lastLearnTime') && progress['lastLearnTime'] != null && progress['lastLearnTime'] > 0) {
+        lastStudyTime = DateTime.fromMillisecondsSinceEpoch(progress['lastLearnTime'] as int);
+      }
     } 
     // 如果没有进度信息，但有索引，则使用旧方法
     else if (node.containsKey('index')) {
@@ -1568,8 +1580,78 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
       }
     }
     
+    // 如果有sectionId，尝试从StudyData获取更精确的遗忘曲线数据
+    if (sectionId != null) {
+      final topicMastery = StudyData.instance.getTopicMastery(sectionId);
+      if (topicMastery > 0) {
+        mastery = topicMastery;
+      }
+      
+      final topicStudyCount = StudyData.instance.getTopicStudyCount(sectionId);
+      if (topicStudyCount > 0) {
+        studyCount = topicStudyCount;
+      }
+      
+      final topicLastStudyTime = StudyData.instance.getTopicLastStudyTime(sectionId);
+      if (topicLastStudyTime != null) {
+        lastStudyTime = topicLastStudyTime;
+      }
+    }
+    
+    // 应用艾宾浩斯遗忘曲线
+    if (lastStudyTime != null) {
+      // 计算距离上次学习的天数 (使用小数表示更精确的时间)
+      final daysSinceLastStudy = DateTime.now().difference(lastStudyTime).inHours / 24.0;
+      
+      // 获取更精准的学习次数，确保考虑所有学习记录
+      int effectiveStudyCount = studyCount;
+      if (sectionId != null) {
+        effectiveStudyCount = max(StudyData.instance.getTopicStudyCount(sectionId), studyCount);
+      }
+      
+      // 基于艾宾浩斯曲线计算保留率
+      // 经典艾宾浩斯曲线使用单一的指数衰减函数: R = e^(-t/S)
+      // 其中S是稳定性参数，t是时间（天）
+      double retentionRate;
+      
+      // 使学习次数成为关键因素，强化其对记忆的影响
+      // 第一次学习的遗忘最快，每次重复学习大幅提高记忆保留
+      if (effectiveStudyCount <= 1) {
+        // 首次学习，使用较为平缓的衰减曲线
+        final stabilityFactor = 2.5; // 中等稳定性
+        retentionRate = exp(-daysSinceLastStudy / stabilityFactor);
+      } else if (effectiveStudyCount == 2) {
+        // 第二次学习，记忆稳定性显著提升
+        final stabilityFactor = 5.0;
+        retentionRate = exp(-daysSinceLastStudy / stabilityFactor);
+        // 确保至少保留40%
+        retentionRate = max(retentionRate, 0.4);
+      } else if (effectiveStudyCount == 3) {
+        // 第三次学习，记忆更加牢固
+        final stabilityFactor = 8.0;
+        retentionRate = exp(-daysSinceLastStudy / stabilityFactor);
+        // 确保至少保留50%
+        retentionRate = max(retentionRate, 0.5);
+      } else if (effectiveStudyCount == 4) {
+        // 第四次学习，记忆进入长期记忆
+        final stabilityFactor = 12.0;
+        retentionRate = exp(-daysSinceLastStudy / stabilityFactor);
+        // 确保至少保留60%
+        retentionRate = max(retentionRate, 0.6);
+      } else {
+        // 5次及以上，记忆非常牢固
+        final stabilityFactor = 15.0 + ((effectiveStudyCount - 5) * 3.0);
+        retentionRate = exp(-daysSinceLastStudy / stabilityFactor);
+        // 确保至少保留70%，且随学习次数增加而提高
+        retentionRate = max(retentionRate, 0.7 + min((effectiveStudyCount - 5) * 0.05, 0.25));
+      }
+      
+      // 应用遗忘曲线，计算实际掌握度
+      mastery = (mastery * retentionRate).clamp(0.1, 1.0);
+    }
+    
     // 确保掌握度在有效范围内
-    return mastery.clamp(0.0, 1.0);
+    return mastery.clamp(0.1, 1.0);
   }
 
   // 构建树状主题项

@@ -6,7 +6,6 @@ import 'package:flutter_application_1/tool/question/question_bank.dart';
 import 'package:flutter_application_1/tool/text_string_handle.dart';
 import 'package:flutter_application_1/tool/question/wrong_question_book.dart';
 import 'package:flutter_application_1/widget/itd_collapse.dart';
-import 'package:flutter_application_1/widget/question_text.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 
 class CollapseDataItem {
@@ -174,8 +173,6 @@ class _SearchScreenInnerState extends State<SearchScreen> {
                                                   overflow:
                                                       TextOverflow.ellipsis,
                                                   softWrap: true,
-                                                  specialTextSpanBuilder:
-                                                      MathIncludeTextSpanBuilder(),
                                                   style: TextStyle(
                                                     fontSize: 16,
                                                     color: TDTheme.of(context)
