@@ -368,7 +368,7 @@ class OptionsMatcher {
                     ),
                   ),
                 );
-              }).toList(),
+              }),
             ],
           ),
         );

@@ -133,7 +133,7 @@ class _InnerState extends State<BankChooseScreen> {
                       setState(() {});
                     },
                     child: Padding(
-                      padding: EdgeInsets.only(bottom: 15, top: 15),
+                      padding: const EdgeInsets.only(bottom: 15, top: 15),
                       child: Icon(
                         Icons.add_box_outlined,
                         color: Theme.of(context).primaryColor,
@@ -149,7 +149,7 @@ class _InnerState extends State<BankChooseScreen> {
                       setState(() {});
                     },
                     child: Padding(
-                      padding: EdgeInsets.only(bottom: 15, top: 15),
+                      padding: const EdgeInsets.only(bottom: 15, top: 15),
                       child: Icon(
                         Icons.save_as_outlined,
                         color: Theme.of(context).primaryColor,
@@ -174,7 +174,7 @@ class _InnerState extends State<BankChooseScreen> {
                       );
                     },
                     child: Padding(
-                      padding: EdgeInsets.only(bottom: 15, top: 15),
+                      padding: const EdgeInsets.only(bottom: 15, top: 15),
                       child: Icon(
                         Icons.quiz_outlined,
                         color: Theme.of(context).primaryColor,

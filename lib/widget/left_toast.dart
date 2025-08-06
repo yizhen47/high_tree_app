@@ -96,7 +96,7 @@ class WindowsLeftToast extends StatelessWidget {
                   BoxShadow(
                     color: Colors.black.withOpacity(0.1),
                     blurRadius: 16,
-                    offset: Offset(4, 4),
+                    offset: const Offset(4, 4),
                   )
                 ],
               ),
@@ -108,7 +108,7 @@ class WindowsLeftToast extends StatelessWidget {
                       width: 6,
                       decoration: BoxDecoration(
                         color: color,
-                        borderRadius: BorderRadius.horizontal(
+                        borderRadius: const BorderRadius.horizontal(
                           left: Radius.circular(8),
                         ),
                       ),
@@ -203,7 +203,7 @@ class _ToastWrapperState extends State<_ToastWrapper>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 600),
     )..forward();
   }
 
@@ -211,7 +211,7 @@ class _ToastWrapperState extends State<_ToastWrapper>
   Widget build(BuildContext context) {
     return SlideTransition(
       position: Tween<Offset>(
-        begin: Offset(-1, 0),
+        begin: const Offset(-1, 0),
         end: Offset.zero,
       ).animate(CurvedAnimation(
         parent: _controller,

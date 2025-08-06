@@ -15,11 +15,11 @@ class _AboutScreenState extends State<AboutScreen>
   String _version = '0.0.0';
 
   final _decorationItems = [
-    _DecorationItem(Icons.star, Colors.white30, Alignment(-0.8, -0.6)),
+    const _DecorationItem(Icons.star, Colors.white30, Alignment(-0.8, -0.6)),
     _DecorationItem(
-        Icons.wb_sunny, Colors.amber.withOpacity(0.2), Alignment(0.7, -0.4)),
+        Icons.wb_sunny, Colors.amber.withOpacity(0.2), const Alignment(0.7, -0.4)),
     _DecorationItem(
-        Icons.circle, Colors.blueAccent.withOpacity(0.1), Alignment(0.3, 0.8)),
+        Icons.circle, Colors.blueAccent.withOpacity(0.1), const Alignment(0.3, 0.8)),
   ];
 
   @override
@@ -57,7 +57,7 @@ class _AboutScreenState extends State<AboutScreen>
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.white.withOpacity(0.8),
-                      shadows: [
+                      shadows: const [
                         Shadow(
                             color: Colors.black38,
                             blurRadius: 4,
@@ -75,7 +75,7 @@ class _AboutScreenState extends State<AboutScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: TDNavBar(/* 保持原有参数 */),
+      appBar: const TDNavBar(/* 保持原有参数 */),
       body: Column(
         children: [
           _buildHeader(),
@@ -147,7 +147,7 @@ class _LogoSection extends StatelessWidget {
             height: 160,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(25),
-              boxShadow: [
+              boxShadow: const [
                 BoxShadow(
                     color: Colors.black26, blurRadius: 20, spreadRadius: 5)
               ],
@@ -271,8 +271,7 @@ class _DecorationItem {
   final Alignment alignment;
   final double size;
 
-  const _DecorationItem(this.icon, this.color, this.alignment,
-      [this.size = 40]);
+  const _DecorationItem(this.icon, this.color, this.alignment, [this.size = 24.0]);
 }
 
 class _MenuItem {

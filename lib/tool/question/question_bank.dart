@@ -128,7 +128,7 @@ class Section {
   List<String> fromKonwledgePoint = [];
   List<String> fromKonwledgeIndex = [];
 
-  String get id => fromKonwledgeIndex.join('/') + '/' + index;
+  String get id => '${fromKonwledgeIndex.join('/')}/$index';
 
   factory Section.fromJson(Map<String, dynamic> json) =>
       _$SectionFromJson(json);
@@ -324,19 +324,19 @@ class Section {
       if (children != null && children!.isNotEmpty)
         XmlElement(XmlName('children'), [],
             children!.map((child) => child.toXml()).toList()),
-      if (fromKonwledgeIndex != null && fromKonwledgeIndex!.isNotEmpty)
+      if (fromKonwledgeIndex.isNotEmpty)
         XmlElement(
             XmlName('fromKonwledgeIndex'),
             [],
-            fromKonwledgeIndex!
+            fromKonwledgeIndex
                 .map((index) =>
                     XmlElement(XmlName('item'), [], [XmlText(index)]))
                 .toList()),
-      if (fromKonwledgePoint != null && fromKonwledgePoint!.isNotEmpty)
+      if (fromKonwledgePoint.isNotEmpty)
         XmlElement(
             XmlName('fromKonwledgePoint'),
             [],
-            fromKonwledgePoint!
+            fromKonwledgePoint
                 .map((point) =>
                     XmlElement(XmlName('item'), [], [XmlText(point)]))
                 .toList()),
@@ -1105,18 +1105,17 @@ class QuestionBankBuilder {
       return lines[lineIndex];
     }
 
-    ;
 
     while (getNextLine() != '-1') {
       line = nextLine();
       while (getNextLine() == ('\$\$')) {
-        line += "\n" + nextLine();
+        line += "\n${nextLine()}";
         nextLine();
         while (getLine() != ('\$\$')) {
-          line += '\n' + getLine();
+          line += '\n${getLine()}';
           nextLine();
         }
-        line += '\n' + getLine();
+        line += '\n${getLine()}';
       }
       // print(line);
 

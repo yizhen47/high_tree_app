@@ -1,6 +1,5 @@
 import 'package:extended_text/extended_text.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/screen/question.dart';
 import 'package:flutter_application_1/screen/question_card.dart';
 import 'package:flutter_application_1/tool/question/question_bank.dart';
 import 'package:flutter_application_1/tool/text_string_handle.dart';

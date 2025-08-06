@@ -7,7 +7,7 @@ import 'package:flutter_application_1/tool/question/wrong_question_book.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:rebirth/rebirth.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
-import 'screen/home.dart';
+import 'screen/home/home.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'tool/question/question_bank.dart';
 import 'package:window_manager/window_manager.dart';
@@ -32,12 +32,40 @@ Future<void> main() async {
       await windowManager.focus();
     });
   } else if (Platform.isAndroid) {
-    List<Permission> permissionNames = [];
-    // permissionNames.add(Permission.location);
-    // permissionNames.add(Permission.camera);
-    permissionNames.add(Permission.storage);
-    for (var p in permissionNames) {
-      p.request();
+    // 逐个申请权限，避免批量请求导致的插件错误
+    try {
+      // 存储权限
+      await Permission.storage.request();
+      
+      // 位置权限（WiFi扫描需要）
+      await Permission.location.request();
+      
+      // 相机权限
+      await Permission.camera.request();
+      
+      // 蓝牙权限
+      try {
+        await Permission.bluetooth.request();
+        await Permission.bluetoothScan.request();
+        await Permission.bluetoothConnect.request();
+        await Permission.bluetoothAdvertise.request();
+      } catch (e) {
+        // 蓝牙权限可能在较低版本不可用，忽略错误
+        print('Bluetooth permissions not available: $e');
+      }
+      
+      // WiFi相关权限（Android 13+）
+      try {
+        await Permission.nearbyWifiDevices.request();
+      } catch (e) {
+        // Permission.nearbyWifiDevices可能在较低版本不可用，忽略错误
+        print('NEARBY_WIFI_DEVICES permission not available: $e');
+      }
+      
+      print('All permissions requested successfully');
+    } catch (e) {
+      print('Error requesting permissions: $e');
+      // 即使权限请求失败，应用也应该继续运行
     }
     try {
       await FlutterDisplayMode.setHighRefreshRate();
@@ -105,7 +133,7 @@ class _MainEnterScreen extends StatefulWidget {
 class _MainEnterScreenState extends State<_MainEnterScreen>
     with TickerProviderStateMixin {
   late AnimationController _fadeController;
-  double _opacity = 1.0;
+  final double _opacity = 1.0;
   bool _initCompleted = false;
 
   @override

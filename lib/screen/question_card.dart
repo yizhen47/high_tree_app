@@ -158,7 +158,7 @@ Widget _buildAdaptiveIndexText(String text) {
 
 // Markdown内容组件
 Widget _buildMarkdownContent(String knowledge) {
-  return Container(
+  return SizedBox(
     width: double.infinity,
     child: MarkdownBody(
       data: knowledge,
@@ -173,7 +173,7 @@ Widget _buildMarkdownContent(String knowledge) {
       ),
       builders: {
         'latex': LatexElementBuilder(
-          textStyle: TextStyle(
+          textStyle: const TextStyle(
             fontWeight: FontWeight.w100,
             fontSize: 14, // 减小字体大小
             fontFamily: 'CMU',
@@ -441,8 +441,8 @@ Card buildQuestionCard(
                                 width: double.infinity,
                                 height: 40, // 增加高度以容纳标签
                                 alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  borderRadius: const BorderRadius.only(
+                                decoration: const BoxDecoration(
+                                  borderRadius: BorderRadius.only(
                                     topLeft: Radius.circular(12),
                                     topRight: Radius.circular(12),
                                   ),
@@ -782,12 +782,12 @@ Widget _buildSimpleSimilarQuestionsContent(BuildContext context, Color primaryCo
                 ),
                 alignment: Alignment.centerLeft,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
+                child: const Column(
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(Icons.bookmark_add, color: Colors.white, size: 24),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Text('加入错题本',
                       style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ],
@@ -800,12 +800,12 @@ Widget _buildSimpleSimilarQuestionsContent(BuildContext context, Color primaryCo
                 ),
                 alignment: Alignment.centerRight,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
+                child: const Column(
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(Icons.bookmark_add, color: Colors.white, size: 24),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Text('加入错题本',
                       style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ],
@@ -961,7 +961,7 @@ Widget _buildSimpleSimilarQuestionsContent(BuildContext context, Color primaryCo
                 ),
               ),
             )
-          ).toList()
+          )
         else
           Center(
             child: Padding(
@@ -1117,7 +1117,7 @@ Widget _buildSimpleKnowledgeContent(String knowledgepoint, BuildContext context,
                     selectable: true,
                     builders: {
                       'latex': LatexElementBuilder(
-                        textStyle: TextStyle(
+                        textStyle: const TextStyle(
                           fontWeight: FontWeight.w100,
                           fontSize: 12,
                         ),

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/screen/home.dart';
+import 'package:flutter_application_1/screen/home/home.dart';
 import 'package:flutter_application_1/screen/mode.dart';
 import 'package:flutter_application_1/screen/question_card.dart';
 import 'package:flutter_application_1/screen/wrong_question.dart';
@@ -472,7 +472,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                         }
                         // Remove the mind map popup on plan failure
                         // _showMindMap(context, c.targetSection!.id);
-                        Future.delayed(Duration(milliseconds: 800))
+                        Future.delayed(const Duration(milliseconds: 800))
                             .whenComplete(() {
                           showKnowledgeCard(context, c.targetSection!);
                           controller
@@ -588,8 +588,8 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
         borderRadius: BorderRadius.circular(8),
         side: BorderSide(color: color.withOpacity(0.3), width: 1),
       ),
-      child: Icon(icon, size: 20, color: Colors.white),
       onPressed: onPressed,
+      child: Icon(icon, size: 20, color: Colors.white),
     );
   }
 
@@ -642,7 +642,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
         },
       ),
     );
-    Future.delayed(Duration(milliseconds: 100)).then((_) {
+    Future.delayed(const Duration(milliseconds: 100)).then((_) {
       if (nodeId != null) {
         // 确保在页面打开后执行定位
         mindMap.controller!.centerNodeById(nodeId);
@@ -683,8 +683,8 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
               mini: true,
               backgroundColor: Colors.grey[200],
               elevation: 2,
-              child: Icon(Icons.reply, color: Colors.grey[700]),
               onPressed: controller.undo,
+              child: Icon(Icons.reply, color: Colors.grey[700]),
             ),
             // 添加题号选择按钮（仅在学习模式显示）
             if (StudyData.instance.studyType == StudyType.studyMode)
@@ -777,7 +777,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
               ),
               // Remove the bottom navigation bar with icons
               // Leaving a small space for the new floating action button area
-              SizedBox(height: 60),
+              const SizedBox(height: 60),
             ],
           ),
           // Windows风格左侧状态栏
@@ -828,7 +828,7 @@ Widget _buildProgressIndicator(double progress) {
     child: Stack(
       children: [
         AnimatedContainer(
-          duration: Duration(milliseconds: 500),
+          duration: const Duration(milliseconds: 500),
           curve: Curves.easeInOutQuart,
           height: 120 * progress,
           decoration: BoxDecoration(
@@ -842,7 +842,7 @@ Widget _buildProgressIndicator(double progress) {
               BoxShadow(
                 color: Colors.blue.withOpacity(0.1),
                 blurRadius: 8,
-                offset: Offset(0, 2),
+                offset: const Offset(0, 2),
               )
             ],
           ),
@@ -855,7 +855,7 @@ Widget _buildProgressIndicator(double progress) {
 // 立体感计数器
 Widget _buildRetryCounter(int count, BuildContext context) {
   return Container(
-    padding: EdgeInsets.symmetric(horizontal: 0, vertical: 6),
+    padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
     decoration: BoxDecoration(
       color: Colors.blue.shade50,
       borderRadius: BorderRadius.circular(6),
@@ -867,7 +867,7 @@ Widget _buildRetryCounter(int count, BuildContext context) {
         BoxShadow(
           color: Colors.blue.shade100.withOpacity(0.2),
           blurRadius: 8,
-          offset: Offset(0, 2),
+          offset: const Offset(0, 2),
         )
       ],
     ),

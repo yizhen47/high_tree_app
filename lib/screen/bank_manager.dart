@@ -253,7 +253,7 @@ class _InnerState extends State<BankManagerScreen> {
                       setState(() {});
                     },
                     child: Padding(
-                      padding: EdgeInsets.only(bottom: 15, top: 15),
+                      padding: const EdgeInsets.only(bottom: 15, top: 15),
                       child: Icon(
                         Icons.add_box_outlined,
                         color: Theme.of(context).primaryColor,
@@ -294,7 +294,7 @@ class _InnerState extends State<BankManagerScreen> {
                       }
                     },
                     child: Padding(
-                      padding: EdgeInsets.only(bottom: 15, top: 15),
+                      padding: const EdgeInsets.only(bottom: 15, top: 15),
                       child: Icon(
                         Icons.create_outlined,
                         color: Theme.of(context).primaryColor,
@@ -319,7 +319,7 @@ class _InnerState extends State<BankManagerScreen> {
                       );
                     },
                     child: Padding(
-                      padding: EdgeInsets.only(bottom: 15, top: 15),
+                      padding: const EdgeInsets.only(bottom: 15, top: 15),
                       child: Icon(
                         Icons.quiz_outlined,
                         color: Theme.of(context).primaryColor,

@@ -3,7 +3,7 @@ import 'dart:ui';
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/screen/home.dart';
+import 'package:flutter_application_1/screen/home/home.dart';
 import 'package:flutter_application_1/tool/question/question_bank.dart';
 import 'package:flutter_application_1/tool/question/question_controller.dart';
 import 'package:flutter_application_1/tool/question/wrong_question_book.dart';
@@ -355,7 +355,7 @@ class StatisticsManager {
   }
   
   // 递归添加章节到树中
-  void _addSectionToTree(List<Section> sections, List<Map<String, dynamic>> targetList, int topicIndex, [String? bankId = null]) {
+  void _addSectionToTree(List<Section> sections, List<Map<String, dynamic>> targetList, int topicIndex, [String? bankId]) {
     int currentIndex = topicIndex; // 使用局部变量跟踪当前索引
     
     // 如果没有提供题库ID，尝试查找
@@ -406,7 +406,7 @@ class StatisticsManager {
     List<Section> sections, 
     List<Map<String, dynamic>> targetList, 
     int topicIndex, 
-    [int depth = 1, String? bankId = null]
+    [int depth = 1, String? bankId]
   ) {
     int currentIndex = topicIndex;
     
@@ -481,7 +481,7 @@ class StatisticsManager {
   }
 
   // 获取章节的学习进度
-  Map<String, dynamic> _getSectionProgress(String sectionId, [String? bankId = null]) {
+  Map<String, dynamic> _getSectionProgress(String sectionId, [String? bankId]) {
     final result = {
       'learnTimes': 0,
       'lastLearnTime': 0,
@@ -492,7 +492,7 @@ class StatisticsManager {
     
     // 如果提供了题库ID，直接查找该题库下的章节数据
     if (bankId != null) {
-      final fullSectionId = bankId + "/" + sectionId;
+      final fullSectionId = "$bankId/$sectionId";
       final sectionData = WrongQuestionBook.instance.sectionDataBox.get(fullSectionId);
       
       if (sectionData != null) {
@@ -519,7 +519,7 @@ class StatisticsManager {
       if (bank.id == null) continue;
       
       // 构建完整的章节ID（与LearningPlanItem.getSectionLearningData的逻辑一致）
-      final fullSectionId = bank.id! + "/" + sectionId;
+      final fullSectionId = "${bank.id!}/$sectionId";
       
       // 从WrongQuestionBook获取章节学习数据
       final sectionData = WrongQuestionBook.instance.sectionDataBox.get(fullSectionId);
@@ -898,7 +898,7 @@ class StatisticsManager {
     // 遍历所有匹配的章节获取进度信息
     for (final section in matchingSections) {
       // 尝试获取章节的银行ID
-      String? bankId = null;
+      String? bankId;
       for (final bank in QuestionBankAccessor.instance.getAllAvailableBanksSynchronously()) {
         if (bank.id != null && bank.data != null) {
           if (_isSectionInBank(section, bank.data!)) {

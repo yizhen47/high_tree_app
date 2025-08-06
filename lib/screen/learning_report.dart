@@ -9,7 +9,7 @@ import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/tool/question/wrong_question_book.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'dart:math';
-import 'package:flutter_application_1/screen/home.dart';
+import 'package:flutter_application_1/screen/home/home.dart';
 
 class LearningReportScreen extends StatefulWidget {
   const LearningReportScreen({super.key, required this.title});
@@ -657,7 +657,7 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.info_outline,
                               size: 18,
                               color: AppTheme.primaryColor,
@@ -1618,23 +1618,23 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
       // 第一次学习的遗忘最快，每次重复学习大幅提高记忆保留
       if (effectiveStudyCount <= 1) {
         // 首次学习，使用较为平缓的衰减曲线
-        final stabilityFactor = 2.5; // 中等稳定性
+        const stabilityFactor = 2.5; // 中等稳定性
         retentionRate = exp(-daysSinceLastStudy / stabilityFactor);
       } else if (effectiveStudyCount == 2) {
         // 第二次学习，记忆稳定性显著提升
-        final stabilityFactor = 5.0;
+        const stabilityFactor = 5.0;
         retentionRate = exp(-daysSinceLastStudy / stabilityFactor);
         // 确保至少保留40%
         retentionRate = max(retentionRate, 0.4);
       } else if (effectiveStudyCount == 3) {
         // 第三次学习，记忆更加牢固
-        final stabilityFactor = 8.0;
+        const stabilityFactor = 8.0;
         retentionRate = exp(-daysSinceLastStudy / stabilityFactor);
         // 确保至少保留50%
         retentionRate = max(retentionRate, 0.5);
       } else if (effectiveStudyCount == 4) {
         // 第四次学习，记忆进入长期记忆
-        final stabilityFactor = 12.0;
+        const stabilityFactor = 12.0;
         retentionRate = exp(-daysSinceLastStudy / stabilityFactor);
         // 确保至少保留60%
         retentionRate = max(retentionRate, 0.6);
@@ -1690,7 +1690,7 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
       // 获取最后学习时间（用于计算保留天数）
       if (progress.containsKey('lastLearnTime') && progress['lastLearnTime'] != null && progress['lastLearnTime'] > 0) {
         lastStudyTime = DateTime.fromMillisecondsSinceEpoch(progress['lastLearnTime'] as int);
-        retentionDay = DateTime.now().difference(lastStudyTime!).inDays + 1;
+        retentionDay = DateTime.now().difference(lastStudyTime).inDays + 1;
       }
     }
     
@@ -1699,7 +1699,7 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
       final topicLastStudyTime = StudyData.instance.getTopicLastStudyTime(sectionId);
       if (topicLastStudyTime != null) {
         lastStudyTime = topicLastStudyTime;
-        retentionDay = DateTime.now().difference(lastStudyTime!).inDays + 1;
+        retentionDay = DateTime.now().difference(lastStudyTime).inDays + 1;
       }
     }
     
@@ -1759,7 +1759,7 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
-                              retentionDay > 1 ? '第${retentionDay}天' : '今天学习',
+                              retentionDay > 1 ? '第$retentionDay天' : '今天学习',
                               style: TextStyle(
                                 fontSize: 10,
                                 color: retentionDay > 14 
@@ -1895,27 +1895,3 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
     return path.join(" > ");
   }
 }
-
-// AppTheme class from home.dart (included for reference)
-class AppTheme {
-  static const primaryColor = Color(0xFF6A88E6);
-  static const secondaryColor = Color(0xFF8E49E2);
-  static const warningColor = Color(0xFFFFA726);
-  static const successColor = Color(0xFF4CAF50);
-  static const textPrimary = Color(0xFF2D2D3A);
-  static const textSecondary = Color(0xFF6E6E8A);
-
-  static const backgroundGradient = LinearGradient(
-    colors: [Color(0xFFF8FAFF), Color(0xFFF2F6FF)],
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
-  );
-
-  static const cardShadow = BoxShadow(
-    color: Colors.black12,
-    blurRadius: 8,
-    offset: Offset(0, 4),
-  );
-
-  static BorderRadius cardBorderRadius = BorderRadius.circular(16);
-} 

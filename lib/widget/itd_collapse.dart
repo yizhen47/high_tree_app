@@ -198,12 +198,12 @@ class _ITDCollapseState extends State<ITDCollapse> {
 
     if (_isCardStyle()) {
       collapse = Container(
+        margin: EdgeInsets.symmetric(
+          horizontal: TDTheme.of(context).spacer16,
+        ),
         child: ClipRRect(
           child: collapse,
           borderRadius: BorderRadius.circular(TDTheme.of(context).radiusLarge),
-        ),
-        margin: EdgeInsets.symmetric(
-          horizontal: TDTheme.of(context).spacer16,
         ),
       );
     }
@@ -445,7 +445,7 @@ class ITDCollapsePanel extends ExpansionPanel {
             isExpanded: isExpanded,
             canTapOnHeader: true,
             backgroundColor: backgroundColor,
-            body: SizedBox());
+            body: const SizedBox());
 
   final Object? value;
 

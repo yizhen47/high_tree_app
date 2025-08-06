@@ -1,10 +1,8 @@
 import 'dart:async';
-import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:latext/latext.dart';
 
 /// 思维导图节点数据类

@@ -82,7 +82,7 @@ class _InnerState extends State<IntelligentSettingScreen> {
                 setState(() {});
               },
               child: Padding(
-                padding: EdgeInsets.only(bottom: 15, top: 15),
+                padding: const EdgeInsets.only(bottom: 15, top: 15),
                 child: Icon(
                   Icons.skip_next_outlined,
                   color: Theme.of(context).primaryColor,
@@ -231,10 +231,8 @@ class _InnerState extends State<IntelligentSettingScreen> {
     for (var bank in LearningPlanManager.instance.questionBanks) {
       try {
         Section bankSection = bank.findSection(section.id.split('/'));
-        if (bankSection != null) {
-          return bank;
-        }
-      } catch (e) {
+        return bank;
+            } catch (e) {
         // Ignore exceptions for banks that don't have this section
       }
     }

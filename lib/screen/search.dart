@@ -95,7 +95,7 @@ class _SearchScreenInnerState extends State<SearchScreen> {
                 return ITDCollapsePanel(
                     headerBuilder: (BuildContext context, bool isExpanded) {
                       return Row(children: [
-                        Icon(
+                        const Icon(
                           Icons.menu,
                           // color: Theme.of(context).primaryColor,
                         ),
@@ -104,7 +104,7 @@ class _SearchScreenInnerState extends State<SearchScreen> {
                         ),
                         Text(
                           hideText(item.headerValue, maxLen: 10),
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                          style: const TextStyle(fontWeight: FontWeight.bold),
                         )
                       ]);
                     },
@@ -117,9 +117,7 @@ class _SearchScreenInnerState extends State<SearchScreen> {
                                     cells: item.question!
                                         .map((e) => TDCell(
                                               // description: e.question['id']!,
-                                              leftIconWidget: WrongQuestionBook.instance.getQuestion(e.question['id']!) != null
-                                              
-                                              && WrongQuestionBook
+                                              leftIconWidget: WrongQuestionBook
                                                       .instance
                                                       .getQuestion(
                                                           e.question['id']!)

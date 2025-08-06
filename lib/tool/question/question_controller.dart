@@ -143,7 +143,7 @@ class LearningPlanItem {
 
   /// Get learning data for a specific section
   SectionUserData getSectionLearningData(Section section) {
-    var sectionId = bank.id! + "/" + section.id;
+    var sectionId = "${bank.id!}/${section.id}";
     if (!learningDataBox.containsKey(sectionId)) {
       learningDataBox.put(sectionId, SectionUserData());
     }
@@ -152,7 +152,7 @@ class LearningPlanItem {
 
   /// Save learning data for a specific section
   void saveSectionLearningData(Section section, SectionUserData data) {
-    var sectionId = bank.id! + "/" + section.id;
+    var sectionId = "${bank.id!}/${section.id}";
     learningDataBox.put(sectionId, data);
   }
 
@@ -290,11 +290,9 @@ class LearningPlanManager {
             for (var bank in questionBanks) {
               if (bank.id == bankId) {
                 Section section = bank.findSection(sectionId.split('/'));
-                if (section != null) {
-                  // Restore to in-memory map
-                  manuallyAddedSections[key.toString()] = section;
-                }
-                break;
+                // Restore to in-memory map
+                manuallyAddedSections[key.toString()] = section;
+                              break;
               }
             }
           }
@@ -307,7 +305,7 @@ class LearningPlanManager {
 
   /// Add a section to the manual learning plan
   bool addSectionToManualLearningPlan(Section section, QuestionBank bank) {
-    String key = bank.id! + "/" + section.id;
+    String key = "${bank.id!}/${section.id}";
 
     // Return if already exists
     if (manuallyAddedSections.containsKey(key)) {
