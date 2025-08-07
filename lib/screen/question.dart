@@ -596,10 +596,20 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
   MindMap _buildMindMap(BuildContext context) {
     var width = MediaQuery.of(context).size.width;
     var height = 400.0;
+    
+    // 构建题库ID到缓存目录的映射
+    final questionBankCacheDirs = <String, String>{};
+    for (var bank in LearningPlanManager.instance.questionBanks) {
+      if (bank.id != null && bank.cacheDir != null) {
+        questionBankCacheDirs[bank.id!] = bank.cacheDir!;
+      }
+    }
+    
     var mindMap = MindMap<Section>(
         rootNode: MindMapHelper.createRoot(data: Section("", "")),
         width: width,
         controller: MindMapController(),
+        questionBankCacheDirs: questionBankCacheDirs, // 传递缓存目录映射
         onNodeTap: (MindMapNode<Section> node) {
           if (node.data == null) {
             return;

@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_application_1/widget/latex.dart';
 import 'package:latext/latext.dart';
 
 /// 思维导图节点数据类
@@ -73,6 +75,7 @@ class MindMap<T> extends StatefulWidget {
   final VoidCallback? onUpdated;
   final Function(MindMapNode<T>)? onNodeTap;
   final MindMapController? controller;
+  final Map<String, String>? questionBankCacheDirs; // 题库ID到缓存目录的映射
 
   const MindMap({
     super.key,
@@ -84,6 +87,7 @@ class MindMap<T> extends StatefulWidget {
     this.onUpdated,
     this.onNodeTap,
     this.controller,
+    this.questionBankCacheDirs, // 题库ID到缓存目录的映射
   });
 
   @override
@@ -144,7 +148,7 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
         left: -5000, // 移出可视区域
         child: RepaintBoundary(
           key: key,
-          child: LaTexT(
+          child: LaTeX(
             laTeXCode: Text(
               latex,
               style: TextStyle(
@@ -242,6 +246,33 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
         });
         stream.addListener(listener);
         return completer.future;
+      }
+      // 支持题库缓存目录中的图片
+      else if (widget.questionBankCacheDirs != null) {
+        // 尝试从所有题库缓存目录中查找图片
+        for (var entry in widget.questionBankCacheDirs!.entries) {
+          final bankId = entry.key;
+          final cacheDir = entry.value;
+          
+
+          
+          // 尝试多种路径格式
+          final possiblePaths = [
+            '$cacheDir/assets/$imagePath',        // 原始路径
+            '$cacheDir/assets/images/$imagePath', // 图片在images子目录下
+            '$cacheDir/$imagePath',               // 直接在缓存目录下
+          ];
+          
+          for (var fullPath in possiblePaths) {
+            final file = File(fullPath);
+            if (await file.exists()) {
+              final bytes = await file.readAsBytes();
+              return await decodeImageFromList(bytes);
+            }
+          }
+        }
+        print('Image file not found in any cache directory: $imagePath');
+        return null;
       }
       // 支持相对路径文件（假设在assets目录下）
       else {
@@ -426,22 +457,33 @@ class _MindMapPainter extends CustomPainter {
       _drawNode(canvas, child);
     }
 
-    final fillPaint = Paint()
-      ..color = node.color.withOpacity(0.15)
-      ..style = PaintingStyle.fill;
-
-    final borderPaint = Paint()
-      ..color = node.color.withOpacity(0.3)
-      ..strokeWidth = 0.8
-      ..style = PaintingStyle.stroke;
-
     final rect = RRect.fromRectAndRadius(
       Rect.fromCenter(
           center: node.position,
           width: node.size.width,
           height: node.size.height),
-      const Radius.circular(6),
+      const Radius.circular(12), // 更圆润的边角
     );
+
+    // 绘制阴影
+    final shadowPaint = Paint()
+      ..color = Colors.black.withOpacity(0.1)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+    canvas.drawRRect(rect.shift(const Offset(2, 2)), shadowPaint);
+
+    // 渐变背景
+    final gradient = LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [
+        node.color.withOpacity(0.8),
+        node.color.withOpacity(0.6),
+      ],
+    );
+    
+    final fillPaint = Paint()
+      ..shader = gradient.createShader(rect.outerRect)
+      ..style = PaintingStyle.fill;
 
     // 绘制背景
     canvas.drawRRect(rect, fillPaint);
@@ -450,19 +492,30 @@ class _MindMapPainter extends CustomPainter {
     if (node.isHighlighted) {
       final highlightPaint = Paint()
         ..color = Color.lerp(
-          node.color.withOpacity(0),
-          node.color.withOpacity(0.3),
+          Colors.amber.withOpacity(0.3),
+          Colors.amber.withOpacity(0.6),
           highlightProgress,
         )!
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
       canvas.drawRRect(
-        rect.inflate(8),
+        rect.inflate(6),
         highlightPaint,
       );
+      
+      // 高亮边框
+      final highlightBorderPaint = Paint()
+        ..color = Colors.amber.withOpacity(0.8)
+        ..strokeWidth = 2.0
+        ..style = PaintingStyle.stroke;
+      canvas.drawRRect(rect, highlightBorderPaint);
+    } else {
+      // 普通边框 - 更细致的边框效果
+      final borderPaint = Paint()
+        ..color = node.color.withOpacity(0.9)
+        ..strokeWidth = 1.5
+        ..style = PaintingStyle.stroke;
+      canvas.drawRRect(rect, borderPaint);
     }
-
-    // 绘制边框
-    canvas.drawRRect(rect, borderPaint);
 
     // 内容绘制
     if (node.hasImage) {
@@ -547,13 +600,23 @@ class _MindMapPainter extends CustomPainter {
   }
 
   void _drawText(Canvas canvas, MindMapNode node) {
+    // 根据节点是否为根节点调整文本样式
+    final isRootNode = node.parent == null;
+    
     final textPainter = TextPainter(
       text: TextSpan(
         text: node.text,
         style: TextStyle(
-          color: Colors.grey[800]!.withOpacity(0.9),
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
+          color: Colors.white,
+          fontSize: isRootNode ? 16 : 13,
+          fontWeight: isRootNode ? FontWeight.bold : FontWeight.w600,
+          shadows: [
+            Shadow(
+              offset: const Offset(0.5, 0.5),
+              blurRadius: 1.0,
+              color: Colors.black.withOpacity(0.3),
+            ),
+          ],
         ),
       ),
       textDirection: TextDirection.ltr,

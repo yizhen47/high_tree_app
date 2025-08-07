@@ -40,7 +40,7 @@ class LearningPlanItem {
 
   LearningPlanItem(this.bank);
 
-  /// Find all sections in the bank that need to be learned
+  /// Find all leaf sections in the bank that need to be learned
   Iterable<Section> getAllSectionsToLearn() sync* {
     yield* _getAllSectionsToLearn(bank.data!, []);
   }
@@ -49,10 +49,13 @@ class LearningPlanItem {
       List<Section> sections, List<String> indexPath) sync* {
     for (var section in sections) {
       if (section.children != null && section.children!.isNotEmpty) {
+        // 非叶子节点，继续遍历子节点
         yield* _getAllSectionsToLearn(section.children!, [...indexPath, section.index]);
-      }
+      } else {
+        // 叶子节点，检查是否需要学习
       if (needsToLearn(section)) {
         yield section;
+        }
       }
     }
   }
@@ -207,10 +210,17 @@ class LearningPlanItem {
   /// Recursively build mind map nodes
   void _buildMindMapNodes(MindMapNode<Section> node, List<Section> sections) {
     for (var section in sections) {
+      // 只有叶子节点才显示学习状态颜色
+      Color? nodeColor;
+      if (section.children == null || section.children!.isEmpty) {
+        // 叶子节点：显示学习状态
+        nodeColor = needsToLearn(section) ? null : Colors.greenAccent.shade400;
+      }
+      
       var childNode = MindMapHelper.addChildNode(node, section.title,
           id: section.id,
           data: section,
-          color: needsToLearn(section) ? null : Colors.greenAccent.shade400,
+          color: nodeColor,
           image: section.image); // 传递章节图片
           
       if (section.children != null && section.children!.isNotEmpty) {
@@ -304,8 +314,13 @@ class LearningPlanManager {
     }
   }
 
-  /// Add a section to the manual learning plan
+  /// Add a section to the manual learning plan (only leaf sections allowed)
   bool addSectionToManualLearningPlan(Section section, QuestionBank bank) {
+    // 只允许叶子节点添加到学习计划
+    if (section.children != null && section.children!.isNotEmpty) {
+      return false; // 非叶子节点不能添加到学习计划
+    }
+    
     String key = "${bank.id!}/${section.id}";
 
     // Return if already exists

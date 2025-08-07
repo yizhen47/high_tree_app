@@ -1,13 +1,13 @@
-# 题库格式文档 (QSet Format Specification)
+# 题库格式文档 (zip Format Specification)
 
 ## 概述
 
-题库文件采用 `.qset` 扩展名，本质上是一个ZIP压缩包，包含XML数据文件和相关资源文件。此格式专为Flutter应用中的题库管理系统设计。
+题库文件采用 `.zip` 扩展名，本质上是一个ZIP压缩包，包含XML数据文件和相关资源文件。此格式专为Flutter应用中的题库管理系统设计。
 
 ## 文件结构
 
 ```
-example.qset (ZIP压缩包)
+example.zip (ZIP压缩包)
 ├── data.xml                    # 主数据文件 (必需)
 ├── assets/                     # 资源文件夹
 │   └── images/                 # 图片资源
@@ -216,7 +216,7 @@ class Section {
 
 ### 导入题库
 
-1. 验证文件扩展名为 `.qset`
+1. 验证文件扩展名为 `.zip`
 2. 解压ZIP文件
 3. 验证 `data.xml` 文件存在
 4. 解析XML结构
@@ -226,7 +226,7 @@ class Section {
 
 1. 构建XML数据结构
 2. 添加资源文件到ZIP
-3. 压缩生成 `.qset` 文件
+3. 压缩生成 `.zip` 文件
 
 ## 版本兼容性
 

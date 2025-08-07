@@ -131,7 +131,9 @@ class Section {
 
   SingleQuestionData? _randomSectionQuestion(
       String fromId, String fromName, bool onlyLayer) {
-    if (onlyLayer) {
+    // 只有叶子节点才能有题目
+    if (children == null || children!.isEmpty) {
+      // 这是叶子节点，可以有题目
       if (questions == null || questions!.isEmpty) return null;
       var selectedQuestion = questions![_random!.nextInt(questions!.length)];
       return SingleQuestionData(selectedQuestion, fromId, fromName)
@@ -139,50 +141,51 @@ class Section {
         ..fromKonwledgePoint = (List.from(fromKonwledgePoint)..add(title));
     }
 
-    int currentQ = questions?.length ?? 0;
+    // 非叶子节点，从子节点中随机选择
+    if (onlyLayer) {
+      // 如果只要求当前层级，但当前是非叶子节点，返回null
+      return null;
+    }
+
     List<int> childQs = [];
     int childTotal = 0;
 
-    if (children != null) {
       for (var child in children!) {
         int total = child.getTotalQuestions();
         childQs.add(total);
         childTotal += total;
-      }
     }
 
-    int total = currentQ + childTotal;
-    if (total == 0) return null;
+    if (childTotal == 0) return null;
 
-    int rand = _random!.nextInt(total);
-    if (rand < currentQ) {
-      if (questions == null || questions!.isEmpty) return null;
-      var selectedQuestion = questions![_random!.nextInt(questions!.length)];
-      return SingleQuestionData(selectedQuestion, fromId, fromName)
-        ..fromKonwledgeIndex = (List.from(fromKonwledgeIndex)..add(index))
-        ..fromKonwledgePoint = (List.from(fromKonwledgePoint)..add(title));
-    } else {
-      if (children == null || children!.isEmpty) return null;
-      int target = rand - currentQ;
+    int rand = _random!.nextInt(childTotal);
       int accumulated = 0;
       for (int i = 0; i < children!.length; i++) {
         accumulated += childQs[i];
-        if (target < accumulated) {
+      if (rand < accumulated) {
           return children![i]
               .randomSectionQuestion(fromId, fromName, onlyLayer: false);
-        }
       }
     }
     return null;
   }
 
-// 添加方法以递归获取题目总数
+// 递归获取题目总数（只从叶子节点计算）
   int getTotalQuestions({bool onlyLayer = false}) {
-    int total = questions?.length ?? 0;
-    if (!onlyLayer) {
-      for (Section child in (children ?? [])) {
-        total += child.getTotalQuestions();
-      }
+    // 如果是叶子节点，返回题目数
+    if (children == null || children!.isEmpty) {
+      return questions?.length ?? 0;
+    }
+    
+    // 如果只计算当前层级，非叶子节点返回0
+    if (onlyLayer) {
+      return 0;
+    }
+    
+    // 非叶子节点，递归计算子节点题目总数
+    int total = 0;
+    for (Section child in children!) {
+      total += child.getTotalQuestions();
     }
     return total;
   }
@@ -252,6 +255,9 @@ class Section {
   List<SingleQuestionData> sectionQuestionOnly(String fromId, String fromName,
       {List<SingleQuestionData>? questionsList}) {
     questionsList ??= [];
+    
+    // 只有叶子节点才能有题目
+    if (children == null || children!.isEmpty) {
     // ignore: unnecessary_null_comparison
     if (questions != null) {
       for (var q in questions!) {
@@ -260,6 +266,8 @@ class Section {
           ..fromKonwledgePoint = (List.from(fromKonwledgePoint)..add(title)));
       }
     }
+    }
+    
     return questionsList;
   }
 
@@ -471,16 +479,49 @@ class QuestionBank {
     if (cacheDir == null) throw Exception("cache dir not found");
     
     try {
-      // 使用 archive_io 直接解压到目标目录，内存效率更高
-      await extractFileToDisk(filePath, cacheDir!);
+      final fileExtension = path.extension(filePath).toLowerCase();
+      
+      if (fileExtension == '.zip') {
+        // .zip文件是ZIP格式，但扩展名不被extractFileToDisk识别，手动解压
+        final inputStream = InputFileStream(filePath);
+        final archive = ZipDecoder().decodeStream(inputStream);
+        
+        try {
+          for (final archiveFile in archive.files) {
+            final outputPath = path.join(cacheDir!, archiveFile.name);
+            
+            if (archiveFile.isFile) {
+              // 确保目录存在
+              final outputDir = Directory(path.dirname(outputPath));
+              if (!await outputDir.exists()) {
+                await outputDir.create(recursive: true);
+              }
+              
+              final outputStream = OutputFileStream(outputPath);
+              try {
+                archiveFile.writeContent(outputStream);
+              } finally {
+                await outputStream.close();
+              }
+            } else {
+              await Directory(outputPath).create(recursive: true);
+            }
+          }
+        } finally {
+          await inputStream.close();
+        }
+      } else {
+        // 对于标准压缩格式，使用extractFileToDisk
+        await extractFileToDisk(filePath, cacheDir!);
+      }
     } catch (e) {
       throw Exception("题库文件解压失败: $e");
-      }
+    }
   }
 
   Future<void> removeFromData() async {
     mksureInit();
-    print(path.join(cacheDir!, '$id.qset'));
+    print(path.join(cacheDir!, '$id.zip'));
     await _removeDirectoryIfExists(Directory(cacheDir!));
   }
 
@@ -504,11 +545,6 @@ class QuestionBank {
       // 从压缩包直接读取
       final fromFile = File(filePath);
       
-      // 检查文件大小
-      final fileSize = await fromFile.length();
-      if (fileSize > 500 * 1024 * 1024) { // 500MB 限制
-        throw Exception("题库文件过大 (${(fileSize / 1024 / 1024).toStringAsFixed(1)}MB)，无法读取信息");
-      }
       
       // 使用流式读取ZIP文件，不加载到内存
       final inputStream = InputFileStream(fromFile.path);
@@ -572,7 +608,7 @@ class QuestionBank {
   static deleteQuestionBank(String id) async {
     mksureInit();
     await _removeDirectoryIfExists(Directory(path.join(loadedDirPath, id)));
-    await _removeFileIfExists(File(path.join(importedDirPath, "$id.qset")));
+    await _removeFileIfExists(File(path.join(importedDirPath, "$id.zip")));
   }
 
   void close() {
@@ -695,7 +731,7 @@ class QuestionBank {
       sendPort.send('log: Isolate started for $filePath');
       sendPort.send(0.0);
       final tempDir =
-          Directory(path.join(tempPath, 'qset_import_${const Uuid().v4()}'));
+          Directory(path.join(tempPath, 'zip_import_${const Uuid().v4()}'));
 
       if (await tempDir.exists()) {
         await tempDir.delete(recursive: true);
@@ -707,30 +743,27 @@ class QuestionBank {
 
       sendPort.send('log: Extracting archive...');
       try {
-        final bytes = await file.readAsBytes();
-        final archive = ZipDecoder().decodeBytes(bytes);
-
-        if (archive.files.isEmpty) {
-          sendPort.send('log: Archive is empty or could not be read.');
-        } else {
-          sendPort.send('log: Archive contains ${archive.numberOfFiles()} files.');
-          for (final file in archive.files) {
-            final filename = file.name;
-            final outputPath = path.join(tempDir.path, filename);
-            sendPort.send('log:  - Extracting ${file.name}');
-            if (file.isFile) {
-              final outputStream = OutputFileStream(outputPath);
-              file.writeContent(outputStream);
-              outputStream.close();
-            } else {
-              await Directory(outputPath).create(recursive: true);
-            }
-          }
+        // 检查文件是否存在和可读
+        if (!await file.exists()) {
+          throw Exception('Archive file does not exist: ${file.path}');
         }
-        sendPort.send('log: Archive extracted successfully.');
+        
+        final fileSize = await file.length();
+        sendPort.send('log: Archive file size: $fileSize bytes');
+        
+        // 使用archive_io的便利函数来处理大文件
+        sendPort.send('log: Attempting to extract ${file.path} to ${tempDir.path}');
+        await extractFileToDisk(file.path, tempDir.path);
+        sendPort.send('log: Archive extracted successfully using extractFileToDisk');
+        
+        // 立即检查解压结果
+        final extractedItems = await tempDir.list(recursive: true).toList();
+        sendPort.send('log: Immediately after extraction, found ${extractedItems.length} items');
+        for (final item in extractedItems) {
+          sendPort.send('log: - ${item.path} (${item is File ? 'File' : 'Directory'})');
+        }
       } catch (e) {
         sendPort.send('log: Error extracting archive: $e');
-        // 可以在这里发送一个错误消息回主线程
         sendPort.send({'error': 'Error extracting archive: $e'});
         return;
       }
@@ -771,7 +804,7 @@ class QuestionBank {
       }
       sendPort.send(0.8);
 
-      final newPath = path.join(importedPath, "$id.qset");
+      final newPath = path.join(importedPath, "$id.zip");
       sendPort.send('log: Copying file to $newPath');
       await file.copy(newPath);
       sendPort.send('log: File copied.');
@@ -797,7 +830,7 @@ class QuestionBank {
     final List<QuestionBank> res = [];
     for (var action in List.from(dir
         .listSync()
-        .where((element) => element.path.endsWith(".qset"))
+        .where((element) => element.path.endsWith(".zip"))
         .map((e) => (e.path)))) {
       res.add(await QuestionBank(action).getQuestionBankInf());
     }
@@ -813,7 +846,7 @@ class QuestionBank {
     final List<QuestionBank> res = [];
     for (var action in List.from(dir
         .listSync()
-        .where((element) => element.path.endsWith(".qset"))
+        .where((element) => element.path.endsWith(".zip"))
         .map((e) => (e.path)))) {
       res.add(QuestionBank(action)..id = path.basenameWithoutExtension(action));
     }
@@ -846,7 +879,7 @@ class QuestionBank {
 
   static Future<QuestionBank> getQuestionBankById(String id) async {
     mksureInit();
-    var p = path.join(QuestionBank.importedDirPath, '$id.qset');
+    var p = path.join(QuestionBank.importedDirPath, '$id.zip');
     var q = QuestionBank(p);
     await q.getQuestionBankInf();
     return q;

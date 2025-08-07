@@ -72,7 +72,7 @@ class _InnerState extends State<BankManagerScreen> {
                               var saveFilePath =
                                   await FilePicker.platform.saveFile(
                                 dialogTitle: "请选择保存路径",
-                                fileName: "custom.qset",
+                                fileName: "custom.zip",
                               );
                               if (saveFilePath == null) return;
                               WrongQuestionBook.instance
@@ -248,8 +248,8 @@ class _InnerState extends State<BankManagerScreen> {
                       var fromFilePath = await FilePicker.platform.pickFiles(
                           allowMultiple: false,
                           type: FileType.custom,
-                          allowedExtensions: ["qset", "zip", "rar", "7z"],
-                          dialogTitle: "选择题库文件 (支持 .qset, .zip, .rar, .7z 格式)");
+                          allowedExtensions: ["zip", "rar", "7z"],
+                          dialogTitle: "选择题库文件 (支持 .zip, .rar, .7z 格式)");
                       if (fromFilePath == null) return;
                       
                       await _importWithProgress(File(fromFilePath.files.single.path!));
@@ -275,7 +275,7 @@ class _InnerState extends State<BankManagerScreen> {
                           return const TDConfirmDialog(
                             title: "帮助",
                             content:
-                                '''左边按钮用于导入题库qset文件。在题库编辑中可以设置当前错题记录位置''',
+                                '''左边按钮用于导入题库zip文件。在题库编辑中可以设置当前错题记录位置''',
                           );
                         },
                       );
@@ -394,7 +394,7 @@ class _InnerState extends State<BankManagerScreen> {
             ],
           ),
         );
-      }
+}
     }
   }
 }

@@ -41,11 +41,21 @@ class _InnerState extends State<IntelligentSettingScreen> {
         .map((item) => item.targetSection!.id)
         .toList();
     var width = MediaQuery.of(context).size.width;
+    
+    // 构建题库ID到缓存目录的映射
+    final questionBankCacheDirs = <String, String>{};
+    for (var bank in LearningPlanManager.instance.questionBanks) {
+      if (bank.id != null && bank.cacheDir != null) {
+        questionBankCacheDirs[bank.id!] = bank.cacheDir!;
+      }
+    }
+    
     var layout = LayoutBuilder(builder: (context, constraints) {
       var mindMap = MindMap<Section>(
           rootNode: MindMapHelper.createRoot(data: Section("", "")),
           width: width,
           controller: MindMapController(),
+          questionBankCacheDirs: questionBankCacheDirs, // 传递缓存目录映射
           onNodeTap: (MindMapNode<Section> node) {
             if (node.data == null) {
               return;
@@ -98,6 +108,9 @@ class _InnerState extends State<IntelligentSettingScreen> {
   void _showNodeActionDialog(BuildContext context, MindMapNode<Section> node) {
     bool isAlreadyInPlan = LearningPlanManager.instance.learningPlanItems
         .any((item) => item.targetSection?.id == node.data!.id);
+    
+    // 检查是否为叶子节点（只有叶子节点可以添加到学习计划）
+    bool isLeafNode = node.data!.children == null || node.data!.children!.isEmpty;
 
     showDialog(
       context: context,
@@ -135,17 +148,46 @@ class _InnerState extends State<IntelligentSettingScreen> {
                   letterSpacing: 0.2,
                 ),
               ),
-              Text(
-                '上次完成时间: ${
-                  DateTime.fromMillisecondsSinceEpoch(
-                    LearningPlanItem(findBank(node.data!)!).getSectionLearningData(node.data!).lastLearnTime
-                  ).toString()
-                }',
+              Builder(
+                builder: (context) {
+                  final bank = findBank(node.data!);
+                  if (bank == null) {
+                    return Text(
+                      '上次完成时间: 未知',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[700],
+                        letterSpacing: 0.2,
+                      ),
+                    );
+                  }
+                  
+                  try {
+                    final lastLearnTime = LearningPlanItem(bank)
+                        .getSectionLearningData(node.data!)
+                        .lastLearnTime;
+                    
+                    return Text(
+                      '上次完成时间: ${lastLearnTime > 0 
+                          ? DateTime.fromMillisecondsSinceEpoch(lastLearnTime).toString().split('.')[0]
+                          : '从未学习'}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[700],
+                        letterSpacing: 0.2,
+                      ),
+                    );
+                  } catch (e) {
+                    return Text(
+                      '上次完成时间: 从未学习',
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey[700],
                   letterSpacing: 0.2,
                 ),
+                    );
+                  }
+                },
               ),
               const SizedBox(height: 12),
               if (isAlreadyInPlan)
@@ -157,6 +199,20 @@ class _InnerState extends State<IntelligentSettingScreen> {
                       '已加入学习计划',
                       style: TextStyle(
                           color: Colors.blue[800],
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              if (!isLeafNode && !isAlreadyInPlan)
+                Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.orange[700], size: 16),
+                    const SizedBox(width: 8),
+                    Text(
+                      '请选择具体的知识点',
+                      style: TextStyle(
+                          color: Colors.orange[700],
                           fontSize: 14,
                           fontWeight: FontWeight.w500),
                     ),
@@ -179,8 +235,8 @@ class _InnerState extends State<IntelligentSettingScreen> {
                     onPressed: () => Navigator.pop(context),
                     child: const Text('关闭'),
                   ),
-                  if (!isAlreadyInPlan) const SizedBox(width: 12),
-                  if (!isAlreadyInPlan)
+                  if (!isAlreadyInPlan && isLeafNode) const SizedBox(width: 12),
+                  if (!isAlreadyInPlan && isLeafNode)
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blueAccent,

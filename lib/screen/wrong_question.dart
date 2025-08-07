@@ -4,7 +4,7 @@ import 'package:flutter_application_1/screen/question_card.dart';
 import 'package:flutter_application_1/tool/question/question_bank.dart';
 import 'package:flutter_application_1/tool/text_string_handle.dart';
 import 'package:flutter_application_1/tool/question/wrong_question_book.dart';
-import 'package:latext/latext.dart';
+import 'package:flutter_application_1/widget/latex.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 
 class WrongQuestionScreen extends StatefulWidget {
@@ -117,7 +117,7 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidget> {
                                   Expanded(
                                     child: SingleChildScrollView(
                                       physics: const BouncingScrollPhysics(),
-                                      child: LaTexT(
+                                      child: LaTeX(
                                         laTeXCode: Text(
                                           latexText,
                                           style: TextStyle(
@@ -358,7 +358,7 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidget> {
                           );
                         },
                         titleWidget: Builder(
-                          builder: (context) => LaTexT(
+                          builder: (context) => LaTeX(
                             laTeXCode: ExtendedText(
                               e['title'],
                               maxLines: 2,

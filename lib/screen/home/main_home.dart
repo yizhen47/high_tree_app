@@ -17,7 +17,7 @@ import 'package:flutter_application_1/tool/question/question_controller.dart';
 import 'package:flutter_application_1/tool/question/wrong_question_book.dart';
 import 'package:flutter_application_1/tool/statistics_manager.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
-import 'package:latext/latext.dart';
+import 'package:flutter_application_1/widget/latex.dart';
 import 'package:page_transition/page_transition.dart';
 
 class MainHomePage extends StatefulWidget {
@@ -758,7 +758,7 @@ class _MainHomePageState extends State<MainHomePage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               // 标题
-                              LaTexT(
+                              LaTeX(
                                 laTeXCode: Text(
                                   LearningPlanManager.instance.learningPlanItems[index].targetSection!.title,
                                   maxLines: 1,

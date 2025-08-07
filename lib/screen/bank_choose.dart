@@ -128,8 +128,8 @@ class _InnerState extends State<BankChooseScreen> {
                       var fromFilePath = await FilePicker.platform.pickFiles(
                           allowMultiple: false,
                           type: FileType.custom,
-                          allowedExtensions: ["qset", "zip", "rar", "7z"],
-                          dialogTitle: "选择题库文件 (支持 .qset, .zip, .rar, .7z 格式)");
+                          allowedExtensions: ["zip", "rar", "7z"],
+                          dialogTitle: "选择题库文件 (支持 .zip, .rar, .7z 格式)");
                       if (fromFilePath == null) return;
                       
                       await _importWithProgress(File(fromFilePath.files.single.path!));
@@ -170,7 +170,7 @@ class _InnerState extends State<BankChooseScreen> {
                           return const TDConfirmDialog(
                             title: "帮助",
                             content:
-                                '''左边第一个按钮用于导入题库qset文件，第二个按钮用于保存已导入的题库，直接点击下一步也会进行保存操作''',
+                                '''左边第一个按钮用于导入题库zip文件，第二个按钮用于保存已导入的题库，直接点击下一步也会进行保存操作''',
                           );
                         },
                       );
