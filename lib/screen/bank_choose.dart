@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -7,7 +8,9 @@ import 'package:flutter_application_1/tool/page_intent_trans.dart';
 import 'package:flutter_application_1/tool/question/question_bank.dart';
 import 'package:flutter_application_1/tool/question/question_controller.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
+import 'package:flutter_application_1/widget/import_progress_dialog.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
+import 'package:path/path.dart' as path;
 
 class BankChooseScreen extends StatefulWidget {
   const BankChooseScreen({super.key});
@@ -125,12 +128,11 @@ class _InnerState extends State<BankChooseScreen> {
                       var fromFilePath = await FilePicker.platform.pickFiles(
                           allowMultiple: false,
                           type: FileType.custom,
-                          allowedExtensions: ["qset", "zip", "rar", "7z"]);
+                          allowedExtensions: ["qset", "zip", "rar", "7z"],
+                          dialogTitle: "选择题库文件 (支持 .qset, .zip, .rar, .7z 格式)");
                       if (fromFilePath == null) return;
-                      await QuestionBank.importQuestionBank(
-                          File(fromFilePath.files.single.path!));
-                      TDToast.showSuccess('导入完毕', context: context);
-                      setState(() {});
+                      
+                      await _importWithProgress(File(fromFilePath.files.single.path!));
                     },
                     child: Padding(
                       padding: const EdgeInsets.only(bottom: 15, top: 15),
@@ -214,5 +216,82 @@ class _InnerState extends State<BankChooseScreen> {
 
     // Update learning plan based on the newly selected question banks
     LearningPlanManager.instance.updateLearningPlan();
+  }
+
+  Future<void> _importWithProgress(File file) async {
+    final fileSizeMB = await file.length() / 1024 / 1024;
+    final fileName = path.basename(file.path);
+    
+    // 创建进度流控制器
+    late StreamController<double> progressController;
+    progressController = StreamController<double>.broadcast();
+    
+    bool importCompleted = false;
+    String? errorMessage;
+    
+    // 显示进度弹窗
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => ImportProgressDialog(
+          fileName: fileName,
+          fileSizeMB: fileSizeMB,
+          progressStream: progressController.stream,
+          onCancel: fileSizeMB > 500 ? () {
+            // 对于大文件提供取消选项
+            Navigator.of(context).pop();
+            progressController.close();
+          } : null,
+        ),
+      );
+    }
+    
+    try {
+      // 执行导入
+      await QuestionBank.importQuestionBank(file, onProgress: (progress) {
+        if (!progressController.isClosed) {
+          progressController.add(progress);
+        }
+      });
+      
+      importCompleted = true;
+      
+      // 等待一小段时间显示完成状态
+      await Future.delayed(const Duration(milliseconds: 800));
+      
+    } catch (e) {
+      errorMessage = e.toString();
+    } finally {
+      progressController.close();
+      
+      // 关闭进度弹窗
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    }
+    
+    // 显示结果
+    if (mounted) {
+      if (importCompleted) {
+        TDToast.showSuccess('导入完毕', context: context);
+        setState(() {}); // 刷新列表
+      } else {
+        // TDToast.showFail('导入失败: $errorMessage', context: context);
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('导入失败'),
+            content: SingleChildScrollView(child: Text(errorMessage ?? '未知错误')),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('好的'),
+              ),
+            ],
+          ),
+        );
+      }
+    }
   }
 }

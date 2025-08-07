@@ -3,8 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_application_1/tool/bluetooth_chat_manager.dart';
-import 'package:flutter_application_1/tool/study_data.dart';
-import 'package:provider/provider.dart';
 
 import 'home.dart';
 
@@ -84,29 +82,37 @@ class _CommunityPageState extends State<CommunityPage> with SingleTickerProvider
     
     // 设置蓝牙管理器回调
     _bluetoothManager.onStatusChanged = (status) {
+      if (mounted) {
       setState(() {
         _statusMessage = status;
       });
+      }
     };
     
     _bluetoothManager.onNewMessage = (message) {
+      if (mounted) {
       setState(() {
         _chatMessages.add(message);
       });
+      }
     };
     
     _bluetoothManager.onStudentJoined = (student) {
+      if (mounted) {
       setState(() {
         _connectedStudents.add(student);
         _currentClass['attendedCount'] = _connectedStudents.where((s) => s.isAttended).length;
       });
+      }
     };
     
     _bluetoothManager.onStudentAttended = (student) {
+      if (mounted) {
       setState(() {
         student.isAttended = true;
         _currentClass['attendedCount'] = _connectedStudents.where((s) => s.isAttended).length;
       });
+      }
     };
     
     // 初始化聊天消息 - 创建可修改的副本
@@ -117,6 +123,11 @@ class _CommunityPageState extends State<CommunityPage> with SingleTickerProvider
   @override
   void dispose() {
     _tabController.dispose();
+    // 清理回调函数
+    _bluetoothManager.onStatusChanged = null;
+    _bluetoothManager.onNewMessage = null;
+    _bluetoothManager.onStudentJoined = null;
+    _bluetoothManager.onStudentAttended = null;
     _bluetoothManager.stop();
     super.dispose();
   }
@@ -143,12 +154,14 @@ class _CommunityPageState extends State<CommunityPage> with SingleTickerProvider
                       isTeacher = !isTeacher;
                       // 停止当前服务并重置状态
                       _bluetoothManager.stop().then((_) {
+                          if (mounted) {
                           setState(() {
                               _chatMessages = [];
                               _connectedStudents = [];
                               _statusMessage = "";
                               _operationInProgress = false;
                           });
+                          }
                       });
                     });
                   },
@@ -1080,6 +1093,7 @@ class _CommunityPageState extends State<CommunityPage> with SingleTickerProvider
     
     final success = await _bluetoothManager.initialize();
     
+    if (mounted) {
     setState(() {
       _operationInProgress = false;
       if (success) {
@@ -1088,6 +1102,7 @@ class _CommunityPageState extends State<CommunityPage> with SingleTickerProvider
         _statusMessage = "蓝牙初始化失败";
       }
     });
+    }
     
     // Clear status message after a few seconds
     Future.delayed(const Duration(seconds: 3), () {
@@ -1110,6 +1125,7 @@ class _CommunityPageState extends State<CommunityPage> with SingleTickerProvider
       _currentClass['teacher'],
     );
     
+    if (mounted) {
     setState(() {
       _operationInProgress = false;
       if (success) {
@@ -1118,6 +1134,7 @@ class _CommunityPageState extends State<CommunityPage> with SingleTickerProvider
         _statusMessage = "启动教师模式失败";
       }
     });
+    }
   }
   
   Future<void> _stopTeacherMode() async {
@@ -1128,6 +1145,7 @@ class _CommunityPageState extends State<CommunityPage> with SingleTickerProvider
     
     await _bluetoothManager.stop();
     
+    if (mounted) {
     setState(() {
       _operationInProgress = false;
       _statusMessage = "课堂已结束";
@@ -1136,6 +1154,7 @@ class _CommunityPageState extends State<CommunityPage> with SingleTickerProvider
       _chatMessages = [];
       _currentClass['attendedCount'] = 0;
     });
+    }
     
     // Clear status message after a few seconds
     Future.delayed(const Duration(seconds: 3), () {
@@ -1155,6 +1174,7 @@ class _CommunityPageState extends State<CommunityPage> with SingleTickerProvider
 
     List<BluetoothDevice> devices = await _bluetoothManager.searchForTeacherDevices();
 
+    if (mounted) {
     setState(() {
       _operationInProgress = false;
     });
@@ -1163,6 +1183,9 @@ class _CommunityPageState extends State<CommunityPage> with SingleTickerProvider
       setState(() {
         _statusMessage = '未找到任何教师设备';
       });
+        return;
+      }
+    } else {
       return;
     }
 
@@ -1202,6 +1225,7 @@ class _CommunityPageState extends State<CommunityPage> with SingleTickerProvider
 
     bool success = await _bluetoothManager.connectToTeacher(device);
 
+    if (mounted) {
     setState(() {
       _operationInProgress = false;
       if (success) {
@@ -1210,6 +1234,7 @@ class _CommunityPageState extends State<CommunityPage> with SingleTickerProvider
         _statusMessage = '连接失败，请重试';
       }
     });
+    }
   }
 
   void _attendClass() async {
@@ -1220,6 +1245,7 @@ class _CommunityPageState extends State<CommunityPage> with SingleTickerProvider
     
     final success = await _bluetoothManager.attendClass();
     
+    if (mounted) {
     setState(() {
       _operationInProgress = false;
       if (success) {
@@ -1234,6 +1260,7 @@ class _CommunityPageState extends State<CommunityPage> with SingleTickerProvider
         _statusMessage = "签到失败";
       }
     });
+    }
     
     // Clear status message after a few seconds
     Future.delayed(const Duration(seconds: 3), () {

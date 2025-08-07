@@ -1,28 +1,22 @@
+import 'dart:async';
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:math';
 import 'dart:typed_data';
-import 'package:archive/archive.dart';
-import 'package:flutter_application_1/tool/question/question_bank.dart';
+import 'package:archive/archive_io.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
-import 'package:xml/xml.dart' as xml;
-import 'dart:convert';
-import '../wmf2png.dart';
 import 'package:xml/xml.dart';
+import 'dart:convert';
 import 'package:path/path.dart' as path;
 import 'package:json_annotation/json_annotation.dart';
 
 part 'question_bank.g.dart';
 
-ZipDecoder? _zipDecoder;
-ZipEncoder? _zipEncoder;
-Wmf2Png? _wmf2png;
 Random? _random;
 
 void mksureInit() {
-  _zipDecoder ??= ZipDecoder();
-  _zipEncoder ??= ZipEncoder();
-  _wmf2png ??= Wmf2Png();
   _random ??= Random();
 }
 
@@ -30,7 +24,7 @@ void mksureInit() {
 class SingleQuestionData {
   List<String> fromKonwledgePoint = [];
   List<String> fromKonwledgeIndex = [];
-  Map<String, String> question;
+  Map<String, dynamic> question;
   String fromId;
   String fromDisplayName;
 
@@ -49,72 +43,18 @@ class SingleQuestionData {
   }
 
   SingleQuestionData clone() {
-    return SingleQuestionData(Map.from(question), fromId, fromDisplayName)
+    final newQuestionMap = Map<String, dynamic>.from(question);
+    if (question.containsKey('options')) {
+      newQuestionMap['options'] =
+          (question['options'] as List).map((opt) => Map.from(opt as Map)).toList();
+    }
+    return SingleQuestionData(newQuestionMap, fromId, fromDisplayName)
       ..fromKonwledgeIndex = List.from(fromKonwledgeIndex)
       ..fromKonwledgePoint = List.from(fromKonwledgePoint);
   }
 
-  XmlElement toXml() {
-    return XmlElement(XmlName('SingleQuestionData'), [
-      XmlAttribute(XmlName('fromId'), fromId),
-      XmlAttribute(XmlName('fromDisplayName'), fromDisplayName),
-    ], [
-      XmlElement(
-          XmlName('fromKonwledgePoint'),
-          [],
-          fromKonwledgePoint
-              .map((point) => XmlElement(XmlName('item'), [], [XmlText(point)]))
-              .toList()),
-      XmlElement(
-          XmlName('fromKonwledgeIndex'),
-          [],
-          fromKonwledgeIndex
-              .map((index) => XmlElement(XmlName('item'), [], [XmlText(index)]))
-              .toList()),
-      XmlElement(
-          XmlName('question'),
-          [],
-          question.entries
-              .map((entry) =>
-                  XmlElement(XmlName(entry.key), [], [XmlText(entry.value)]))
-              .toList())
-    ]);
-  }
-
-  // SingleQuestionData 的反序列化
-  factory SingleQuestionData.fromXml(XmlElement element) {
-    final fromId = element.getAttribute('fromId') ?? '';
-    final fromDisplayName = element.getAttribute('fromDisplayName') ?? '';
-
-    final knowledgePoint = element
-        .findElements('fromKonwledgePoint')
-        .first
-        .findElements('item')
-        .map((e) => e.text)
-        .toList();
-
-    final knowledgeIndex = element
-        .findElements('fromKonwledgeIndex')
-        .first
-        .findElements('item')
-        .map((e) => e.text)
-        .toList();
-
-    final questionMap = element
-        .findElements('question')
-        .first
-        .childElements
-        .fold<Map<String, String>>({}, (map, element) {
-      map[element.name.local] = element.text;
-      return map;
-    });
-
-    return SingleQuestionData(
-      questionMap,
-      fromId,
-      fromDisplayName,
-    );
-  }
+  // toXml 和 fromXml 已被移除，因为它们不再被使用，且会与新的数据结构冲突。
+  // 相关的 XML 序列化/反序列化逻辑已移至 Section 类中统一处理。
 }
 
 @JsonSerializable()
@@ -122,8 +62,10 @@ class Section {
   String index;
   String title;
   String? note;
+  String? image;  // 添加图片解释支持，用于思维导图
   List<Section>? children;
-  List<Map<String, String>>? questions;
+  List<Map<String, dynamic>>? questions;
+  List<String>? videos;  // 添加视频列表支持
 
   List<String> fromKonwledgePoint = [];
   List<String> fromKonwledgeIndex = [];
@@ -138,7 +80,9 @@ class Section {
   Section(this.index, this.title)
       : children = [],
         questions = [],
-        note = '';
+        videos = [],
+        note = '',
+        image = null;
 
   Map<String, dynamic> toTrimJson() {
     return {
@@ -146,15 +90,20 @@ class Section {
       'title': title,
       'children': children!.map((child) => child.toTrimJson()).toList(),
       'note': note!.isNotEmpty ? note!.trim() : null,
+      'image': image?.isNotEmpty == true ? image!.trim() : null,
+      'videos': videos!.isNotEmpty ? videos : null,
       'fromKonwledgePoint': fromKonwledgePoint,
       'fromKonwledgeIndex': fromKonwledgeIndex,
       'questions': questions!.isNotEmpty
           ? questions!
               .map((q) => {
-                    'q': q['q']?.trim(),
-                    'w': q['w']?.trim(),
+                    'q': q['q']?.toString().trim(),
+                    'w': q['w']?.toString().trim(),
                     'id': q['id'] ?? const Uuid().v4(),
-                    if (q['note'] != null) 'note': q['note']?.trim()
+                    if (q['note'] != null) 'note': q['note']?.toString().trim(),
+                    if (q['options'] != null) 'options': q['options'],
+                    if (q['answer'] != null) 'answer': q['answer'],
+                    if (q['video'] != null) 'video': q['video']?.toString().trim(),
                   })
               .toList()
           : null,
@@ -321,6 +270,8 @@ class Section {
     ], [
       if (note != null && note!.isNotEmpty)
         XmlElement(XmlName('note'), [], [XmlText(note!)]),
+      if (image != null && image!.isNotEmpty)
+        XmlElement(XmlName('image'), [], [XmlText(image!)]),
       if (children != null && children!.isNotEmpty)
         XmlElement(XmlName('children'), [],
             children!.map((child) => child.toXml()).toList()),
@@ -340,20 +291,58 @@ class Section {
                 .map((point) =>
                     XmlElement(XmlName('item'), [], [XmlText(point)]))
                 .toList()),
+      if (videos != null && videos!.isNotEmpty)
+        XmlElement(
+            XmlName('videos'),
+            [],
+            videos!
+                .map((video) =>
+                    XmlElement(XmlName('video'), [], [XmlText(video)]))
+                .toList()),
       if (questions != null && questions!.isNotEmpty)
         XmlElement(
             XmlName('questions'),
             [],
             questions!.map((q) {
-              final id = q['id'] ?? const Uuid().v4();
-              return XmlElement(
-                  XmlName('question'),
-                  [XmlAttribute(XmlName('id'), id)],
-                  q.entries
-                      .where((e) => e.key != 'id')
-                      .map((entry) => XmlElement(
-                          XmlName(entry.key), [], [XmlText(entry.value ?? '')]))
-                      .toList());
+              final id = q['id']?.toString() ?? const Uuid().v4();
+              final questionElements = <XmlNode>[];
+
+              // 序列化普通字段
+              ['q', 'w', 'note', 'video'].forEach((key) {
+                if (q[key] != null) {
+                  questionElements.add(XmlElement(XmlName(key), [], [XmlText(q[key].toString())]));
+                }
+              });
+
+              // 序列化答案字段
+              if (q['answer'] != null) {
+                final answerElement = XmlElement(XmlName('answer'));
+                if (q['answer'] is List) {
+                  for (var ans in (q['answer'] as List)) {
+                    answerElement.children.add(XmlElement(XmlName('item'), [], [XmlText(ans.toString())]));
+                  }
+                } else {
+                  answerElement.children.add(XmlText(q['answer'].toString()));
+                }
+                questionElements.add(answerElement);
+              }
+
+              // 序列化选项字段
+              if (q['options'] != null && q['options'] is List) {
+                final optionsElement = XmlElement(XmlName('options'));
+                for (var opt in (q['options'] as List)) {
+                  if (opt is Map) {
+                    optionsElement.children.add(XmlElement(
+                        XmlName('option'),
+                        [XmlAttribute(XmlName('key'), opt['key'].toString())],
+                        [XmlText(opt['value'].toString())]));
+                  }
+                }
+                questionElements.add(optionsElement);
+              }
+
+              return XmlElement(XmlName('question'),
+                  [XmlAttribute(XmlName('id'), id)], questionElements);
             }).toList())
     ]);
   }
@@ -365,6 +354,9 @@ class Section {
 
     // 解析备注
     section.note = element.findElements('note').firstOrNull?.text;
+    
+    // 解析图片
+    section.image = element.findElements('image').firstOrNull?.text;
 
     // 解析子章节
     section.children = element
@@ -392,6 +384,15 @@ class Section {
             .toList() ??
         [];
 
+    // 解析视频
+    section.videos = element
+            .findElements('videos')
+            .firstOrNull
+            ?.findElements('video')
+            .map((e) => e.text)
+            .toList() ??
+        [];
+
     // 解析题目
     section.questions = element
             .findElements('questions')
@@ -399,11 +400,28 @@ class Section {
             ?.findElements('question')
             .map((q) {
           final id = q.getAttribute('id') ?? const Uuid().v4();
-          return {
-            'id': id,
-            ...q.childElements.fold<Map<String, String>>(
-                {}, (map, e) => map..[e.name.local] = e.text)
-          };
+          final questionMap = <String, dynamic>{'id': id};
+
+          for (final child in q.childElements) {
+            final key = child.name.local;
+            if (key == 'options') {
+              questionMap[key] =
+                  child.findElements('option').map((opt) => {
+                        'key': opt.getAttribute('key'),
+                        'value': opt.text
+                      }).toList();
+            } else if (key == 'answer') {
+              final items = child.findElements('item');
+              if (items.isNotEmpty) {
+                questionMap[key] = items.map((e) => e.text).toList();
+              } else {
+                questionMap[key] = child.text;
+              }
+            } else {
+              questionMap[key] = child.text;
+            }
+          }
+          return questionMap;
         }).toList() ??
         [];
 
@@ -415,150 +433,6 @@ class Section {
 extension XmlElementExtensions on XmlElement {
   XmlElement? firstOrNull(String name) =>
       findElements(name).isEmpty ? null : findElements(name).first;
-}
-
-Future<void> generateByMd(File fromFile, File saveFile) async {
-  mksureInit();
-  var id = const Uuid().v4();
-  var text = await fromFile.readAsString();
-  var builder = QuestionBankBuilder.parseWordToJSONData(
-      text, path.basename(fromFile.path.split('/').first), id);
-
-  List<Future> futures = [];
-
-  await Future.wait(futures);
-  _wmf2png!.cleanup();
-  builder.addTestFile(text);
-  builder.build(saveFile.path);
-}
-
-Future<void> generateByDocx(File fromFile, File saveFile) async {
-  mksureInit();
-  var id = const Uuid().v4();
-  final bytes = await fromFile.readAsBytes();
-
-  final archiveDecoder = _zipDecoder!.decodeBytes(bytes);
-
-  final List<String> list = [];
-
-  // Find relationships for images
-  Map<String, String> imageRels = {};
-  for (final file in archiveDecoder) {
-    if (file.isFile) {
-      if (file.name == 'word/_rels/document.xml.rels') {
-        final fileContent = utf8.decode(file.content);
-        final document = xml.XmlDocument.parse(fileContent);
-        document.findAllElements('Relationship').forEach((rel) {
-          if (rel.getAttribute('Type') ==
-              'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image') {
-            imageRels["word/${rel.getAttribute('Target')!}"] =
-                rel.getAttribute('Id')!;
-          }
-        });
-      }
-    }
-  }
-
-  for (final file in archiveDecoder) {
-    if (file.isFile && file.name == 'word/document.xml') {
-      final fileContent = utf8.decode(file.content);
-      final document = xml.XmlDocument.parse(fileContent);
-      String parseRender(XmlElement render) {
-        var texts = [];
-        for (final atti in render.childElements) {
-          switch (atti.name.local) {
-            case 't':
-              texts.add(atti.innerText);
-              break;
-            case 'pict':
-              for (final shape in atti.findElements("v:shape")) {
-                for (final data in shape.childElements) {
-                  if (data.name.local == "imagedata") {
-                    final imageId = data.getAttribute("r:id");
-                    // final imagePath = imageRels[imageId];
-                    texts.add('[image:$id:$imageId.png]');
-                  }
-                }
-              }
-              break;
-            case 'drawing':
-              for (final typeUsed in atti.childElements) {
-                if (typeUsed.name.local == "inline") {
-                  for (final blip in typeUsed.findAllElements("a:blip")) {
-                    final imageId = blip.getAttribute("r:embed");
-                    texts.add('[image:$id:$imageId.png]');
-                  }
-                }
-              }
-              break;
-          }
-        }
-        return texts.join('').trim();
-      }
-
-      String parsePara(XmlElement paragraph) {
-        var texts = [];
-        for (final element in paragraph.childElements) {
-          switch (element.name.local) {
-            case "r":
-              texts.add(parseRender(element));
-              break;
-            case "smartTag":
-              for (final render in element.findElements("w:r")) {
-                texts.add(parseRender(render));
-              }
-              break;
-            default:
-              break;
-          }
-        }
-        return texts.join().trim();
-      }
-
-      final bodies = document.findAllElements('w:body');
-      for (final body in bodies) {
-        for (final paragraph in body.childElements) {
-          switch (paragraph.name.local) {
-            case "p":
-              var res = parsePara(paragraph);
-              if (res != "") {
-                list.add(res);
-              }
-              break;
-            default:
-              break;
-          }
-        }
-      }
-    }
-  }
-
-  var builder = QuestionBankBuilder.parseWordToJSONData(
-      list.join('\n'), path.basename(fromFile.path.split('/').first), id);
-
-  List<Future> futures = [];
-  for (final file in archiveDecoder) {
-    if (file.isFile) {
-      if (file.name.startsWith("word/media/")) {
-        futures.add((() async {
-          final contents = await _wmf2png!.convert(file.content, dpi: 300);
-          print(file.name);
-          builder.addImageFile(contents, '${imageRels[(file.name)]}.png');
-        })());
-      }
-    }
-  }
-
-  await Future.wait(futures);
-  _wmf2png!.cleanup();
-  builder.addTestFile(list.join('\n'));
-  builder.build(saveFile.path);
-}
-
-// Dummy function to convert math XML to LaTeX
-String mathToLatex(xml.XmlElement mathElement) {
-  // Implement actual conversion logic here
-  return '[LaTeX representation]';
 }
 
 class QuestionBank {
@@ -593,18 +467,15 @@ class QuestionBank {
 
   Future<void> loadIntoData() async {
     mksureInit();
-    var achieve = _zipDecoder!.decodeBytes(await File(filePath).readAsBytes());
+    
     if (cacheDir == null) throw Exception("cache dir not found");
-    List<Future> waitList = [];
-    for (final file in achieve) {
-      Directory(path.dirname(path.join(cacheDir!, file.name)))
-          .createSync(recursive: true);
-      if (file.isFile) {
-        waitList.add(
-            File(path.join(cacheDir!, file.name)).writeAsBytes(file.content));
+    
+    try {
+      // 使用 archive_io 直接解压到目标目录，内存效率更高
+      await extractFileToDisk(filePath, cacheDir!);
+    } catch (e) {
+      throw Exception("题库文件解压失败: $e");
       }
-    }
-    await Future.wait(waitList);
   }
 
   Future<void> removeFromData() async {
@@ -632,13 +503,37 @@ class QuestionBank {
 
       // 从压缩包直接读取
       final fromFile = File(filePath);
-      final archive = _zipDecoder!.decodeBytes(await fromFile.readAsBytes());
-
-      final xmlEntry = archive.files.firstWhere(
-          (file) => file.name == "data.xml",
-          orElse: () => throw Exception("ZIP包中缺少 data.xml 文件"));
-
-      return _parseQuestionBankXml(utf8.decode(xmlEntry.content));
+      
+      // 检查文件大小
+      final fileSize = await fromFile.length();
+      if (fileSize > 500 * 1024 * 1024) { // 500MB 限制
+        throw Exception("题库文件过大 (${(fileSize / 1024 / 1024).toStringAsFixed(1)}MB)，无法读取信息");
+      }
+      
+      // 使用流式读取ZIP文件，不加载到内存
+      final inputStream = InputFileStream(fromFile.path);
+      final archive = ZipDecoder().decodeStream(inputStream);
+      
+      try {
+        // 查找data.xml文件
+        ArchiveFile? xmlEntry;
+        for (final file in archive.files) {
+          if (file.name == "data.xml") {
+            xmlEntry = file;
+            break;
+          }
+        }
+        
+        if (xmlEntry == null) {
+          throw Exception("ZIP包中缺少 data.xml 文件");
+        }
+        
+                 // 读取XML内容
+         final xmlContent = utf8.decode(xmlEntry.readBytes() as List<int>);
+        return _parseQuestionBankXml(xmlContent);
+      } finally {
+        inputStream.close();
+      }
     } on XmlParserException catch (e) {
       throw Exception("XML解析失败: ${e.message}");
     } on FormatException catch (e) {
@@ -741,48 +636,156 @@ class QuestionBank {
     return qList;
   }
 
-  static Future<void> importQuestionBank(File file) async {
+  static Future<void> importQuestionBank(
+      File file, {Function(double)? onProgress}) async {
     mksureInit();
-
     if (!file.existsSync()) {
       throw Exception("文件不存在");
     }
 
-    final archive = _zipDecoder!.decodeBytes(await file.readAsBytes());
-    String? id;
+    final receivePort = ReceivePort();
+    final completer = Completer<void>();
 
     try {
-      // 在 ZIP 中查找 XML 数据文件
-      final xmlEntry = archive.files.firstWhere((f) => f.name == "data.xml",
-          orElse: () => throw Exception("ZIP 包中缺少 data.xml 文件"));
+      // 在主 Isolate 中获取路径
+      final tempPath = (await getTemporaryDirectory()).path;
+      final importedPath = QuestionBank.importedDirPath;
 
-      // 解析 XML 内容
-      final xmlDoc = XmlDocument.parse(utf8.decode(xmlEntry.content));
+      final isolate = await Isolate.spawn(
+        _importQuestionBankIsolate,
+        _IsolateData(file.path, receivePort.sendPort, tempPath, importedPath),
+      );
+
+      receivePort.listen((message) {
+        if (message is double) {
+          onProgress?.call(message);
+        } else if (message is String && message.startsWith('log:')) {
+          if (kDebugMode) {
+            print(message.substring(4));
+          }
+        } else if (message is String && message.startsWith('error:')) {
+          var errorMsg = message.substring(6);
+          if (errorMsg.startsWith('Exception: ')) {
+            errorMsg = errorMsg.substring('Exception: '.length);
+          }
+          completer.completeError(Exception(errorMsg));
+          receivePort.close();
+          isolate.kill();
+        } else if (message == 'done') {
+          completer.complete();
+          receivePort.close();
+          isolate.kill();
+        }
+      });
+    } catch (e) {
+      completer.completeError(e);
+    }
+
+    return completer.future;
+  }
+
+  static Future<void> _importQuestionBankIsolate(_IsolateData data) async {
+    final sendPort = data.sendPort;
+    final filePath = data.filePath;
+    final tempPath = data.tempPath;
+    final importedPath = data.importedPath;
+    final file = File(filePath);
+
+    try {
+      sendPort.send('log: Isolate started for $filePath');
+      sendPort.send(0.0);
+      final tempDir =
+          Directory(path.join(tempPath, 'qset_import_${const Uuid().v4()}'));
+
+      if (await tempDir.exists()) {
+        await tempDir.delete(recursive: true);
+      }
+      await tempDir.create(recursive: true);
+      sendPort.send('log: Temp directory created at ${tempDir.path}');
+
+      sendPort.send(0.1);
+
+      sendPort.send('log: Extracting archive...');
+      try {
+        final bytes = await file.readAsBytes();
+        final archive = ZipDecoder().decodeBytes(bytes);
+
+        if (archive.files.isEmpty) {
+          sendPort.send('log: Archive is empty or could not be read.');
+        } else {
+          sendPort.send('log: Archive contains ${archive.numberOfFiles()} files.');
+          for (final file in archive.files) {
+            final filename = file.name;
+            final outputPath = path.join(tempDir.path, filename);
+            sendPort.send('log:  - Extracting ${file.name}');
+            if (file.isFile) {
+              final outputStream = OutputFileStream(outputPath);
+              file.writeContent(outputStream);
+              outputStream.close();
+            } else {
+              await Directory(outputPath).create(recursive: true);
+            }
+          }
+        }
+        sendPort.send('log: Archive extracted successfully.');
+      } catch (e) {
+        sendPort.send('log: Error extracting archive: $e');
+        // 可以在这里发送一个错误消息回主线程
+        sendPort.send({'error': 'Error extracting archive: $e'});
+        return;
+      }
+
+      final items = await tempDir.list(recursive: true).toList();
+      sendPort.send('log: Found ${items.length} items in temp directory:');
+      for (final item in items) {
+        sendPort.send('log:  - ${item.path}');
+      }
+
+      final filteredItems = items
+          .where((entity) => entity is File && path.basename(entity.path) == 'data.xml')
+          .firstOrNull;
+
+      if (filteredItems == null) {
+        throw Exception("题库压缩包中缺少 data.xml 文件");
+      }
+      final xmlFile = filteredItems as File;
+      sendPort.send(0.6);
+
+      String id;
+      try {
+        sendPort.send('log: Parsing data.xml');
+        final xmlContent = await xmlFile.readAsString();
+        final xmlDoc = XmlDocument.parse(xmlContent);
       final rootElement = xmlDoc.rootElement;
 
-      // 验证根元素并获取 ID
       if (rootElement.name.local != 'QuestionBank') {
         throw Exception("无效的 XML 根元素");
       }
-
-      id = rootElement.getAttribute('id');
-      if (id == null || id.isEmpty) {
+        id = rootElement.getAttribute('id') ?? '';
+        if (id.isEmpty) {
         throw Exception("XML 文件缺少有效的 ID 属性");
       }
-
-      // 验证版本号
-      final version = rootElement.getAttribute('version');
-      if (version == null || int.tryParse(version) == null) {
-        throw Exception("无效的版本号格式");
+        sendPort.send('log: Parsed id: $id');
+      } catch (e) {
+        throw Exception("XML 文件解析或验证失败: $e");
       }
-    } on XmlParserException catch (e) {
-      throw Exception("XML 解析失败: ${e.message}");
-    } on FormatException catch (e) {
-      throw Exception("文件格式错误: ${e.message}");
+      sendPort.send(0.8);
+
+      final newPath = path.join(importedPath, "$id.qset");
+      sendPort.send('log: Copying file to $newPath');
+      await file.copy(newPath);
+      sendPort.send('log: File copied.');
+
+      if (await tempDir.exists()) {
+        await tempDir.delete(recursive: true);
+        sendPort.send('log: Temp directory deleted.');
+      }
+
+      sendPort.send(1.0);
+      sendPort.send('done');
+    } catch (e) {
+      sendPort.send('error:${e.toString()}');
     }
-    // 保存到题库目录
-    final npath = path.join(QuestionBank.importedDirPath, "$id.qset");
-    await file.copy(npath);
   }
 
   static Future<List<QuestionBank>> getAllImportedQuestionBanks() async {
@@ -859,14 +862,6 @@ class QuestionBank {
     await Directory(QuestionBank.loadedDirPath).create();
     // await clean();
   }
-
-  static create(String path, String outputFile) async {
-    if (path.endsWith('.md')) {
-      await generateByMd(File(path), File(outputFile));
-    } else if (path.endsWith('.docx')) {
-      await generateByDocx(File(path), File(outputFile));
-    }
-  }
 }
 
 class QuestionBankBuilder {
@@ -936,7 +931,7 @@ class QuestionBankBuilder {
   Future<void> addNeedImageForBuilder() async {
     for (var bank in QuestionBank.getAllImportedQuestionBanksWithId()) {
       var achieve =
-          _zipDecoder!.decodeBytes(await File(bank.filePath).readAsBytes());
+          ZipDecoder().decodeBytes(await File(bank.filePath).readAsBytes());
       for (var aFile in achieve) {
         if (aFile.isFile && aFile.name.startsWith("assets/images/")) {
           var key = '${bank.id}/${path.basename(aFile.name)}';
@@ -1024,7 +1019,7 @@ class QuestionBankBuilder {
     } catch (e) {
       print(e);
     }
-    List<int>? outputData = _zipEncoder!.encode(archive);
+    List<int>? outputData = ZipEncoder().encode(archive);
     if (outputData == null) {
       return;
     }
@@ -1032,223 +1027,13 @@ class QuestionBankBuilder {
 
     print('Saved to ${saveFile.path}');
   }
+}
 
-  static QuestionBankBuilder parseWordToJSONData(
-      String text, String title, String id) {
-    var lines = text.trim().split('\n');
-    var root = Section('', '');
-    var stack = [root];
-    bool inExercises = false;
-    bool inSummerize = false;
-    var inState = 0;
+class _IsolateData {
+  final String filePath;
+  final SendPort sendPort;
+  final String tempPath;
+  final String importedPath;
 
-    void appendQuestionOrAnswer(
-        Map<String, String> qa, String key, String content) {
-      if (!qa.containsKey(key) || qa[key] == null) {
-        qa[key] = '';
-      }
-      qa[key] = '${qa[key]}$content\n';
-    }
-
-    var matchf = RegExp(r'^[0-9]+ *[\.|．|、] *(?![0-9 ])');
-
-    var line = '';
-
-    var lineIndex = -1;
-
-    lines = lines
-        .map((e) => e.trim())
-        .toList()
-        .where(
-          (element) => element.isNotEmpty,
-        )
-        .toList();
-
-    List<String> processStringArray(List<String> input) {
-      final List<String> result = [];
-
-      for (final element in input) {
-        if (element.isEmpty) {
-          // 当遇到空字符串且存在前驱非空元素时
-          if (result.isNotEmpty) {
-            // 给最后一个元素追加换行符
-            result[result.length - 1] += '\n';
-          }
-          // 没有前驱元素时直接忽略空字符串
-        } else {
-          // 非空元素直接保留
-          result.add(element);
-        }
-      }
-
-      return result;
-    }
-
-    lines = processStringArray(lines);
-    getNextLine() {
-      if (lineIndex + 1 >= lines.length) return '-1';
-      return lines[lineIndex + 1];
-    }
-
-    getPrevLine() {
-      if (lineIndex - 1 < 0) return '-1';
-      return lines[lineIndex - 1];
-    }
-
-    String nextLine() {
-      lineIndex++;
-      if (lineIndex >= lines.length) return '-1';
-      return lines[lineIndex];
-    }
-
-    String getLine() {
-      return lines[lineIndex];
-    }
-
-
-    while (getNextLine() != '-1') {
-      line = nextLine();
-      while (getNextLine() == ('\$\$')) {
-        line += "\n${nextLine()}";
-        nextLine();
-        while (getLine() != ('\$\$')) {
-          line += '\n${getLine()}';
-          nextLine();
-        }
-        line += '\n${getLine()}';
-      }
-      // print(line);
-
-      // Handle examples and exercise questions only when inside exercises section
-      if (RegExp(r'[一二三四五六七八九]+、.*题').hasMatch(line) && inExercises) continue;
-
-      if ((line.startsWith('例') || (inExercises && matchf.hasMatch(line)))) {
-        stack.last.questions!.add({'q': '', 'w': ''});
-        inState = 1;
-        if (!inExercises && line.startsWith('例')) {
-          appendQuestionOrAnswer(
-              stack.last.questions!.last, 'q', line.substring(2).trim());
-        } else if (inExercises) {
-          // Inside exercises section, treat numbered lines as questions
-          var q = line.substring(matchf.firstMatch(line)?.end ?? 0 + 1).trim();
-          if (q.startsWith('.') || q.startsWith('．')) {
-            q = q.substring(1).trim();
-          }
-          appendQuestionOrAnswer(stack.last.questions!.last, 'q', q);
-        }
-      } else if (line.startsWith('解')) {
-        // Handle solutions
-        inState = 2;
-        if (stack.last.questions!.isNotEmpty) {
-          appendQuestionOrAnswer(
-              stack.last.questions!.last, 'w', line.substring(1).trim());
-        }
-      } else if (line.startsWith('习题')) {
-        // Start of exercises section
-        inExercises = true;
-        // Ensure exercises are added to the correct parent section
-        // Extract the section number from "习题" line, e.g., "习题 1.1"
-        var match = RegExp(r'^习题 *([0-9]+ *(\.[0-9]+)*)').firstMatch(line);
-        if (match != null) {
-          var targetIndex = match.group(1)!.replaceAll(' ', '');
-          // Pop the stack until we find the correct parent section or reach the root
-          while (stack.length > 1 && stack.last.index != (targetIndex)) {
-            stack.removeLast();
-          }
-        }
-      } else {
-        // Parse sections and subsections or add to the current section's note
-        // Match top-level chapters like "第一章"
-        var matchTop = RegExp(r'^(第[一二三四五六七八九]+章) *(.+)$').firstMatch(line);
-        var matchSub =
-            RegExp(r'^([0-9]+ *(?:\. *[0-9]+)*) *．?(.+)$').firstMatch(line);
-        var matchNum = RegExp(r'^([0-9]+)$');
-        if (line.startsWith("本章内容小结")) {
-          inExercises = false;
-          inSummerize = true;
-          inState = 0;
-          while (stack.length > 1 &&
-              !RegExp(r'^第[一二三四五六七八九]+章$').hasMatch(stack.last.index)) {
-            stack.removeLast();
-          }
-        } else if (RegExp(r'^(复习题[一二三四五六七八九]+)$').hasMatch(line)) {
-          inExercises = true;
-          inSummerize = false;
-          inState = 0;
-          while (stack.length > 1 &&
-              !RegExp(r'^第[一二三四五六七八九]+章$').hasMatch(stack.last.index)) {
-            stack.removeLast();
-          }
-        } else if (matchTop != null) {
-          // Top-level chapter found
-          var newIndex = matchTop.group(1)!.replaceAll(' ', '');
-          var newTitle = matchTop.group(2)!.replaceAll(' ', '');
-
-          // Reset exercise flag when a new chapter starts
-          inExercises = false;
-          inSummerize = false;
-          inState = 0;
-          var newSection = Section(newIndex, newTitle);
-          while (stack.length > 1) {
-            stack.removeLast();
-          }
-          stack.last.children!.add(newSection);
-          stack.add(newSection);
-        } else if (inSummerize) {
-          stack.last.note = '${stack.last.note!}$line\n';
-        } else if (matchSub != null) {
-          // Reset exercise flag when a new section starts
-          inExercises = false;
-          inState = 0;
-          var newIndex = matchSub.group(1)!.replaceAll(' ', '');
-          var newTitle = matchSub.group(2)!.replaceAll(' ', '');
-
-          if (newTitle.startsWith(".") || newTitle.startsWith("．")) {
-            newTitle = newTitle.substring(1);
-          }
-
-          // Find the correct parent section based on newIndex
-          while (stack.length > 2 &&
-              (!newIndex.startsWith(stack.last.index) &&
-                      !matchNum.hasMatch(newIndex) ||
-                  (matchNum.hasMatch(newIndex) &&
-                      matchNum.hasMatch(stack.last.index)) ||
-                  (!matchNum.hasMatch(newIndex) &&
-                      matchNum.hasMatch(stack.last.index)))) {
-            stack.removeLast();
-          }
-
-          var newSection = Section(newIndex, newTitle);
-          stack.last.children!.add(newSection);
-          stack.add(newSection);
-        } else {
-          if (inState == 1) {
-            appendQuestionOrAnswer(stack.last.questions!.last, 'q', line);
-          } else if (inState == 2) {
-            appendQuestionOrAnswer(stack.last.questions!.last, 'w', line);
-          } else {
-            stack.last.note = '${stack.last.note!}$line\n';
-          }
-        }
-      }
-    }
-
-    //遍历加入路径
-    handleSection(List<String> fromKnowledgePoint, List<String> fromIndexPoint,
-        List<Section> secs) {
-      for (var sec in secs) {
-        sec.fromKonwledgePoint = fromKnowledgePoint;
-        sec.fromKonwledgeIndex = fromIndexPoint;
-        if (sec.children != null && sec.children!.isNotEmpty) {
-          handleSection([...fromKnowledgePoint, sec.title],
-              [...fromIndexPoint, sec.index], sec.children!);
-        }
-      }
-    }
-
-    handleSection([], [], root.children!);
-
-    return QuestionBankBuilder(
-        data: root.children!, id: id, displayName: title, version: 4);
-  }
+  _IsolateData(this.filePath, this.sendPort, this.tempPath, this.importedPath);
 }

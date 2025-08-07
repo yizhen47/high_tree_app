@@ -1,14 +1,17 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:latext/latext.dart';
 
 /// 思维导图节点数据类
 class MindMapNode<T> {
   final String id;
   String text;
+  String? image; // 添加图片属性
   Offset position;
   final List<MindMapNode<T>> children;
   Size size;
@@ -21,6 +24,7 @@ class MindMapNode<T> {
   MindMapNode({
     required this.id,
     required this.text,
+    this.image, // 添加图片参数
     required this.position,
     Iterable<MindMapNode<T>> children = const [],
     this.size = const Size(120, 48),
@@ -31,6 +35,7 @@ class MindMapNode<T> {
 
   bool get isLatex => text.contains(r'$$') || text.contains(r'$');
   String get latexContent => isLatex ? text : '';
+  bool get hasImage => image != null && image!.isNotEmpty; // 添加图片检查方法
 
   void _updateHighlight(List<String> targetId) {
     isHighlighted = (targetId.contains(id));
@@ -94,6 +99,7 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
   late AnimationController _highlightController;
   late Animation<double> _highlightAnimation;
   final Map<String, ui.Image> _latexCache = {};
+  final Map<String, ui.Image> _imageCache = {}; // 添加图片缓存
   final GlobalKey _repaintBoundaryKey = GlobalKey();
 
   @override
@@ -109,6 +115,7 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
       curve: Curves.easeInOut,
     );
     _precacheLatex(widget.rootNode);
+    _precacheImages(widget.rootNode); // 添加图片预缓存
   }
 
   @override
@@ -202,6 +209,50 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
       });
     }
     node.children.forEach(_precacheLatex);
+  }
+
+  void _precacheImages(MindMapNode node) {
+    if (node.hasImage && !_imageCache.containsKey(node.image!)) {
+      _loadImage(node.image!).then((image) {
+        if (image != null && mounted) {
+          setState(() => _imageCache[node.image!] = image);
+        }
+      });
+    }
+    node.children.forEach(_precacheImages);
+  }
+
+  Future<ui.Image?> _loadImage(String imagePath) async {
+    try {
+      // 支持本地资源图片
+      if (imagePath.startsWith('assets/')) {
+        final data = await DefaultAssetBundle.of(context).load(imagePath);
+        final bytes = data.buffer.asUint8List();
+        return await decodeImageFromList(bytes);
+      }
+      // 支持网络图片
+      else if (imagePath.startsWith('http')) {
+        final ImageProvider provider = NetworkImage(imagePath);
+        final ImageStream stream = provider.resolve(ImageConfiguration.empty);
+        final Completer<ui.Image> completer = Completer<ui.Image>();
+        late ImageStreamListener listener;
+        listener = ImageStreamListener((ImageInfo info, bool _) {
+          completer.complete(info.image);
+          stream.removeListener(listener);
+        });
+        stream.addListener(listener);
+        return completer.future;
+      }
+      // 支持相对路径文件（假设在assets目录下）
+      else {
+        final data = await DefaultAssetBundle.of(context).load('assets/$imagePath');
+        final bytes = data.buffer.asUint8List();
+        return await decodeImageFromList(bytes);
+      }
+    } catch (e) {
+      print('Error loading image $imagePath: $e');
+      return null;
+    }
   }
 
   void centerNodeById(String nodeId,
@@ -302,6 +353,7 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
                 child: CustomPaint(
                   painter: _MindMapPainter(
                     latexCache: _latexCache,
+                    imageCache: _imageCache, // 添加图片缓存
                     rootNode: widget.rootNode,
                     lineColor: widget.lineColor,
                     lineWidth: widget.lineWidth,
@@ -348,6 +400,7 @@ class _MindMapPainter extends CustomPainter {
   final double scale;
   final double highlightProgress;
   final Map<String, ui.Image> latexCache;
+  final Map<String, ui.Image> imageCache; // 添加图片缓存
 
   _MindMapPainter({
     required this.rootNode,
@@ -356,6 +409,7 @@ class _MindMapPainter extends CustomPainter {
     required this.scale,
     required this.highlightProgress,
     required this.latexCache,
+    required this.imageCache, // 添加图片缓存参数
   });
 
   @override
@@ -411,7 +465,9 @@ class _MindMapPainter extends CustomPainter {
     canvas.drawRRect(rect, borderPaint);
 
     // 内容绘制
-    if (node.isLatex) {
+    if (node.hasImage) {
+      _drawNodeImage(canvas, node);
+    } else if (node.isLatex) {
       _drawLatex(canvas, node);
     } else {
       _drawText(canvas, node);
@@ -442,6 +498,52 @@ class _MindMapPainter extends CustomPainter {
     canvas.scale(width / image.width);
     canvas.drawImage(image, Offset.zero, Paint());
     canvas.restore();
+  }
+
+  void _drawNodeImage(Canvas canvas, MindMapNode node) {
+    final image = imageCache[node.image!];
+    if (image == null) {
+      // 如果图片未加载，显示文本
+      _drawText(canvas, node);
+      return;
+    }
+
+    final aspectRatio = image.width / image.height;
+    final maxWidth = node.size.width - 10;
+    final maxHeight = node.size.height - 20; // 为文本留出空间
+
+    // 计算图片尺寸
+    double imageWidth = maxWidth;
+    double imageHeight = imageWidth / aspectRatio;
+    if (imageHeight > maxHeight * 0.7) { // 图片最多占节点高度的70%
+      imageHeight = maxHeight * 0.7;
+      imageWidth = imageHeight * aspectRatio;
+    }
+
+    // 绘制图片
+    final imageOffset = node.position - Offset(imageWidth / 2, imageHeight / 2 + 5);
+    final rect = Rect.fromLTWH(imageOffset.dx, imageOffset.dy, imageWidth, imageHeight);
+    canvas.drawImageRect(image, Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()), rect, Paint());
+
+    // 在图片下方绘制文本
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: node.text,
+        style: TextStyle(
+          color: Colors.grey[800]!.withOpacity(0.9),
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+      textAlign: TextAlign.center,
+    )..layout(maxWidth: node.size.width - 10);
+
+    final textPos = Offset(
+      node.position.dx - textPainter.width / 2,
+      node.position.dy + imageHeight / 2 - 5,
+    );
+    textPainter.paint(canvas, textPos);
   }
 
   void _drawText(Canvas canvas, MindMapNode node) {
@@ -531,14 +633,15 @@ class MindMapHelper {
 
   /// 添加子节点到指定父节点，自动计算位置
   static MindMapNode<T> addChildNode<T>(MindMapNode<T> parent, String text,
-      {bool left = false, String? id, T? data,Color? color}) {
+      {bool left = false, String? id, T? data, Color? color, String? image}) {
     final newPosition = _calculateChildPosition(parent, left);
     var node = MindMapNode<T>(
         id: id ?? DateTime.now().microsecondsSinceEpoch.toString(),
         text: text,
         position: newPosition,
         parent: parent,
-        color: color ?? Colors.blue ,
+        color: color ?? Colors.blue,
+        image: image, // 添加图片参数
         data: data);
     parent.children.add(node);
     return node;

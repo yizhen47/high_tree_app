@@ -9,7 +9,7 @@ import 'package:flutter_markdown_latex/flutter_markdown_latex.dart';
 import 'package:latext/latext.dart';
 import 'package:flutter_application_1/tool/question/question_controller.dart';
 import 'package:flutter_application_1/widget/left_toast.dart';
-import 'package:flutter_application_1/tool/question/options_matcher.dart'; // 导入新的选项匹配工具
+// import 'package:flutter_application_1/tool/question/options_matcher.dart'; // 导入新的选项匹配工具
 
 import 'package:markdown/markdown.dart' as md;
 
@@ -241,10 +241,7 @@ Card buildQuestionCard(
   // 添加额外的状态来管理各功能的展开状态
   final ValueNotifier<String> activeFeature = ValueNotifier('none');
   
-  // 识别并处理选项 - 使用新的工具类
-  final ChoiceOptionsResult optionsResult = OptionsMatcher.extractChoiceOptions(question, answer);
-  final List<ChoiceOption> options = optionsResult.options;
-  final String cleanedQuestion = optionsResult.cleanedQuestion;
+  final options = currentQuestionData?.question['options'] as List<dynamic>?;
   
   return Card(
     color: Theme.of(context).cardColor,
@@ -324,7 +321,7 @@ Card buildQuestionCard(
                           child: Builder(
                             builder: (context) => LaTexT(
                               laTeXCode: ExtendedText(
-                                cleanedQuestion, // 使用去除了选项的题目文本
+                                question, // 使用去除了选项的题目文本
                                 style: TextStyle(
                                   fontSize: 14.0, // 减小题目字体大小，原值15.5
                                   height: 1.4, // 减小行高，原值1.5
@@ -346,16 +343,9 @@ Card buildQuestionCard(
                         ),
 
                         // 显示选项UI (如果题目包含选项) - 使用新的工具类
-                        OptionsMatcher.buildChoiceOptionsUI(
-                          options, 
-                          context,
-                          TextStyle(
-                            fontSize: 13,
-                            fontWeight: latexStyleConfig.fontWeight,
-                            fontFamily: latexStyleConfig.mathFontFamily,
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
+                        if (options != null && options.isNotEmpty)
+                          _buildChoiceOptions(
+                              context, options, currentQuestionData),
 
                         // 解析切换按钮 - 更小更紧凑
                         GestureDetector(
@@ -491,6 +481,187 @@ Card buildQuestionCard(
   );
 }
 
+Widget _buildChoiceOptions(BuildContext context, List<dynamic> options,
+    SingleQuestionData? questionData) {
+  if (questionData == null) return const SizedBox.shrink();
+
+  final ValueNotifier<Set<String>> selectedOptions = ValueNotifier({});
+  final ValueNotifier<bool> answerChecked = ValueNotifier(false);
+
+  final dynamic correctAnswer = questionData.question['answer'];
+  final bool isMultipleChoice = correctAnswer is List;
+
+  void handleTap(String key) {
+    if (answerChecked.value) return; // 答案已检查，不允许修改
+
+    final currentSelection = Set<String>.from(selectedOptions.value);
+    if (isMultipleChoice) {
+      if (currentSelection.contains(key)) {
+        currentSelection.remove(key);
+      } else {
+        currentSelection.add(key);
+      }
+    } else {
+      currentSelection.clear();
+      currentSelection.add(key);
+    }
+    selectedOptions.value = currentSelection;
+  }
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      const SizedBox(height: 16),
+      ...options.map((option) {
+        final String key = option['key'].toString();
+        final String value = option['value'].toString();
+
+        return ValueListenableBuilder<Set<String>>(
+          valueListenable: selectedOptions,
+          builder: (context, selected, _) {
+            final bool isSelected = selected.contains(key);
+
+            return ValueListenableBuilder<bool>(
+              valueListenable: answerChecked,
+              builder: (context, checked, _) {
+                Color? tileColor;
+                Color borderColor = Colors.grey.shade300;
+                Color keyColor = Colors.white;
+                Color keyBackgroundColor = Colors.grey.shade400;
+
+                if (checked) {
+                  final bool isCorrect = isMultipleChoice
+                      ? (correctAnswer as List).contains(key)
+                      : correctAnswer == key;
+
+                  if (isCorrect) {
+                    // 正确答案显示绿色
+                    tileColor = Colors.green.withOpacity(0.1);
+                    borderColor = Colors.green.shade300;
+                    keyBackgroundColor = Colors.green;
+                  } else if (isSelected && !isCorrect) {
+                    // 用户选错的答案显示红色
+                    tileColor = Colors.red.withOpacity(0.1);
+                    borderColor = Colors.red.shade300;
+                    keyBackgroundColor = Colors.red;
+                  }
+                } else if (isSelected) {
+                  // 用户选中但还未检查答案
+                  tileColor = Theme.of(context).primaryColor.withOpacity(0.1);
+                  borderColor = Theme.of(context).primaryColor;
+                  keyBackgroundColor = Theme.of(context).primaryColor;
+                }
+
+                return Card(
+                  elevation: 0,
+                  margin: const EdgeInsets.only(bottom: 8),
+                  color: tileColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: BorderSide(color: borderColor, width: 1),
+                  ),
+                  child: InkWell(
+                    onTap: () => handleTap(key),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 24,
+                            height: 24,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: keyBackgroundColor,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Text(
+                              key,
+                              style: TextStyle(
+                                color: keyColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: LaTexT(
+                              laTeXCode: ExtendedText(value),
+                              equationStyle: TextStyle(
+                                fontSize: 13,
+                                fontWeight: latexStyleConfig.fontWeight,
+                                fontFamily: latexStyleConfig.mathFontFamily,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+        );
+      }).toList(),
+      const SizedBox(height: 16),
+      ValueListenableBuilder(
+        valueListenable: answerChecked,
+        builder: (context, checked, _) {
+          if (checked) {
+            final bool isCorrect = isMultipleChoice
+                ? Set.from(correctAnswer).containsAll(selectedOptions.value) &&
+                    selectedOptions.value
+                        .containsAll(Set.from(correctAnswer))
+                : selectedOptions.value.firstOrNull == correctAnswer;
+
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  isCorrect ? Icons.check_circle : Icons.cancel,
+                  color: isCorrect ? Colors.green : Colors.red,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  isCorrect ? '回答正确' : '回答错误',
+                  style: TextStyle(
+                    color: isCorrect ? Colors.green : Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            );
+          }
+          return ElevatedButton(
+            onPressed: () {
+              if (selectedOptions.value.isNotEmpty) {
+                answerChecked.value = true;
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                  content: Text('请先选择一个选项'),
+                  duration: Duration(seconds: 2),
+                ));
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).primaryColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('检查答案', style: TextStyle(color: Colors.white)),
+          );
+        },
+      )
+    ],
+  );
+}
+
 // 底部固定的功能按钮组
 Widget _buildBottomFeatureButtons(BuildContext context, ValueNotifier<String> activeFeature) {
   final Color primaryColor = Theme.of(context).primaryColor;
@@ -609,7 +780,7 @@ Widget _buildFeatureContent(String feature, String question, String knowledgepoi
   // 为每个功能创建适当的内容展示
   switch (feature) {
     case 'video':
-      return _buildSimpleVideoContent(context, primaryColor);
+      return _buildSimpleVideoContent(context, primaryColor, currentQuestionData);
     case 'ai':
       return _buildSimpleAIContent(question, context, primaryColor);
     case 'similar':
@@ -622,46 +793,250 @@ Widget _buildFeatureContent(String feature, String question, String knowledgepoi
 }
 
 // 视频解析内容 - 简化版
-Widget _buildSimpleVideoContent(BuildContext context, Color primaryColor) {
+Widget _buildSimpleVideoContent(BuildContext context, Color primaryColor, [SingleQuestionData? currentQuestionData]) {
+  // 获取题目中的视频路径
+  String? videoPath = currentQuestionData?.question['video']?.toString();
+  
+  if (videoPath == null || videoPath.isEmpty) {
+    // 如果没有视频，显示占位符
   return Container(
-    margin: const EdgeInsets.symmetric(vertical: 10), // 减少外边距
+      margin: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
       color: Colors.grey.shade50,
       borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.video_library_outlined,
+            size: 32,
+            color: Colors.grey.shade400,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '该题目暂无视频解析',
+            style: TextStyle(
+              color: Colors.grey.shade600,
+              fontSize: 13,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  return Container(
+    margin: const EdgeInsets.symmetric(vertical: 10),
+    decoration: BoxDecoration(
+      color: Colors.grey.shade50,
+      borderRadius: BorderRadius.circular(8),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.1),
+          blurRadius: 4,
+          offset: const Offset(0, 2),
+        ),
+      ],
     ),
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(8),
     child: AspectRatio(
       aspectRatio: 16/9, // 标准视频比例
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // 视频播放按钮
-          Icon(
-            Icons.play_circle_fill,
+            // 视频缩略图或占位图
+            Container(
+              width: double.infinity,
+              height: double.infinity,
+              color: Colors.black12,
+              child: Icon(
+                Icons.video_file,
             size: 48,
+                color: Colors.grey.shade400,
+              ),
+            ),
+            // 播放按钮
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  // 播放视频的逻辑
+                  _playVideo(context, videoPath, primaryColor);
+                },
+                child: Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
             color: primaryColor.withOpacity(0.9),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.play_arrow,
+                    size: 32,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
           ),
-          // 右下方提示文字
+            // 视频信息
           Positioned(
             bottom: 8,
+              left: 8,
             right: 8,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withOpacity(0.6),
                 borderRadius: BorderRadius.circular(4),
               ),
-              child: const Text(
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.play_circle_outline,
+                      size: 16,
+                      color: Colors.white,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
                 '视频解析',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '点击播放',
                 style: TextStyle(
+                        color: Colors.white.withOpacity(0.8),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+// 播放视频的方法
+void _playVideo(BuildContext context, String videoPath, Color primaryColor) {
+  // 显示视频播放对话框
+  showDialog(
+    context: context,
+    barrierDismissible: true,
+    builder: (BuildContext context) {
+      return Dialog(
+        backgroundColor: Colors.black,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
+          height: MediaQuery.of(context).size.height * 0.6,
+          child: Column(
+            children: [
+              // 标题栏
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: primaryColor,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(8),
+                    topRight: Radius.circular(8),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.play_circle_outline,
                   color: Colors.white,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        '视频解析',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
+                ),
+              ),
+              // 视频播放区域
+              Expanded(
+                child: Container(
+                  color: Colors.black,
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.video_library,
+                          size: 64,
+                          color: Colors.white.withOpacity(0.7),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          '视频播放器',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.7),
+                            fontSize: 18,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '路径: $videoPath',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.5),
                   fontSize: 12,
                 ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          '这里将集成视频播放器\n支持播放相对路径的视频文件',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.5),
+                            fontSize: 13,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
               ),
             ),
           ),
         ],
       ),
     ),
+      );
+    },
   );
 }
 

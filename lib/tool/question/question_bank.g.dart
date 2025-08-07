@@ -8,7 +8,7 @@ part of 'question_bank.dart';
 
 SingleQuestionData _$SingleQuestionDataFromJson(Map<String, dynamic> json) =>
     SingleQuestionData(
-      Map<String, String>.from(json['question'] as Map),
+      json['question'] as Map<String, dynamic>,
       json['fromId'] as String,
       json['fromDisplayName'] as String,
     )
@@ -33,12 +33,15 @@ Section _$SectionFromJson(Map<String, dynamic> json) => Section(
       json['title'] as String,
     )
       ..note = json['note'] as String?
+      ..image = json['image'] as String?
       ..children = (json['children'] as List<dynamic>?)
           ?.map((e) => Section.fromJson(e as Map<String, dynamic>))
           .toList()
       ..questions = (json['questions'] as List<dynamic>?)
-          ?.map((e) => Map<String, String>.from(e as Map))
+          ?.map((e) => e as Map<String, dynamic>)
           .toList()
+      ..videos =
+          (json['videos'] as List<dynamic>?)?.map((e) => e as String).toList()
       ..fromKonwledgePoint = (json['fromKonwledgePoint'] as List<dynamic>)
           .map((e) => e as String)
           .toList()
@@ -50,8 +53,10 @@ Map<String, dynamic> _$SectionToJson(Section instance) => <String, dynamic>{
       'index': instance.index,
       'title': instance.title,
       'note': instance.note,
+      'image': instance.image,
       'children': instance.children,
       'questions': instance.questions,
+      'videos': instance.videos,
       'fromKonwledgePoint': instance.fromKonwledgePoint,
       'fromKonwledgeIndex': instance.fromKonwledgeIndex,
     };

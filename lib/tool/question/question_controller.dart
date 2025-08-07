@@ -210,7 +210,8 @@ class LearningPlanItem {
       var childNode = MindMapHelper.addChildNode(node, section.title,
           id: section.id,
           data: section,
-          color: needsToLearn(section) ? null : Colors.greenAccent.shade400);
+          color: needsToLearn(section) ? null : Colors.greenAccent.shade400,
+          image: section.image); // 传递章节图片
           
       if (section.children != null && section.children!.isNotEmpty) {
         _buildMindMapNodes(childNode, section.children!);
