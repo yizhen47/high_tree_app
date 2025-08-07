@@ -3,16 +3,17 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/screen/bank_choose.dart';
+
+import 'package:flutter_application_1/screen/bank_management.dart';
 import 'package:flutter_application_1/screen/home/home.dart' as HomeComponents;
 import 'package:flutter_application_1/screen/home/home.dart';
-import 'package:flutter_application_1/screen/intelligent_setting.dart';
+import 'package:flutter_application_1/screen/mind_map_screen.dart';
 import 'package:flutter_application_1/screen/learning_report.dart';
-import 'package:flutter_application_1/screen/mode.dart';
 import 'package:flutter_application_1/screen/question.dart';
 import 'package:flutter_application_1/screen/wrong_question.dart';
 import 'package:flutter_application_1/tool/page_intent_trans.dart';
 import 'package:flutter_application_1/tool/question/question_bank.dart';
+import 'package:flutter_application_1/tool/question/question_bank_accessor.dart';
 import 'package:flutter_application_1/tool/question/question_controller.dart';
 import 'package:flutter_application_1/tool/question/wrong_question_book.dart';
 import 'package:flutter_application_1/tool/statistics_manager.dart';
@@ -137,8 +138,8 @@ class _MainHomePageState extends State<MainHomePage> {
               children: [
                 _buildSimpleButton(
                   context: context,
-                  icon: Icons.auto_awesome_motion,
-                  label: '智能学习',
+                  icon: Icons.account_tree,
+                  label: '思维导图',
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -146,7 +147,7 @@ class _MainHomePageState extends State<MainHomePage> {
                         type: PageTransitionType.rightToLeftPop,
                         childCurrent: widget,
                         alignment: const Alignment(10, 20),
-                        child: const IntelligentSettingScreen(),
+                        child: const MindMapScreen(),
                         duration: const Duration(milliseconds: 400),
                         curve: Curves.easeInOut,
                       ),
@@ -155,20 +156,19 @@ class _MainHomePageState extends State<MainHomePage> {
                         .whenComplete(() => setState(() {})));
                   },
                 ),
+
                 _buildSimpleButton(
                   context: context,
-                  icon: Icons.play_circle_outline,
-                  label: '顺序练习',
+                  icon: Icons.folder_outlined,
+                  label: '题库管理',
                   onPressed: () {
-                    PageIntentTrans.map[PageIntentTrans.bankChooseTarget] =
-                        () => const ModeScreen(title: '',);
                     Navigator.push(
                       context,
                       PageTransition(
                         type: PageTransitionType.rightToLeftPop,
                         childCurrent: widget,
                         alignment: const Alignment(10, 20),
-                        child: const BankChooseScreen(),
+                        child: const BankManagementScreen(),
                         duration: const Duration(milliseconds: 400),
                         curve: Curves.easeInOut,
                       ),
@@ -177,6 +177,7 @@ class _MainHomePageState extends State<MainHomePage> {
                         .whenComplete(() => setState(() {})));
                   },
                 ),
+
                 _buildSimpleButton(
                   context: context,
                   icon: Icons.assignment_outlined,
@@ -268,25 +269,23 @@ class _MainHomePageState extends State<MainHomePage> {
 
   // 新的学习统计卡片 (从_buildPracticeSection中提取出来)
   Widget _buildLearningStatistics() {
-    // 计算累计完成的章节数和总章节数
-    int totalSections = 0;
-    int completedSections = 0;
+    // 计算累计完成的章节数和总章节数（只统计有学习价值的节点）
+    int totalLearnableSections = 0;
+    int completedLearnableSections = 0;
     
-    // 遍历所有题库的章节数据
-    for (var key in WrongQuestionBook.instance.sectionDataBox.keys) {
-      // 获取章节数据
-      final sectionData = WrongQuestionBook.instance.sectionDataBox.get(key);
-      if (sectionData != null) {
-        // 如果章节已经学习过（learnTimes > 0），则计为已完成
-        if (sectionData.learnTimes > 0) {
-          completedSections++;
-        }
-        totalSections++;
+    // 遍历所有已加载的题库
+    final availableBanks = QuestionBankAccessor.instance.getAllAvailableBanksSynchronously();
+    for (final bank in availableBanks) {
+      // 递归遍历每个题库中的所有节点
+      if (bank.data != null) {
+        final result = _countLearnableSections(bank.data!);
+        totalLearnableSections += result['total']!;
+        completedLearnableSections += result['completed']!;
       }
     }
     
     // 计算累计进度百分比
-    final progressPercentage = totalSections > 0 ? ((completedSections / totalSections) * 100).toInt() : 0;
+    final progressPercentage = totalLearnableSections > 0 ? ((completedLearnableSections / totalLearnableSections) * 100).toInt() : 0;
     
     // 计算当日学习时间 - 使用实际数据
     final dailyStudyHours = (StudyData.instance.studyMinute / max(StudyData.instance.studyCount, 1)).toStringAsFixed(1);
@@ -336,7 +335,7 @@ class _MainHomePageState extends State<MainHomePage> {
                     context,
                     Icons.assignment_turned_in, 
                     "累计进度", 
-                    "$completedSections/$totalSections", 
+                    "$completedLearnableSections/$totalLearnableSections", 
                     "$progressPercentage%"
                   ),
                 ),
@@ -650,15 +649,14 @@ class _MainHomePageState extends State<MainHomePage> {
         return CommonComponents.buildCommonCard(
           InkWell(
             onTap: () {
-              PageIntentTrans.map[PageIntentTrans.bankChooseTarget] =
-                  () => const ModeScreen(title: '',);
+              // 直接导航到题库管理页面，选择后自动使用智能推荐模式
               Navigator.push(
                 context,
                 PageTransition(
                   type: PageTransitionType.rightToLeftPop,
                   childCurrent: widget,
                   alignment: const Alignment(10, 20),
-                  child: const BankChooseScreen(),
+                  child: const BankManagementScreen(),
                   duration: const Duration(milliseconds: 400),
                   curve: Curves.easeInOut,
                 ),
@@ -854,5 +852,33 @@ class _MainHomePageState extends State<MainHomePage> {
         ),
       ),
     );
+  }
+
+  /// 递归统计有学习价值的节点数量
+  Map<String, int> _countLearnableSections(List<Section> sections) {
+    int total = 0;
+    int completed = 0;
+
+    for (final section in sections) {
+      if (section.hasLearnableContent()) {
+        // 这是一个有学习价值的节点，计入总数
+        total++;
+        
+        // 检查是否已完成学习
+        final sectionData = WrongQuestionBook.instance.sectionDataBox.get(section.id);
+        if (sectionData != null && sectionData.learnTimes > 0) {
+          completed++;
+        }
+      }
+      
+      // 递归处理子节点
+      if (section.children != null && section.children!.isNotEmpty) {
+        final childResult = _countLearnableSections(section.children!);
+        total += childResult['total']!;
+        completed += childResult['completed']!;
+      }
+    }
+
+    return {'total': total, 'completed': completed};
   }
 }

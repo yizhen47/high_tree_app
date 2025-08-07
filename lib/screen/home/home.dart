@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_application_1/screen/about.dart';
-import 'package:flutter_application_1/screen/bank_manager.dart';
+import 'package:flutter_application_1/screen/bank_management.dart';
 import 'package:flutter_application_1/screen/home/community.dart';
 import 'package:flutter_application_1/screen/home/main_home.dart';
 import 'package:flutter_application_1/screen/personal.dart';
@@ -528,9 +528,7 @@ class ProfilePage extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const BankManagerScreen(
-                        title: '',
-                      ),
+                      builder: (context) => const BankManagementScreen(),
                     ),
                   );
                 },

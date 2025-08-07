@@ -5,9 +5,12 @@ import 'dart:ui' as ui;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_application_1/widget/latex.dart';
 import 'package:latext/latext.dart';
+
+enum NodeSide { left, right, none }
 
 /// 思维导图节点数据类
 class MindMapNode<T> {
@@ -20,8 +23,13 @@ class MindMapNode<T> {
   MindMapNode? parent;
   Color color;
   double childHeight = 0.0;
+  double leftChildHeight = 0.0; // 新增：左侧子树总高度
+  double rightChildHeight = 0.0; // 新增：右侧子树总高度
+  NodeSide side = NodeSide.none; // 新增：节点所在方向
   bool isHighlighted = false;
   T? data;
+  ui.Image? _cachedImage; // 缓存加载的图片
+  Size? _originalImageSize; // 原始图片尺寸
 
   MindMapNode({
     required this.id,
@@ -29,15 +37,87 @@ class MindMapNode<T> {
     this.image, // 添加图片参数
     required this.position,
     Iterable<MindMapNode<T>> children = const [],
-    this.size = const Size(120, 48),
-    this.color = Colors.blue,
+    Size? size, // 改为可选参数
+    this.color = const Color(0xFF4F46E5), // 更现代的默认颜色
     this.parent,
     this.data,
-  }) : children = List.of(children);
+  }) : children = List.of(children),
+       size = size ?? _calculateDefaultSize(text, image);
 
   bool get isLatex => text.contains(r'$$') || text.contains(r'$');
   String get latexContent => isLatex ? text : '';
   bool get hasImage => image != null && image!.isNotEmpty; // 添加图片检查方法
+
+  // 计算默认节点大小
+  static Size _calculateDefaultSize(String text, String? image) {
+    // 如果有图片，使用默认尺寸，后续会根据实际图片大小调整
+    if (image != null && image.isNotEmpty) {
+      return const Size(200, 150); // 默认图片节点大小，会被动态调整
+    }
+    
+    // 根据文本长度动态调整
+    final textLength = text.length;
+    if (textLength <= 6) {
+      return const Size(100, 40);
+    } else if (textLength <= 12) {
+      return const Size(140, 50);
+    } else if (textLength <= 20) {
+      return const Size(180, 60);
+    } else {
+      return const Size(220, 70);
+    }
+  }
+
+  // 动态更新节点大小
+  void updateSize({Size? newSize}) {
+    if (newSize != null) {
+      size = newSize;
+    } else {
+      size = _calculateDefaultSize(text, image);
+    }
+  }
+
+  // 根据实际图片尺寸计算节点大小
+  Size calculateImageNodeSize() {
+    if (!hasImage || _originalImageSize == null) {
+      return _calculateDefaultSize(text, image);
+    }
+    
+    final originalSize = _originalImageSize!;
+    const double maxWidth = 300.0; // 最大宽度
+    const double maxHeight = 200.0; // 最大高度
+    const double minWidth = 120.0; // 最小宽度
+    const double minHeight = 80.0; // 最小高度
+    const double textHeight = 30.0; // 为文本预留的高度
+    
+    // 计算缩放比例
+    double scaleX = maxWidth / originalSize.width;
+    double scaleY = (maxHeight - textHeight) / originalSize.height;
+    double scale = scaleX < scaleY ? scaleX : scaleY;
+    
+    // 如果图片太小，设置最小尺寸
+    double finalWidth = (originalSize.width * scale).clamp(minWidth, maxWidth);
+    double finalHeight = (originalSize.height * scale).clamp(minHeight - textHeight, maxHeight - textHeight) + textHeight;
+    
+    return Size(finalWidth, finalHeight);
+  }
+
+  // 设置原始图片尺寸并更新节点大小
+  void setImageSize(Size imageSize) {
+    _originalImageSize = imageSize;
+    if (hasImage) {
+      size = calculateImageNodeSize();
+    }
+  }
+
+  // 设置缓存的图片
+  void setCachedImage(ui.Image image) {
+    _cachedImage = image;
+    setImageSize(Size(image.width.toDouble(), image.height.toDouble()));
+  }
+
+  // 获取缓存的图片
+  ui.Image? get cachedImage => _cachedImage;
 
   void _updateHighlight(List<String> targetId) {
     isHighlighted = (targetId.contains(id));
@@ -219,11 +299,27 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
     if (node.hasImage && !_imageCache.containsKey(node.image!)) {
       _loadImage(node.image!).then((image) {
         if (image != null && mounted) {
-          setState(() => _imageCache[node.image!] = image);
+          setState(() {
+            _imageCache[node.image!] = image;
+            // 设置图片到节点并自动调整大小
+            node.setCachedImage(image);
+            // 重新布局树以适应新的节点大小
+            _relayoutTree();
+          });
         }
       });
     }
     node.children.forEach(_precacheImages);
+  }
+
+  // 重新布局树
+  void _relayoutTree() {
+    // 使用 MindMapHelper 重新组织树
+    try {
+      MindMapHelper.organizeTree(widget.rootNode);
+    } catch (e) {
+      print('Error relayouting tree: $e');
+    }
   }
 
   Future<ui.Image?> _loadImage(String imagePath) async {
@@ -385,11 +481,16 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
                   painter: _MindMapPainter(
                     latexCache: _latexCache,
                     imageCache: _imageCache, // 添加图片缓存
+                    questionBankCacheDirs: widget.questionBankCacheDirs ?? {}, // 添加题库缓存目录
                     rootNode: widget.rootNode,
                     lineColor: widget.lineColor,
                     lineWidth: widget.lineWidth,
                     scale: _scale,
                     highlightProgress: _highlightAnimation.value,
+                    onImageLoaded: () {
+                      // 图片加载完成后重绘
+                      setState(() {});
+                    },
                   ),
                   size: Size.infinite,
                 ),
@@ -432,6 +533,8 @@ class _MindMapPainter extends CustomPainter {
   final double highlightProgress;
   final Map<String, ui.Image> latexCache;
   final Map<String, ui.Image> imageCache; // 添加图片缓存
+  final Map<String, String> questionBankCacheDirs; // 题库缓存目录映射
+  final VoidCallback? onImageLoaded; // 图片加载完成回调
 
   _MindMapPainter({
     required this.rootNode,
@@ -441,6 +544,8 @@ class _MindMapPainter extends CustomPainter {
     required this.highlightProgress,
     required this.latexCache,
     required this.imageCache, // 添加图片缓存参数
+    required this.questionBankCacheDirs, // 添加题库缓存目录参数
+    this.onImageLoaded,
   });
 
   @override
@@ -451,42 +556,139 @@ class _MindMapPainter extends CustomPainter {
     canvas.restore();
   }
 
+  // 异步加载图片
+  void _loadImageForNode(MindMapNode node) {
+    if (node.image == null || node.cachedImage != null) return;
+    
+    // 检查是否已经在全局缓存中
+    final cachedImage = imageCache[node.image!];
+    if (cachedImage != null) {
+      node.setCachedImage(cachedImage);
+      // 使用 WidgetsBinding.instance.addPostFrameCallback 来避免在绘制期间调用 setState
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        onImageLoaded?.call(); // 触发重绘
+      });
+      return;
+    }
+    
+    // 异步加载图片
+    _loadImageAsync(node.image!).then((image) {
+      if (image != null) {
+        imageCache[node.image!] = image; // 添加到全局缓存
+        node.setCachedImage(image); // 设置到节点
+        // 使用 WidgetsBinding.instance.addPostFrameCallback 来避免在绘制期间调用 setState
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          onImageLoaded?.call(); // 触发重绘
+        });
+      }
+    }).catchError((error) {
+      print('Error loading image ${node.image}: $error');
+    });
+  }
+
+  // 异步加载图片文件
+  Future<ui.Image?> _loadImageAsync(String imagePath) async {
+    try {
+      late File imageFile;
+      
+      // 根据路径类型处理
+      if (imagePath.startsWith('http')) {
+        // 网络图片 - 暂时不支持，可以后续扩展
+        return null;
+      } else if (imagePath.startsWith('/') || imagePath.contains(':')) {
+        // 绝对路径
+        imageFile = File(imagePath);
+      } else {
+        // 相对路径，需要在题库缓存目录中查找
+        String? foundPath;
+        for (final cacheDir in questionBankCacheDirs.values) {
+          final fullPath = '$cacheDir/$imagePath';
+          if (File(fullPath).existsSync()) {
+            foundPath = fullPath;
+            break;
+          }
+        }
+        if (foundPath == null) return null;
+        imageFile = File(foundPath);
+      }
+      
+      if (!imageFile.existsSync()) return null;
+      
+      final bytes = await imageFile.readAsBytes();
+      final codec = await ui.instantiateImageCodec(bytes);
+      final frame = await codec.getNextFrame();
+      return frame.image;
+    } catch (e) {
+      print('Error loading image: $e');
+      return null;
+    }
+  }
+
   void _drawNode(Canvas canvas, MindMapNode node) {
     for (final child in node.children) {
       _drawConnection(canvas, node, child);
       _drawNode(canvas, child);
     }
 
+    // 如果是隐藏的根节点（尺寸为0），不绘制节点本身
+    if (node.size.width == 0 && node.size.height == 0) {
+      return;
+    }
+
+    // 根据内容类型选择不同的绘制样式
+    if (node.hasImage) {
+      _drawImageNode(canvas, node);
+    } else if (node.isLatex) {
+      _drawLatexNode(canvas, node);
+    } else {
+      _drawTextNode(canvas, node);
+    }
+  }
+
+  // 绘制图片节点 - XMind 风格
+  void _drawImageNode(Canvas canvas, MindMapNode node) {
+    final image = node.cachedImage; // 使用缓存的图片
+    if (image == null) {
+      // 如果图片还没有加载，尝试从缓存加载或异步加载
+      _loadImageForNode(node);
+      _drawTextNode(canvas, node);
+      return;
+    }
+
+    // 计算图片的最佳显示尺寸
+    final imageAspectRatio = image.width / image.height;
+    final maxImageWidth = node.size.width - 20;
+    final maxImageHeight = node.size.height - 40; // 为文本预留空间
+
+    double imageWidth = maxImageWidth;
+    double imageHeight = imageWidth / imageAspectRatio;
+    
+    if (imageHeight > maxImageHeight) {
+      imageHeight = maxImageHeight;
+      imageWidth = imageHeight * imageAspectRatio;
+    }
+
+    // 绘制节点背景 - 更像卡片的样式
     final rect = RRect.fromRectAndRadius(
       Rect.fromCenter(
-          center: node.position,
-          width: node.size.width,
-          height: node.size.height),
-      const Radius.circular(12), // 更圆润的边角
+        center: node.position,
+        width: node.size.width,
+        height: node.size.height,
+      ),
+      const Radius.circular(16),
     );
 
-    // 绘制阴影
+    // 阴影
     final shadowPaint = Paint()
-      ..color = Colors.black.withOpacity(0.1)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-    canvas.drawRRect(rect.shift(const Offset(2, 2)), shadowPaint);
+      ..color = Colors.black.withOpacity(0.15)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+    canvas.drawRRect(rect.shift(const Offset(0, 4)), shadowPaint);
 
-    // 渐变背景
-    final gradient = LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: [
-        node.color.withOpacity(0.8),
-        node.color.withOpacity(0.6),
-      ],
-    );
-    
-    final fillPaint = Paint()
-      ..shader = gradient.createShader(rect.outerRect)
+    // 背景
+    final backgroundPaint = Paint()
+      ..color = Colors.white
       ..style = PaintingStyle.fill;
-
-    // 绘制背景
-    canvas.drawRRect(rect, fillPaint);
+    canvas.drawRRect(rect, backgroundPaint);
 
     // 高亮效果
     if (node.isHighlighted) {
@@ -496,113 +698,118 @@ class _MindMapPainter extends CustomPainter {
           Colors.amber.withOpacity(0.6),
           highlightProgress,
         )!
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
-      canvas.drawRRect(
-        rect.inflate(6),
-        highlightPaint,
-      );
-      
-      // 高亮边框
-      final highlightBorderPaint = Paint()
-        ..color = Colors.amber.withOpacity(0.8)
-        ..strokeWidth = 2.0
-        ..style = PaintingStyle.stroke;
-      canvas.drawRRect(rect, highlightBorderPaint);
-    } else {
-      // 普通边框 - 更细致的边框效果
-      final borderPaint = Paint()
-        ..color = node.color.withOpacity(0.9)
-        ..strokeWidth = 1.5
-        ..style = PaintingStyle.stroke;
-      canvas.drawRRect(rect, borderPaint);
-    }
-
-    // 内容绘制
-    if (node.hasImage) {
-      _drawNodeImage(canvas, node);
-    } else if (node.isLatex) {
-      _drawLatex(canvas, node);
-    } else {
-      _drawText(canvas, node);
-    }
-  }
-
-// 修改后的_drawLatex方法
-  void _drawLatex(Canvas canvas, MindMapNode node) {
-    final image = latexCache[node.latexContent];
-    if (image == null) return;
-
-    final aspectRatio = image.width / image.height;
-    final maxWidth = node.size.width - 10;
-    final maxHeight = node.size.height - 10;
-
-    // 计算最佳尺寸
-    double width = maxWidth;
-    double height = width / aspectRatio;
-    if (height > maxHeight) {
-      height = maxHeight;
-      width = height * aspectRatio;
-    }
-
-    final offset = node.position - Offset(width / 2, height / 2);
-
-    canvas.save();
-    canvas.translate(offset.dx, offset.dy);
-    canvas.scale(width / image.width);
-    canvas.drawImage(image, Offset.zero, Paint());
-    canvas.restore();
-  }
-
-  void _drawNodeImage(Canvas canvas, MindMapNode node) {
-    final image = imageCache[node.image!];
-    if (image == null) {
-      // 如果图片未加载，显示文本
-      _drawText(canvas, node);
-      return;
-    }
-
-    final aspectRatio = image.width / image.height;
-    final maxWidth = node.size.width - 10;
-    final maxHeight = node.size.height - 20; // 为文本留出空间
-
-    // 计算图片尺寸
-    double imageWidth = maxWidth;
-    double imageHeight = imageWidth / aspectRatio;
-    if (imageHeight > maxHeight * 0.7) { // 图片最多占节点高度的70%
-      imageHeight = maxHeight * 0.7;
-      imageWidth = imageHeight * aspectRatio;
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3.0;
+      canvas.drawRRect(rect.inflate(2), highlightPaint);
     }
 
     // 绘制图片
-    final imageOffset = node.position - Offset(imageWidth / 2, imageHeight / 2 + 5);
-    final rect = Rect.fromLTWH(imageOffset.dx, imageOffset.dy, imageWidth, imageHeight);
-    canvas.drawImageRect(image, Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()), rect, Paint());
-
-    // 在图片下方绘制文本
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: node.text,
-        style: TextStyle(
-          color: Colors.grey[800]!.withOpacity(0.9),
-          fontSize: 11,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-      textAlign: TextAlign.center,
-    )..layout(maxWidth: node.size.width - 10);
-
-    final textPos = Offset(
-      node.position.dx - textPainter.width / 2,
-      node.position.dy + imageHeight / 2 - 5,
+    final imageRect = Rect.fromCenter(
+      center: Offset(node.position.dx, node.position.dy - 10),
+      width: imageWidth,
+      height: imageHeight,
     );
-    textPainter.paint(canvas, textPos);
+    
+    // 图片圆角裁剪
+    final imageRRect = RRect.fromRectAndRadius(imageRect, const Radius.circular(8));
+    canvas.clipRRect(imageRRect);
+    canvas.drawImageRect(
+      image, 
+      Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()), 
+      imageRect, 
+      Paint()
+    );
+    canvas.restore();
+    canvas.save();
+    canvas.scale(scale);
+
+    // 绘制文本标签
+    if (node.text.isNotEmpty) {
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: node.text,
+          style: TextStyle(
+            color: Colors.grey[800],
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+        textAlign: TextAlign.center,
+      )..layout(maxWidth: node.size.width - 20);
+
+      final textPos = Offset(
+        node.position.dx - textPainter.width / 2,
+        node.position.dy + imageHeight / 2 + 5,
+      );
+      textPainter.paint(canvas, textPos);
+    }
+
+    // 边框
+    final borderPaint = Paint()
+      ..color = node.color.withOpacity(0.3)
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+    canvas.drawRRect(rect, borderPaint);
   }
 
-  void _drawText(Canvas canvas, MindMapNode node) {
-    // 根据节点是否为根节点调整文本样式
-    final isRootNode = node.parent == null;
+  // 绘制文本节点 - 更现代的样式
+  void _drawTextNode(Canvas canvas, MindMapNode node) {
+    final isRootNode = node.parent == null || (node.parent != null && node.parent!.size == const Size(0, 0));
     
+    // 计算圆角半径
+    final borderRadius = isRootNode ? 20.0 : 12.0;
+
+    final rect = RRect.fromRectAndRadius(
+      Rect.fromCenter(
+          center: node.position,
+          width: node.size.width,
+        height: node.size.height,
+      ),
+      Radius.circular(borderRadius),
+    );
+
+    // 阴影效果
+    final shadowPaint = Paint()
+      ..color = Colors.black.withOpacity(0.1)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+    canvas.drawRRect(rect.shift(const Offset(0, 2)), shadowPaint);
+
+    // 渐变背景
+    final gradient = LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [
+        node.color.withOpacity(0.9),
+        node.color.withOpacity(0.7),
+      ],
+    );
+    
+    final fillPaint = Paint()
+      ..shader = gradient.createShader(rect.outerRect)
+      ..style = PaintingStyle.fill;
+    canvas.drawRRect(rect, fillPaint);
+
+    // 高亮效果
+    if (node.isHighlighted) {
+      final highlightPaint = Paint()
+        ..color = Color.lerp(
+          Colors.amber.withOpacity(0.4),
+          Colors.amber.withOpacity(0.8),
+          highlightProgress,
+        )!
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
+      canvas.drawRRect(rect.inflate(8), highlightPaint);
+
+      // 高亮边框
+      final highlightBorderPaint = Paint()
+        ..color = Colors.amber.withOpacity(0.9)
+        ..strokeWidth = 2.5
+        ..style = PaintingStyle.stroke;
+      canvas.drawRRect(rect, highlightBorderPaint);
+    }
+
+    // 绘制文本
     final textPainter = TextPainter(
       text: TextSpan(
         text: node.text,
@@ -623,12 +830,93 @@ class _MindMapPainter extends CustomPainter {
       textAlign: TextAlign.center,
     )..layout(maxWidth: node.size.width - 20);
 
-    final pos =
-        node.position - Offset(textPainter.width / 2, textPainter.height / 2);
-    textPainter.paint(canvas, pos);
+    final textPos = node.position - Offset(textPainter.width / 2, textPainter.height / 2);
+    textPainter.paint(canvas, textPos);
+
+    // 细边框装饰
+    final borderPaint = Paint()
+      ..color = Colors.white.withOpacity(0.2)
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+    canvas.drawRRect(rect, borderPaint);
+  }
+
+  // 绘制 LaTeX 节点
+  void _drawLatexNode(Canvas canvas, MindMapNode node) {
+    final image = latexCache[node.latexContent];
+    if (image == null) {
+      _drawTextNode(canvas, node);
+      return;
+    }
+
+    // 计算白色背景框
+    final rect = RRect.fromRectAndRadius(
+      Rect.fromCenter(
+        center: node.position,
+        width: node.size.width,
+        height: node.size.height,
+      ),
+      const Radius.circular(12),
+    );
+
+    // 阴影
+    final shadowPaint = Paint()
+      ..color = Colors.black.withOpacity(0.1)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+    canvas.drawRRect(rect.shift(const Offset(0, 2)), shadowPaint);
+
+    // 白色背景
+    final backgroundPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+    canvas.drawRRect(rect, backgroundPaint);
+
+    // 高亮效果
+    if (node.isHighlighted) {
+      final highlightPaint = Paint()
+        ..color = Color.lerp(
+          Colors.amber.withOpacity(0.3),
+          Colors.amber.withOpacity(0.6),
+          highlightProgress,
+        )!
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0;
+      canvas.drawRRect(rect, highlightPaint);
+    }
+
+    // 绘制 LaTeX 图像
+    final aspectRatio = image.width / image.height;
+    final maxWidth = node.size.width - 20;
+    final maxHeight = node.size.height - 20;
+
+    double width = maxWidth;
+    double height = width / aspectRatio;
+    if (height > maxHeight) {
+      height = maxHeight;
+      width = height * aspectRatio;
+    }
+
+    final offset = node.position - Offset(width / 2, height / 2);
+    canvas.save();
+    canvas.translate(offset.dx, offset.dy);
+    canvas.scale(width / image.width);
+    canvas.drawImage(image, Offset.zero, Paint());
+    canvas.restore();
+
+    // 边框
+    final borderPaint = Paint()
+      ..color = node.color.withOpacity(0.4)
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+    canvas.drawRRect(rect, borderPaint);
   }
 
   void _drawConnection(Canvas canvas, MindMapNode parent, MindMapNode child) {
+    // 如果父节点是隐藏的根节点（尺寸为0），不绘制连接线
+    if (parent.size.width == 0 && parent.size.height == 0) {
+      return;
+    }
+    
     final start = Offset(
       parent.position.dx +
           (child.position.dx > parent.position.dx ? 1 : -1) *
@@ -644,28 +932,74 @@ class _MindMapPainter extends CustomPainter {
       child.position.dy,
     );
 
+    // 创建更优雅的贝塞尔曲线
+    final controlPoint1 = Offset(
+      start.dx + (end.dx - start.dx) * 0.5,
+      start.dy,
+    );
+    final controlPoint2 = Offset(
+      start.dx + (end.dx - start.dx) * 0.5,
+      end.dy,
+    );
+
     final path = Path()
       ..moveTo(start.dx, start.dy)
-      ..quadraticBezierTo(
-        (start.dx + end.dx) / 2,
-        (start.dy + end.dy) / 2 +
-            40 * (child.position.dx > parent.position.dx ? 1 : -1),
-        end.dx,
-        end.dy,
+      ..cubicTo(
+        controlPoint1.dx, controlPoint1.dy,
+        controlPoint2.dx, controlPoint2.dy,
+        end.dx, end.dy,
+      );
+
+    // 绘制连接线阴影
+    final shadowPath = Path()
+      ..moveTo(start.dx + 1, start.dy + 1)
+      ..cubicTo(
+        controlPoint1.dx + 1, controlPoint1.dy + 1,
+        controlPoint2.dx + 1, controlPoint2.dy + 1,
+        end.dx + 1, end.dy + 1,
       );
 
     canvas.drawPath(
-      path,
+      shadowPath,
       Paint()
-        ..shader = LinearGradient(
-          colors: [parent.color, child.color],
-        ).createShader(Rect.fromPoints(start, end))
-        ..strokeWidth = 1.8
+        ..color = Colors.black.withOpacity(0.1)
+        ..strokeWidth = 3.0
         ..strokeCap = StrokeCap.round
         ..style = PaintingStyle.stroke,
     );
 
-    canvas.drawCircle(end, 3.0, Paint()..color = child.color);
+    // 绘制主连接线
+    canvas.drawPath(
+      path,
+      Paint()
+        ..shader = LinearGradient(
+          colors: [
+            parent.color.withOpacity(0.9),
+            child.color.withOpacity(0.9),
+          ],
+        ).createShader(Rect.fromPoints(start, end))
+        ..strokeWidth = 2.5
+        ..strokeCap = StrokeCap.round
+        ..style = PaintingStyle.stroke,
+    );
+
+    // 绘制连接点
+    canvas.drawCircle(
+      end, 
+      4.0, 
+      Paint()
+        ..color = child.color.withOpacity(0.9)
+        ..style = PaintingStyle.fill,
+    );
+    
+    // 连接点的高光效果
+    canvas.drawCircle(
+      end, 
+      4.0, 
+      Paint()
+        ..color = Colors.white.withOpacity(0.3)
+        ..style = PaintingStyle.fill,
+    );
   }
 
   @override
@@ -693,40 +1027,96 @@ class MindMapHelper {
         position: position,
         data: data);
   }
+  
+  /// 创建智能根节点 - 根据题库数量决定是否显示根节点
+  static MindMapNode<T> createSmartRoot<T>(
+      {String? id,
+      String text = 'Root',
+      Offset position = Offset.zero,
+      T? data,
+      required int questionBankCount}) {
+    
+    // 如果只有一个题库，创建一个隐藏的根节点
+    if (questionBankCount == 1) {
+      return MindMapNode<T>(
+          id: id ?? DateTime.now().microsecondsSinceEpoch.toString(),
+          text: '', // 空文本，实际不会显示
+          position: position,
+          data: data,
+          size: const Size(0, 0)); // 零尺寸，不占用空间
+    }
+    
+    // 多个题库时显示正常的根节点
+    return MindMapNode<T>(
+        id: id ?? DateTime.now().microsecondsSinceEpoch.toString(),
+        text: text,
+        position: position,
+        data: data);
+  }
 
   /// 添加子节点到指定父节点，自动计算位置
   static MindMapNode<T> addChildNode<T>(MindMapNode<T> parent, String text,
       {bool left = false, String? id, T? data, Color? color, String? image}) {
     final newPosition = _calculateChildPosition(parent, left);
+    
+    // 使用更现代的颜色方案
+    final defaultColors = [
+      const Color(0xFF6366F1), // 紫色
+      const Color(0xFF8B5CF6), // 紫罗兰
+      const Color(0xFF06B6D4), // 青色
+      const Color(0xFF10B981), // 绿色
+      const Color(0xFFF59E0B), // 橙色
+      const Color(0xFFEF4444), // 红色
+      const Color(0xFF8B5A2B), // 棕色
+      const Color(0xFF6B7280), // 灰色
+    ];
+    
+    final defaultColor = defaultColors[parent.children.length % defaultColors.length];
+    
+    // 为图片节点使用更大的默认尺寸
+    Size? nodeSize;
+    if (image != null && image.isNotEmpty) {
+      nodeSize = const Size(200, 150); // 图片节点的默认大小
+    }
+    
     var node = MindMapNode<T>(
         id: id ?? DateTime.now().microsecondsSinceEpoch.toString(),
         text: text,
         position: newPosition,
         parent: parent,
-        color: color ?? Colors.blue,
+        color: color ?? defaultColor,
         image: image, // 添加图片参数
-        data: data);
+        data: data,
+        size: nodeSize); // 使用计算出的大小
+    
+    // 如果父节点是根节点，设置子节点的side
+    final isRootNode = parent.parent == null || (parent.parent != null && parent.parent!.size == const Size(0, 0));
+    if (isRootNode) {
+      node.side = parent.children.length % 2 == 1 ? NodeSide.left : NodeSide.right;
+    } else {
+      node.side = parent.side; // 继承父节点的side
+    }
+
     parent.children.add(node);
     return node;
   }
 
   /// 计算子节点位置
   static Offset _calculateChildPosition<T>(MindMapNode<T> parent, bool left) {
-    final childCount = parent.children.length;
+    final isRootNode = parent.parent == null || (parent.parent != null && parent.parent!.size == const Size(0, 0));
 
-    // 水平方向：左侧或右侧
-    final dx = left ? -_defaultHorizontalSpacing : _defaultHorizontalSpacing;
-
-    // 垂直方向：基于子节点数量居中分布
-    final baseY = parent.position.dy +
-        (childCount % 2 == 0
-            ? -childCount * _defaultVerticalSpacing / 2
-            : (childCount - 1) * _defaultVerticalSpacing / 2);
-
-    return Offset(
-      parent.position.dx + dx,
-      baseY + (childCount.isOdd ? _defaultVerticalSpacing : 0),
-    );
+    // 对于根节点，我们只决定左右方向，具体位置由organizeTree调整
+    // 这里使用默认间距，具体位置会在organizeTree中用动态间距重新计算
+    if (isRootNode) {
+        final isLeftSide = parent.children.length % 2 == 1;
+        final dx = isLeftSide ? -_defaultHorizontalSpacing : _defaultHorizontalSpacing;
+        return Offset(parent.position.dx + dx, parent.position.dy);
+    }
+    
+    // 对于非根节点，根据其自身的side属性决定方向
+    // 这里使用默认间距，具体位置会在organizeTree中用动态间距重新计算
+    final dx = parent.side == NodeSide.left ? -_defaultHorizontalSpacing : _defaultHorizontalSpacing;
+    return Offset(parent.position.dx + dx, parent.position.dy);
   }
 
   static MindMapNode<T> addAutoChild<T>(MindMapNode<T> parent, String text) {
@@ -748,8 +1138,29 @@ class MindMapHelper {
 
   // 计算树深度（后序遍历）
   static double _calculateTreeHeight<T>(MindMapNode<T> node) {
+    final isRootNode = node.parent == null || (node.parent != null && node.parent!.size == const Size(0, 0));
+    
+    if (isRootNode) {
+      // 对根节点，分别计算左右子树的高度
+      final leftChildren = node.children.where((c) => c.side == NodeSide.left);
+      final rightChildren = node.children.where((c) => c.side == NodeSide.right);
+
+      node.leftChildHeight = leftChildren.fold(0.0, (sum, child) {
+        final childHeight = _calculateTreeHeight(child);
+        return sum + childHeight + _verticalSpacing;
+      }) - (leftChildren.isNotEmpty ? _verticalSpacing : 0);
+      
+      node.rightChildHeight = rightChildren.fold(0.0, (sum, child) {
+        final childHeight = _calculateTreeHeight(child);
+        return sum + childHeight + _verticalSpacing;
+      }) - (rightChildren.isNotEmpty ? _verticalSpacing : 0);
+      
+      node.childHeight = (node.leftChildHeight > node.rightChildHeight ? node.leftChildHeight : node.rightChildHeight);
+      return node.childHeight;
+
+    } else {
     if (node.children.isEmpty) {
-      node.size = Size(node.size.width, _minNodeHeight);
+        // 使用节点的实际高度，而不是固定的最小高度
       node.childHeight = node.size.height;
       return node.childHeight;
     }
@@ -758,31 +1169,70 @@ class MindMapHelper {
         }) -
         _verticalSpacing;
     return node.childHeight;
+    }
   }
 
   // 递归布局子树
   static void _layoutSubtree<T>(MindMapNode<T> node, Offset parentPosition) {
     if (node.children.isEmpty) return;
 
-    // 计算子节点总高度（包含动态间距）
-    double totalHeight = node.childHeight;
+    final isRootNode = node.parent == null || (node.parent != null && node.parent!.size == const Size(0, 0));
 
-    // 起始Y坐标（垂直居中布局）
-    double startY = node.position.dy - totalHeight / 2;
-    double currentY = startY;
+    if (isRootNode) {
+      // 根节点的子节点左右分布
+      double leftStartY = node.position.dy - node.leftChildHeight / 2;
+      double rightStartY = node.position.dy - node.rightChildHeight / 2;
 
     for (final child in node.children) {
-      // 计算子节点位置
-      final childX =
-          parentPosition.dx + node.size.width / 2 + _horizontalSpacing;
-      final childY = currentY + child.childHeight / 2;
+        // 计算动态水平间距，考虑节点和父节点的宽度
+        final dynamicSpacing = _calculateDynamicSpacing(node, child);
+        
+        if (child.side == NodeSide.left) {
+          final childX = node.position.dx - dynamicSpacing;
+          final childY = leftStartY + child.childHeight / 2;
       child.position = Offset(childX, childY);
-
-      // 递归布局子节点
       _layoutSubtree(child, child.position);
+          leftStartY += child.childHeight + _verticalSpacing;
+        } else { // Right side
+          final childX = node.position.dx + dynamicSpacing;
+          final childY = rightStartY + child.childHeight / 2;
+          child.position = Offset(childX, childY);
+          _layoutSubtree(child, child.position);
+          rightStartY += child.childHeight + _verticalSpacing;
+        }
+      }
+    } else {
+      // 非根节点布局
+      double totalHeight = node.childHeight;
+      double startY = node.position.dy - totalHeight / 2;
+      
+      final isLeft = node.side == NodeSide.left;
 
-      // 更新当前Y坐标（考虑动态间距）
-      currentY += child.childHeight + _verticalSpacing;
+      for (final child in node.children) {
+        // 计算动态水平间距，考虑节点和父节点的宽度
+        final dynamicSpacing = _calculateDynamicSpacing(node, child);
+        final childX = node.position.dx + (isLeft ? -dynamicSpacing : dynamicSpacing);
+        final childY = startY + child.childHeight / 2;
+        child.position = Offset(childX, childY);
+        _layoutSubtree(child, child.position);
+        startY += child.childHeight + _verticalSpacing;
     }
+    }
+  }
+
+  // 计算动态水平间距，考虑父节点和子节点的宽度
+  static double _calculateDynamicSpacing<T>(MindMapNode<T> parent, MindMapNode<T> child) {
+    // 基础间距
+    double baseSpacing = _horizontalSpacing.toDouble();
+    
+    // 计算父节点和子节点的半宽
+    double parentHalfWidth = parent.size.width / 2;
+    double childHalfWidth = child.size.width / 2;
+    
+    // 确保间距足够大，避免重叠，并添加额外的缓冲区
+    double minSpacing = parentHalfWidth + childHalfWidth + 50; // 50是额外的缓冲区
+    
+    // 返回基础间距和最小间距中的较大值
+    return minSpacing > baseSpacing ? minSpacing : baseSpacing;
   }
 }

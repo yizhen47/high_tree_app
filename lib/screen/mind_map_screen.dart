@@ -2,30 +2,30 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/screen/mode.dart';
 import 'package:flutter_application_1/tool/page_intent_trans.dart';
 import 'package:flutter_application_1/tool/question/question_bank.dart';
 import 'package:flutter_application_1/tool/question/question_controller.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/widget/mind_map.dart';
+import 'package:flutter_application_1/widget/question_card/knowledge_card_widget.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 
-class IntelligentSettingScreen extends StatefulWidget {
-  const IntelligentSettingScreen({super.key});
+class MindMapScreen extends StatefulWidget {
+  const MindMapScreen({super.key});
   @override
-  State<IntelligentSettingScreen> createState() => _InnerState();
+  State<MindMapScreen> createState() => _InnerState();
 }
 
 //这里是在一个页面中加了PageView，PageView可以载入更多的StatefulWidget或者StatelessWidget（也就是页面中加载其他页面作为子控件）
-class _InnerState extends State<IntelligentSettingScreen> {
+class _InnerState extends State<MindMapScreen> {
   List<String> selectIds = QuestionBank.getAllLoadedQuestionBankIds();
   //这修改页面2的内容
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: TDNavBar(
-        title: '智能学习',
-        onBack: () {},
+        title: '思维导图',
+        onBack: () => Navigator.of(context).pop(),
       ),
       body: Column(
         children: [
@@ -51,8 +51,14 @@ class _InnerState extends State<IntelligentSettingScreen> {
     }
     
     var layout = LayoutBuilder(builder: (context, constraints) {
+      final questionBankCount = LearningPlanManager.instance.questionBanks.length;
+      
       var mindMap = MindMap<Section>(
-          rootNode: MindMapHelper.createRoot(data: Section("", "")),
+          rootNode: MindMapHelper.createSmartRoot(
+            data: Section("", ""), 
+            questionBankCount: questionBankCount,
+            position: Offset(width / 2, constraints.maxHeight / 2), // 将根节点放在中心
+          ),
           width: width,
           controller: MindMapController(),
           questionBankCacheDirs: questionBankCacheDirs, // 传递缓存目录映射
@@ -109,8 +115,17 @@ class _InnerState extends State<IntelligentSettingScreen> {
     bool isAlreadyInPlan = LearningPlanManager.instance.learningPlanItems
         .any((item) => item.targetSection?.id == node.data!.id);
     
-    // 检查是否为叶子节点（只有叶子节点可以添加到学习计划）
+    // 检查节点是否有学习价值（可以添加到学习计划）
+    bool canAddToPlan = node.data!.hasLearnableContent();
+    
+    // 检查是否为叶子节点
     bool isLeafNode = node.data!.children == null || node.data!.children!.isEmpty;
+    
+    // 检查是否有知识点内容（备注或视频）
+    bool hasKnowledgeContent = (node.data!.note?.isNotEmpty ?? false) || 
+                              (node.data!.videos?.isNotEmpty ?? false);
+    
+
 
     showDialog(
       context: context,
@@ -189,6 +204,25 @@ class _InnerState extends State<IntelligentSettingScreen> {
                   }
                 },
               ),
+              
+              // 显示视频信息
+              if (node.data!.videos?.isNotEmpty ?? false) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(Icons.video_library, color: Colors.green[700], size: 16),
+                    const SizedBox(width: 8),
+                    Text(
+                      '包含 ${node.data!.videos!.length} 个视频课程',
+                      style: TextStyle(
+                          color: Colors.green[700],
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ],
+              
               const SizedBox(height: 12),
               if (isAlreadyInPlan)
                 Row(
@@ -204,13 +238,13 @@ class _InnerState extends State<IntelligentSettingScreen> {
                     ),
                   ],
                 ),
-              if (!isLeafNode && !isAlreadyInPlan)
+              if (!canAddToPlan && !isAlreadyInPlan)
                 Row(
                   children: [
                     Icon(Icons.info_outline, color: Colors.orange[700], size: 16),
                     const SizedBox(width: 8),
                     Text(
-                      '请选择具体的知识点',
+                      isLeafNode ? '此节点无学习内容' : '请选择有学习内容的知识点',
                       style: TextStyle(
                           color: Colors.orange[700],
                           fontSize: 14,
@@ -235,8 +269,26 @@ class _InnerState extends State<IntelligentSettingScreen> {
                     onPressed: () => Navigator.pop(context),
                     child: const Text('关闭'),
                   ),
-                  if (!isAlreadyInPlan && isLeafNode) const SizedBox(width: 12),
-                  if (!isAlreadyInPlan && isLeafNode)
+                  if (hasKnowledgeContent) const SizedBox(width: 12),
+                  if (hasKnowledgeContent)
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _showKnowledgeDetail(context, node.data!);
+                      },
+                      child: const Text('查看知识点'),
+                    ),
+                  if (!isAlreadyInPlan && canAddToPlan) const SizedBox(width: 12),
+                  if (!isAlreadyInPlan && canAddToPlan)
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blueAccent,
@@ -266,14 +318,12 @@ class _InnerState extends State<IntelligentSettingScreen> {
   void _addToLearningPlan(Section section) {
     bool added = false;
     var bank = findBank(section);
+    
     if (bank != null) {
       // 使用新方法将节点添加到手动学习计划中
       added = LearningPlanManager.instance
           .addSectionToManualLearningPlan(section, bank);
     }
-
-    // 更新UI
-    setState(() {});
 
     // 显示相应提示
     if (added) {
@@ -283,13 +333,57 @@ class _InnerState extends State<IntelligentSettingScreen> {
     }
   }
 
+  void _showKnowledgeDetail(BuildContext context, Section section) {
+    showKnowledgeCard(context, section);
+  }
+
   QuestionBank? findBank(Section section) {
     for (var bank in LearningPlanManager.instance.questionBanks) {
       try {
-        Section bankSection = bank.findSection(section.id.split('/'));
-        return bank;
-            } catch (e) {
-        // Ignore exceptions for banks that don't have this section
+        // Try different path formats
+        List<List<String>> pathsToTry = [];
+        
+        // 1. 原始方法：使用完整ID split
+        var originalPath = section.id.split('/').where((s) => s.isNotEmpty).toList();
+        if (originalPath.isNotEmpty) {
+          pathsToTry.add(originalPath);
+        }
+        
+        // 2. 使用 section.index 分割成子路径 (例如: "4.5.1" -> ["4", "5", "1"])
+        if (section.index.contains('.')) {
+          pathsToTry.add(section.index.split('.'));
+        } else {
+          pathsToTry.add([section.index]);
+        }
+        
+        // 3. 使用 fromKonwledgeIndex + index
+        if (section.fromKonwledgeIndex.isNotEmpty) {
+          pathsToTry.add([...section.fromKonwledgeIndex, section.index]);
+        }
+        
+        // 4. 构建层次化路径 (例如: "4.5.1.1" -> ["4.5", "4.5.1", "4.5.1.1"])
+        if (section.index.contains('.')) {
+          List<String> hierarchicalPath = [];
+          var parts = section.index.split('.');
+          // 从第二级开始构建路径 (跳过单独的章节号)
+          for (int i = 1; i < parts.length; i++) {
+            var pathPart = parts.sublist(0, i + 1).join('.');
+            hierarchicalPath.add(pathPart);
+          }
+          pathsToTry.add(hierarchicalPath);
+        }
+        
+        for (var path in pathsToTry) {
+          try {
+            Section bankSection = bank.findSection(path);
+            return bank;
+          } catch (e) {
+            continue;
+          }
+        }
+        
+      } catch (e) {
+        // Continue to next bank
       }
     }
     return null;

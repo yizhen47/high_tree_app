@@ -1,9 +1,7 @@
-import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screen/home/home.dart';
-import 'package:flutter_application_1/screen/mode.dart';
 import 'package:flutter_application_1/screen/question_card.dart';
 import 'package:flutter_application_1/screen/wrong_question.dart';
 import 'package:flutter_application_1/tool/question/question_bank.dart';
@@ -108,14 +106,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
             ),
             const SizedBox(height: 32),
 
-            // 在显示完成卡片时结束学习会话
-            StatefulBuilder(
-              builder: (context, setState) {
-                // 确保只调用一次endStudySession
-                Future.microtask(() => StudyData.instance.endStudySession());
-                return Container();
-              },
-            ),
+            // 学习会话将在dispose时结束，这里不需要重复调用
 
             // 按钮使用次要色系
             Column(
@@ -131,15 +122,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                       ),
                     ),
                     onPressed: () {
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ModeScreen(
-                            title: '',
-                          ),
-                        ),
-                        (layer) => layer.isFirst,
-                      );
+                      Navigator.popUntil(context, (route) => route.isFirst);
                     },
                     child: Text('继续做题',
                         style: TextStyle(
@@ -222,9 +205,6 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
             return Text("Error: ${snapshot.error}" '${snapshot.stackTrace}');
           } else {
             List<Card> cards = [];
-            final studyType = StudyData.instance.studyType;
-            final isTestMode = studyType == StudyType.testMode;
-            final isStudyMode = studyType == StudyType.studyMode;
 
             // 公共处理逻辑
             void addQuestionCard(SingleQuestionData q) {
@@ -284,70 +264,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
               return rightQuestions.contains(q);
             }
 
-            // 测试模式处理
-            if (isTestMode) {
-              final secList = StudyData.instance.studySection;
-              Map<String, List<int>> dtype = {};
-
-              if (secList != null) {
-                final decoded = json.decode(secList) as Map<String, dynamic>;
-                dtype = decoded
-                    .map((k, v) => MapEntry(k, List<int>.from(v as List)));
-              }
-
-              final rQdb = snapshot.data!;
-              final sectionKeys = List<String>.from(dtype.keys);
-
-              for (int i = 0;
-                  i < StudyData.instance.studyQuestionNum;
-                  i++) {
-                final randomKey =
-                    sectionKeys[Random().nextInt(sectionKeys.length)];
-                final sectionData = rQdb[int.parse(randomKey)];
-                final questionIndexes = dtype[randomKey]!;
-                final randomIndex =
-                    questionIndexes[Random().nextInt(questionIndexes.length)];
-
-                final question = sectionData.data![randomIndex];
-                final qData = question.randomSectionQuestion(
-                    sectionData.id!, sectionData.displayName!);
-
-                addQuestionCard(qData);
-              }
-            } else if (isStudyMode) {
-              final secList = StudyData.instance.studySection ??
-                  (throw Exception("需要指定学习章节"));
-              Section currentSection = Section("", "")
-                ..children = snapshot.data!.single.data;
-              final knowledgePath = secList.split("/");
-
-              // 递归构建知识卡片
-              void buildSectionTree(Section section) {
-                cards.add(buildKnowledgeCard(context, section.index,
-                    section.title, section.note ?? "暂无知识点"));
-                questionRemoved.add(false);
-                allQuestions.add(SingleQuestionData({}, "", ""));
-                questionRemain++;
-
-                section.children?.forEach((child) => buildSectionTree(child));
-              }
-
-              // 定位目标章节
-              for (final index in knowledgePath) {
-                currentSection = currentSection.children!
-                    .firstWhere((e) => e.index == index);
-              }
-
-              buildSectionTree(currentSection);
-              currentSection
-                  .sectionQuestion(
-                    snapshot.data!.single.id!,
-                    snapshot.data!.single.displayName!,
-                  )
-                  .forEach(addQuestionCard);
-            } else if (StudyData.instance.studyType ==
-                StudyType.recommandMode) {
-              // Check if a specific plan is selected
+            // 智能推荐模式处理
               final currentPlanId = StudyData.instance.currentPlanId;
               if (currentPlanId >= 0 && currentPlanId < LearningPlanManager.instance.learningPlanItems.length) {
                 // Study only the selected plan
@@ -360,7 +277,6 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                 for (var c in LearningPlanManager.instance.learningPlanItems) {
                   for (var q in c.questionList) {
                     addQuestionCard(q);
-                  }
                 }
               }
             }
@@ -427,10 +343,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                       ? rightQuestions.add(question)
                       : leftQuestions.add(question);
 
-                  //推荐模式下的判断
-                  if (StudyData.instance.studyType ==
-                      StudyType.recommandMode) {
-                    // Check if a specific plan is selected
+                  // 智能推荐模式的学习计划管理
                     final currentPlanId = StudyData.instance.currentPlanId;
                     final planItems = currentPlanId >= 0 && currentPlanId < LearningPlanManager.instance.learningPlanItems.length
                         ? [LearningPlanManager.instance.learningPlanItems[currentPlanId]]
@@ -455,9 +368,6 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                         }
                       }
                       if (!notNeedRefresh) {
-                        // 移除重做提示弹窗
-                        // showVerticalToast(
-                        //     title: "重做", message: "题目已经刷新", context: context);
                         retryCount++;
                         List<int> indexRecord = [];
                         for (var q in c.questionList) {
@@ -470,8 +380,6 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                           replaceQuestion(
                               c.questionList[i], indexRecord[i]);
                         }
-                        // Remove the mind map popup on plan failure
-                        // _showMindMap(context, c.targetSection!.id);
                         Future.delayed(const Duration(milliseconds: 800))
                             .whenComplete(() {
                           showKnowledgeCard(context, c.targetSection!);
@@ -483,11 +391,6 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                       } else if (pass) {
                         if (c.needsToLearn(c.targetSection!)) {
                           retryCount = 0;
-                          // 移除完成提示弹窗
-                          // showVerticalToast(
-                          //     title: '完成',
-                          //     message: c.targetSection!.title,
-                          //     context: context);
                           c.completeSection();
 
                           unlockedQuestionNum +=
@@ -498,7 +401,6 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                       var sectionData = c.getSectionLearningData(c.targetSection!);
                       sectionData.alreadyCompleteQuestion = progress;
                       c.saveSectionLearningData(c.targetSection!, sectionData);
-                    }
                   }
                   restartUpdater.value = !restartUpdater.value;
 
@@ -605,8 +507,13 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
       }
     }
     
+    final questionBankCount = LearningPlanManager.instance.questionBanks.length;
+    
     var mindMap = MindMap<Section>(
-        rootNode: MindMapHelper.createRoot(data: Section("", "")),
+        rootNode: MindMapHelper.createSmartRoot(
+          data: Section("", ""), 
+          questionBankCount: questionBankCount
+        ),
         width: width,
         controller: MindMapController(),
         questionBankCacheDirs: questionBankCacheDirs, // 传递缓存目录映射
@@ -696,8 +603,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
               onPressed: controller.undo,
               child: Icon(Icons.reply, color: Colors.grey[700]),
             ),
-            // 添加题号选择按钮（仅在学习模式显示）
-            if (StudyData.instance.studyType == StudyType.studyMode)
+            // 添加题号选择按钮
               FloatingActionButton(
                 heroTag: 'question_number_btn',
                 mini: true,
@@ -729,8 +635,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                                 return Scaffold(
                                   body: InkWell(
                                     onTap: () {
-                                      if (index < unlockedQuestionNum || 
-                                          StudyData.instance.studyType != StudyType.recommandMode) {
+                                      if (index < unlockedQuestionNum) {
                                         controller.moveTo(index);
                                       }
                                     },
@@ -739,8 +644,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(10),
                                       ),
-                                      color: (index >= unlockedQuestionNum &&
-                                              StudyData.instance.studyType == StudyType.recommandMode)
+                                      color: (index >= unlockedQuestionNum)
                                           ? Colors.grey.shade300
                                           : (allQuestions[index].fromKonwledgeIndex.isEmpty) ||
                                                   questionId == null

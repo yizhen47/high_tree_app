@@ -22,6 +22,20 @@ class StatisticsManager {
   // Constructor
   StatisticsManager(this.selectedPeriod);
 
+  // Convert period to readable string
+  String _periodToString(int period) {
+    switch (period) {
+      case PERIOD_WEEK:
+        return '过去7天';
+      case PERIOD_MONTH:
+        return '过去30天';
+      case PERIOD_ALL_TIME:
+        return '全部时间';
+      default:
+        return '过去${period}天';
+    }
+  }
+
   // Convert string period to int days
   static int periodStringToDays(String periodString) {
     switch (periodString) {
@@ -37,18 +51,32 @@ class StatisticsManager {
   // Get study time in minutes for the selected period
   double getStudyTimeInMinutes() {
     final now = DateTime.now();
+    // print('[StudyTimeAnalysis] 开始分析学习时间 - 选择期间: ${_periodToString(selectedPeriod)}');
     
     if (selectedPeriod == PERIOD_ALL_TIME) {
-      return StudyData.instance.studyMinute * 60;
+      final totalHours = StudyData.instance.studyMinute;
+      final totalMinutes = totalHours * 60;
+      print('[StudyTimeAnalysis] 全部时间学习时长: ${totalHours.toStringAsFixed(1)}小时 (${totalMinutes.toStringAsFixed(0)}分钟)');
+      return totalMinutes;
     }
     
     // Get actual time data for the period
     double totalMinutes = 0;
+    int activeDays = 0;
+    // print('[StudyTimeAnalysis] 分析过去${selectedPeriod}天的学习数据:');
+    
     for (int i = 0; i < selectedPeriod; i++) {
       final date = now.subtract(Duration(days: i));
-      totalMinutes += StudyData.instance.getStudyTimeForDate(date);
+      final dayMinutes = StudyData.instance.getStudyTimeForDate(date);
+      totalMinutes += dayMinutes;
+      
+      if (dayMinutes > 0) {
+        activeDays++;
+        print('[DEBUG] ${date.toString().substring(0, 10)}: ${dayMinutes.toStringAsFixed(0)}分钟 = ${(dayMinutes/60).toStringAsFixed(1)}小时');
+      }
     }
     
+    print('[DEBUG] 总计: ${totalMinutes.toStringAsFixed(0)}分钟 = ${(totalMinutes/60).toStringAsFixed(1)}小时, 活跃天数: $activeDays/${selectedPeriod}天');
     return totalMinutes;
   }
 
@@ -107,19 +135,27 @@ class StatisticsManager {
   List<double> getDailyStudyData() {
     final now = DateTime.now();
     final List<double> dailyData = List.filled(7, 0);
+    final days = ['一', '二', '三', '四', '五', '六', '日'];
+    
+    // print('[DailyStudyAnalysis] 开始分析每日学习数据');
     
     // For 7-day period, use actual data
     for (int i = 0; i < 7; i++) {
       final date = now.subtract(Duration(days: 6 - i)); // Last 7 days in chronological order
       if (selectedPeriod == PERIOD_WEEK || i >= 7 - selectedPeriod) {
-        dailyData[i] = StudyData.instance.getStudyTimeForDate(date);
+        final dayMinutes = StudyData.instance.getStudyTimeForDate(date);
+        dailyData[i] = dayMinutes;
+        
+        if (dayMinutes > 0) {
+          // print('[DailyStudyAnalysis] 周${days[i]} (${date.toString().substring(5, 10)}): ${(dayMinutes/60).toStringAsFixed(1)}小时');
+        }
       }
     }
     
     // If no data is available, generate some example data
     if (dailyData.every((element) => element == 0)) {
       // Generate realistic daily data based on study patterns (same as before)
-      double totalMinutes = StudyData.instance.studyMinute * 60;
+      double totalMinutes = StudyData.instance.studyMinute * 60; // studyMinute is in hours, convert to minutes
       double avgMinutes = totalMinutes / 7;
       
       for (int i = 0; i < 7; i++) {
@@ -354,9 +390,34 @@ class StatisticsManager {
     return count;
   }
   
+  // 递归检查章节是否有学习价值（包括子节点）
+  bool _hasLearnableContentRecursive(Section section) {
+    // 如果当前节点有学习价值，直接返回true
+    if (section.hasLearnableContent()) {
+      return true;
+    }
+    
+    // 如果没有子节点，返回false
+    if (section.children == null || section.children!.isEmpty) {
+      return false;
+    }
+    
+    // 递归检查子节点
+    for (final child in section.children!) {
+      if (_hasLearnableContentRecursive(child)) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+
   // 递归添加章节到树中
   void _addSectionToTree(List<Section> sections, List<Map<String, dynamic>> targetList, int topicIndex, [String? bankId]) {
     int currentIndex = topicIndex; // 使用局部变量跟踪当前索引
+    int totalSections = 0;
+    int learnableSections = 0;
+    int filteredSections = 0;
     
     // 如果没有提供题库ID，尝试查找
     if (bankId == null) {
@@ -368,37 +429,68 @@ class StatisticsManager {
       }
     }
     
+
+    
     for (final section in sections) {
-      // 获取章节学习进度数据
-      final progress = _getSectionProgress(section.id, bankId);
+      totalSections++;
       
-      // 确保进度信息包含计算后的完成率
-      _ensureProgressCompletionRate(progress);
+      // 检查章节是否有学习价值（包括子节点）
+      bool hasLearnableContent = _hasLearnableContentRecursive(section);
       
-      final childTopic = {
-        'name': section.title,
-        'index': currentIndex,
-        'children': <Map<String, dynamic>>[],
-        'id': section.id,
-        'progress': progress,
-        'isCompleted': progress['learnTimes'] > 0,
-      };
-      
-      targetList.add(childTopic);
-      currentIndex++; // 每个章节递增索引
-      
-      // 递归处理子章节
-      if (section.children != null && section.children!.isNotEmpty) {
-        // 递归调用并更新索引值（第一层深度为1）
-        currentIndex = _addSectionToTreeWithReturn(
-          section.children!,
-          childTopic['children'] as List<Map<String, dynamic>>,
-          currentIndex,
-          2,
-          bankId
-        );
+      if (hasLearnableContent) {
+        learnableSections++;
+        
+        // 获取章节学习进度数据
+        final progress = _getSectionProgress(section.id, bankId);
+        
+        // 确保进度信息包含计算后的完成率
+        _ensureProgressCompletionRate(progress);
+        
+        final childTopic = {
+          'name': section.title,
+          'index': currentIndex,
+          'children': <Map<String, dynamic>>[],
+          'id': section.id,
+          'progress': progress,
+          'isCompleted': progress['learnTimes'] > 0,
+          'hasLearnableContent': true,
+        };
+        
+        targetList.add(childTopic);
+        currentIndex++; // 每个章节递增索引
+        
+
+        
+        // 递归处理子章节
+        if (section.children != null && section.children!.isNotEmpty) {
+          // 递归调用并更新索引值（第一层深度为1）
+          currentIndex = _addSectionToTreeWithReturn(
+            section.children!,
+            childTopic['children'] as List<Map<String, dynamic>>,
+            currentIndex,
+            2,
+            bankId
+          );
+        }
+      } else {
+        filteredSections++;
+
+        
+        // 如果当前章节没有学习价值，但有子章节，仍需要检查子章节
+        if (section.children != null && section.children!.isNotEmpty) {
+          // 直接处理子章节，不添加当前无价值节点
+          currentIndex = _addSectionToTreeWithReturn(
+            section.children!,
+            targetList, // 直接添加到当前层级，不创建新的父节点
+            currentIndex,
+            2,
+            bankId
+          );
+        }
       }
     }
+    
+
   }
   
   // 返回更新后索引的递归方法
@@ -409,6 +501,8 @@ class StatisticsManager {
     [int depth = 1, String? bankId]
   ) {
     int currentIndex = topicIndex;
+    int filteredAtDepth = 0;
+    int addedAtDepth = 0;
     
     // 限制最多三层深度（题库-一层-二层-三层）
     if (depth > 3) {
@@ -416,35 +510,59 @@ class StatisticsManager {
     }
     
     for (final section in sections) {
-      // 获取章节学习进度数据
-      final progress = _getSectionProgress(section.id, bankId);
+      // 检查章节是否有学习价值（包括子节点）
+      bool hasLearnableContent = _hasLearnableContentRecursive(section);
       
-      // 确保进度信息包含计算后的完成率
-      _ensureProgressCompletionRate(progress);
-      
-      final childTopic = {
-        'name': section.title,
-        'index': currentIndex,
-        'children': <Map<String, dynamic>>[],
-        'id': section.id,
-        'progress': progress,
-        'isCompleted': progress['learnTimes'] > 0,
-      };
-      
-      targetList.add(childTopic);
-      currentIndex++; // 每个章节递增索引
-      
-      // 递归处理子章节
-      if (section.children != null && section.children!.isNotEmpty) {
-        currentIndex = _addSectionToTreeWithReturn(
-          section.children!,
-          childTopic['children'] as List<Map<String, dynamic>>,
-          currentIndex,
-          depth + 1,
-          bankId
-        );
+      if (hasLearnableContent) {
+        addedAtDepth++;
+        
+        // 获取章节学习进度数据
+        final progress = _getSectionProgress(section.id, bankId);
+        
+        // 确保进度信息包含计算后的完成率
+        _ensureProgressCompletionRate(progress);
+        
+        final childTopic = {
+          'name': section.title,
+          'index': currentIndex,
+          'children': <Map<String, dynamic>>[],
+          'id': section.id,
+          'progress': progress,
+          'isCompleted': progress['learnTimes'] > 0,
+          'hasLearnableContent': true,
+        };
+        
+        targetList.add(childTopic);
+        currentIndex++; // 每个章节递增索引
+        
+        // 递归处理子章节
+        if (section.children != null && section.children!.isNotEmpty) {
+          currentIndex = _addSectionToTreeWithReturn(
+            section.children!,
+            childTopic['children'] as List<Map<String, dynamic>>,
+            currentIndex,
+            depth + 1,
+            bankId
+          );
+        }
+      } else {
+        filteredAtDepth++;
+        
+        // 如果当前章节没有学习价值，但有子章节，仍需要检查子章节
+        if (section.children != null && section.children!.isNotEmpty) {
+          // 直接处理子章节，不添加当前无价值节点
+          currentIndex = _addSectionToTreeWithReturn(
+            section.children!,
+            targetList, // 直接添加到当前层级，不创建新的父节点
+            currentIndex,
+            depth + 1,
+            bankId
+          );
+        }
       }
     }
+    
+
     
     return currentIndex; // 返回更新后的索引
   }
@@ -1022,6 +1140,17 @@ class StatisticsManager {
     double mastery = 0.5; // 默认值
     DateTime? lastStudyTime;
     int studyCount = 0;
+    final sectionId = node['id'] as String?;
+    final sectionName = node['name'] as String? ?? '未知章节';
+    
+    // 检查节点是否有学习价值，如果没有则跳过遗忘曲线计算
+    final hasLearnableContent = node['hasLearnableContent'] as bool? ?? true;
+    if (!hasLearnableContent) {
+      print('[ForgettingCurveCalculation] 跳过无学习价值节点: $sectionName');
+      return 0.1; // 返回最低掌握度
+    }
+    
+    print('[ForgettingCurveCalculation] 开始计算节点掌握度: $sectionName (ID: $sectionId)');
     
     // 从节点进度信息获取掌握度
     if (node.containsKey('progress') && node['progress'] is Map) {
@@ -1030,6 +1159,7 @@ class StatisticsManager {
       // 获取基础掌握度
       if (progress.containsKey('completionRate')) {
         mastery = progress['completionRate'] as double;
+        print('[ForgettingCurveCalculation] 使用完成率作为基础掌握度: ${mastery.toStringAsFixed(2)}');
       } else if (progress.containsKey('learnTimes') && 
                 progress.containsKey('allNeedCompleteQuestion') && 
                 progress['allNeedCompleteQuestion'] > 0) {
@@ -1042,6 +1172,7 @@ class StatisticsManager {
           // 如果有更详细的完成题目数据，计算更精确的掌握度
           mastery = progress['alreadyCompleteQuestion'] / 
                    progress['allNeedCompleteQuestion'];
+          print('[ForgettingCurveCalculation] 基于题目完成情况计算掌握度: ${progress['alreadyCompleteQuestion']}/${progress['allNeedCompleteQuestion']} = ${mastery.toStringAsFixed(2)}');
         }
       }
       
@@ -1066,7 +1197,6 @@ class StatisticsManager {
     }
     
     // 如果有id，尝试从StudyData获取更精确的遗忘曲线数据
-    final sectionId = node['id'] as String?;
     if (sectionId != null) {
       final topicMastery = StudyData.instance.getTopicMastery(sectionId);
       if (topicMastery > 0) {
@@ -1089,13 +1219,20 @@ class StatisticsManager {
       // 计算距离上次学习的天数
       final daysSinceLastStudy = DateTime.now().difference(lastStudyTime).inDays;
       
+      print('[ForgettingCurveCalculation] 应用遗忘曲线 - 距离上次学习: ${daysSinceLastStudy}天, 学习次数: $studyCount');
+      
       // 基于艾宾浩斯遗忘曲线计算保留率
       // R = e^(-t/S)，其中t是时间，S是稳定性参数
       final stability = 20.0 * (studyCount + 1); // 学习次数越多，稳定性越高
       final retentionRate = exp(-daysSinceLastStudy / stability);
       
+      final originalMastery = mastery;
       // 应用遗忘曲线，计算实际掌握度
       mastery = (mastery * retentionRate).clamp(0.0, 1.0);
+      
+      print('[ForgettingCurveCalculation] 遗忘曲线应用完成 - 原始掌握度: ${originalMastery.toStringAsFixed(2)}, 保留率: ${retentionRate.toStringAsFixed(2)}, 最终掌握度: ${mastery.toStringAsFixed(2)}');
+    } else {
+      print('[ForgettingCurveCalculation] 无学习时间记录，使用基础掌握度: ${mastery.toStringAsFixed(2)}');
     }
     
     // 确保掌握度在有效范围内

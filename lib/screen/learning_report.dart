@@ -287,8 +287,9 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
     final dailyData = _statsManager.getDailyStudyData();
     final days = ['一', '二', '三', '四', '五', '六', '日'];
     
-    // Check if data exists
+    // Check if data exists and find max value for warnings
     final hasRealData = dailyData.any((time) => time > 0);
+    final maxDailyValue = dailyData.fold(0.0, (max, value) => value > max ? value : max);
     
     return _buildSectionCard(
       title: '学习时间分析',
@@ -330,6 +331,32 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
                   ),
             ),
             const SizedBox(height: 16),
+            // Warning if data was capped
+            if (maxDailyValue > 480)
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.warning_amber, size: 16, color: Colors.orange),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '检测到异常高的学习时间数据，图表已限制显示最高8小时',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.orange.shade700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             // Average study time indicator with more informative data
             Container(
               padding: const EdgeInsets.all(12),
@@ -440,18 +467,22 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
     // Find the maximum value for proper scaling
     final maxValue = dailyData.fold(0.0, (max, value) => value > max ? value : max);
     
-    for (int i = 0; i < 7; i++) {
-      // The dailyData is already in the right order (last 7 days in chronological order)
-      // so we can use i directly as the index
-      final value = dailyData[i];
-      final displayValue = value > 0 && value < 5 ? 5.0 : value;
+    // Cap the maximum value to prevent extremely tall bars (max 8 hours = 480 minutes per day)
+    final cappedMaxValue = maxValue > 480 ? 480 : maxValue;
+    
+          for (int i = 0; i < 7; i++) {
+        // The dailyData is already in the right order (last 7 days in chronological order)
+        // so we can use i directly as the index
+        final value = dailyData[i];
+        // Cap individual values to prevent extremely tall bars
+        final displayValue = value > 480 ? 480.0 : value;
       
       barGroups.add(
         BarChartGroupData(
           x: i,
           barRods: [
             BarChartRodData(
-              toY: displayValue,
+              toY: displayValue.toDouble(),
               color: AppTheme.primaryColor,
               width: 15,
               borderRadius: const BorderRadius.only(
@@ -471,20 +502,20 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
       gridData: FlGridData(
         show: true,
         drawVerticalLine: false,
-        horizontalInterval: maxValue > 60 ? 30 : 10,  // Adjust grid based on data scale
+        horizontalInterval: cappedMaxValue > 60 ? 30 : 10,  // Adjust grid based on data scale
         getDrawingHorizontalLine: (value) => FlLine(
           color: Colors.grey.withOpacity(0.2),
           strokeWidth: 1,
         ),
       ),
-      maxY: maxValue > 0 ? (maxValue * 1.2) : 60, // Add room above highest bar
+      maxY: cappedMaxValue > 0 ? max(cappedMaxValue * 1.2, 60) : 60, // Add room above highest bar, with minimum of 60 minutes
       titlesData: FlTitlesData(
         show: true,
         leftTitles: AxisTitles(
           sideTitles: SideTitles(
             showTitles: true,
             getTitlesWidget: (value, meta) {
-              if (value % (maxValue > 60 ? 30 : 10) != 0) return const SizedBox();
+              if (value % (cappedMaxValue > 60 ? 30 : 10) != 0) return const SizedBox();
               return Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: Text(
@@ -1516,9 +1547,9 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
       }
       
       // 调试输出
-      if (mastery < 0.4) {
-        print('节点 ${node['name']} 掌握度低: $mastery, 子节点掌握度: $childrenMasteryValues, 自身掌握度: $selfMastery');
-      }
+      // if (mastery < 0.4) {
+      //   print('节点 ${node['name']} 掌握度低: $mastery, 子节点掌握度: $childrenMasteryValues, 自身掌握度: $selfMastery');
+      // }
     } else {
       // 没有子节点，使用自身掌握度
       mastery = selfMastery;

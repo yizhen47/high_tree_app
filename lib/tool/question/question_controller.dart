@@ -52,12 +52,45 @@ class LearningPlanItem {
         // 非叶子节点，继续遍历子节点
         yield* _getAllSectionsToLearn(section.children!, [...indexPath, section.index]);
       } else {
-        // 叶子节点，检查是否需要学习
-      if (needsToLearn(section)) {
+        // 叶子节点，检查是否有学习价值且需要学习
+        if (section.hasLearnableContent() && needsToLearn(section)) {
         yield section;
+      }
+        // 如果叶子节点没有学习价值（只有图片等），则查找其父节点
+        else if (!section.hasLearnableContent() && needsToLearn(section)) {
+          // 向上查找有学习价值的父节点
+          Section? parent = _findLearnableParent(indexPath);
+          if (parent != null && needsToLearn(parent)) {
+            yield parent;
+          }
         }
       }
     }
+  }
+
+  /// 根据路径查找有学习价值的父节点
+  Section? _findLearnableParent(List<String> indexPath) {
+    if (indexPath.isEmpty) return null;
+    
+    // 从根节点开始，按路径查找父节点
+    Section? current = Section("", "");
+    current.children = bank.data;
+    
+    try {
+      // 遍历路径，但不包括最后一级（因为最后一级就是当前的无价值叶子节点）
+      for (int i = 0; i < indexPath.length; i++) {
+        current = current!.children!.firstWhere((e) => e.index == indexPath[i]);
+        // 检查当前节点是否有学习价值
+        if (current.hasLearnableContent()) {
+          return current;
+        }
+      }
+    } catch (e) {
+      // 路径查找失败
+      return null;
+    }
+    
+    return null;
   }
 
   /// Returns a subset of sections that need to be learned, limited by count
@@ -210,11 +243,34 @@ class LearningPlanItem {
   /// Recursively build mind map nodes
   void _buildMindMapNodes(MindMapNode<Section> node, List<Section> sections) {
     for (var section in sections) {
-      // 只有叶子节点才显示学习状态颜色
+      // 根据节点状态设置不同颜色
       Color? nodeColor;
-      if (section.children == null || section.children!.isEmpty) {
-        // 叶子节点：显示学习状态
-        nodeColor = needsToLearn(section) ? null : Colors.greenAccent.shade400;
+      bool isLeafNode = section.children == null || section.children!.isEmpty;
+      bool hasLearnableContent = section.hasLearnableContent();
+      
+      if (isLeafNode) {
+        // 叶子节点
+        if (hasLearnableContent) {
+          if (needsToLearn(section)) {
+            // 需要学习的叶子节点：保持默认颜色（蓝色系）
+            nodeColor = null;
+          } else {
+            // 已完成学习的叶子节点：绿色
+            nodeColor = Colors.greenAccent.shade400;
+          }
+        } else {
+          // 无学习价值的叶子节点：保持默认颜色，不再设为灰色
+          nodeColor = null;
+        }
+      } else {
+        // 非叶子节点
+        if (hasLearnableContent) {
+          // 有学习价值的非叶子节点：橙色系
+          nodeColor = Colors.orange.shade300;
+        } else {
+          // 无学习价值的非叶子节点：保持默认颜色，不再设为灰色
+          nodeColor = null;
+        }
       }
       
       var childNode = MindMapHelper.addChildNode(node, section.title,
@@ -314,11 +370,11 @@ class LearningPlanManager {
     }
   }
 
-  /// Add a section to the manual learning plan (only leaf sections allowed)
+  /// Add a section to the manual learning plan (only sections with learnable content allowed)
   bool addSectionToManualLearningPlan(Section section, QuestionBank bank) {
-    // 只允许叶子节点添加到学习计划
-    if (section.children != null && section.children!.isNotEmpty) {
-      return false; // 非叶子节点不能添加到学习计划
+    // 直接检查是否有学习价值
+    if (!section.hasLearnableContent()) {
+      return false;
     }
     
     String key = "${bank.id!}/${section.id}";
@@ -340,7 +396,9 @@ class LearningPlanManager {
     planItem.addRandomQuestions(StudyData.instance.needCompleteQuestionNum);
 
     // Only add if not already exists
-    if (!learningPlanItems.any((item) => item.targetSection?.id == section.id)) {
+    bool alreadyInPlan = learningPlanItems.any((item) => item.targetSection?.id == section.id);
+    
+    if (!alreadyInPlan) {
       learningPlanItems.add(planItem);
 
       // Update bank learning data
@@ -348,9 +406,10 @@ class LearningPlanManager {
       bankData.needLearnSectionNum += 1;
       planItem.saveBankLearningData(bankData);
     }
-
     return true;
   }
+
+
 
   /// Clear all manually added sections
   void clearManuallyAddedSections() {

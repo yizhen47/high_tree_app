@@ -11,7 +11,7 @@ import 'latex_config.dart';
 
 Card buildKnowledgeCard(BuildContext context, final String index,
     final String title, final String knowledge,
-    {final String? images}) {
+    {final String? images, final List<String>? videos}) {
   return Card(
     elevation: 4,
     shape: RoundedRectangleBorder(
@@ -44,6 +44,7 @@ Card buildKnowledgeCard(BuildContext context, final String index,
                   children: [
                     _buildMarkdownContent(knowledge),
                     if (images != null) _buildImageSection(images),
+                    if (videos != null && videos.isNotEmpty) _buildVideoSection(videos),
                   ],
                 ),
               ),
@@ -189,6 +190,102 @@ Widget _buildImageSection(String images) {
           },
         ),
       ),
+    ),
+  );
+}
+
+Widget _buildVideoSection(List<String> videos) {
+  return Padding(
+    padding: const EdgeInsets.only(top: 24),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.video_library, color: Colors.red[600], size: 20),
+            const SizedBox(width: 8),
+            Text(
+              '视频课程 (${videos.length})',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.red[600],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        ...videos.asMap().entries.map((entry) {
+          final index = entry.key;
+          final video = entry.value;
+          return Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: InkWell(
+              onTap: () {
+                // TODO: 实现视频播放功能
+                // 这里可以添加视频播放逻辑
+              },
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red[200]!),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.red[600],
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.play_arrow,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '视频课程 ${index + 1}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            video,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      size: 16,
+                      color: Colors.grey[400],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }),
+      ],
     ),
   );
 }

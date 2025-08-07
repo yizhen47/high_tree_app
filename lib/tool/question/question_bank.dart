@@ -131,10 +131,10 @@ class Section {
 
   SingleQuestionData? _randomSectionQuestion(
       String fromId, String fromName, bool onlyLayer) {
-    // 只有叶子节点才能有题目
+    // 只有有学习价值的叶子节点才能有题目
     if (children == null || children!.isEmpty) {
-      // 这是叶子节点，可以有题目
-      if (questions == null || questions!.isEmpty) return null;
+      // 这是叶子节点，检查是否有学习价值（有题目）
+      if (!hasLearnableContent()) return null;
       var selectedQuestion = questions![_random!.nextInt(questions!.length)];
       return SingleQuestionData(selectedQuestion, fromId, fromName)
         ..fromKonwledgeIndex = (List.from(fromKonwledgeIndex)..add(index))
@@ -147,13 +147,18 @@ class Section {
       return null;
     }
 
+    // 只考虑有学习价值的子节点
     List<int> childQs = [];
     int childTotal = 0;
 
       for (var child in children!) {
+      if (child.hasLearnableContent()) {
         int total = child.getTotalQuestions();
         childQs.add(total);
         childTotal += total;
+      } else {
+        childQs.add(0); // 没有学习价值的子节点不参与随机选择
+      }
     }
 
     if (childTotal == 0) return null;
@@ -162,19 +167,34 @@ class Section {
       int accumulated = 0;
       for (int i = 0; i < children!.length; i++) {
         accumulated += childQs[i];
-      if (rand < accumulated) {
+      if (rand < accumulated && childQs[i] > 0) { // 确保选择的是有学习价值的节点
           return children![i]
               .randomSectionQuestion(fromId, fromName, onlyLayer: false);
+        }
       }
-    }
     return null;
   }
 
-// 递归获取题目总数（只从叶子节点计算）
+  // 检查此节点是否有可学习的内容（有题目）
+  bool hasLearnableContent() {
+    return questions != null && questions!.isNotEmpty;
+  }
+
+  // 获取最适合学习的节点：如果当前节点是无题目的叶子节点，则查找有题目的父节点
+  Section? getLearnableSection() {
+    // 如果当前节点有学习价值，直接返回
+    if (hasLearnableContent()) {
+      return this;
+    }
+    // 如果没有学习价值，返回null，让调用者向上查找
+    return null;
+  }
+
+  // 递归获取题目总数（只从有学习价值的叶子节点计算）
   int getTotalQuestions({bool onlyLayer = false}) {
-    // 如果是叶子节点，返回题目数
+    // 如果是叶子节点，只有有学习价值的才返回题目数
     if (children == null || children!.isEmpty) {
-      return questions?.length ?? 0;
+      return hasLearnableContent() ? (questions?.length ?? 0) : 0;
     }
     
     // 如果只计算当前层级，非叶子节点返回0
@@ -182,10 +202,12 @@ class Section {
       return 0;
     }
     
-    // 非叶子节点，递归计算子节点题目总数
+    // 非叶子节点，递归计算有学习价值的子节点题目总数
     int total = 0;
     for (Section child in children!) {
-      total += child.getTotalQuestions();
+      if (child.hasLearnableContent()) {
+        total += child.getTotalQuestions();
+      }
     }
     return total;
   }
@@ -246,7 +268,10 @@ class Section {
     questionsList.addAll(sectionQuestionOnly(fromId, fromName));
     if (children != null) {
       for (var c in children!) {
+        // 只从有学习价值的子节点递归获取题目
+        if (c.hasLearnableContent()) {
         c.sectionQuestion(fromId, fromName, questionsList: questionsList);
+        }
       }
     }
     return questionsList;
@@ -256,10 +281,9 @@ class Section {
       {List<SingleQuestionData>? questionsList}) {
     questionsList ??= [];
     
-    // 只有叶子节点才能有题目
+    // 只有有学习价值的叶子节点才能有题目
     if (children == null || children!.isEmpty) {
-    // ignore: unnecessary_null_comparison
-    if (questions != null) {
+      if (hasLearnableContent() && questions != null) {
       for (var q in questions!) {
         questionsList.add(SingleQuestionData(q, fromId, fromName)
           ..fromKonwledgeIndex = (List.from(fromKonwledgeIndex)..add(index))
@@ -549,7 +573,7 @@ class QuestionBank {
       // 使用流式读取ZIP文件，不加载到内存
       final inputStream = InputFileStream(fromFile.path);
       final archive = ZipDecoder().decodeStream(inputStream);
-      
+
       try {
         // 查找data.xml文件
         ArchiveFile? xmlEntry;
@@ -742,7 +766,7 @@ class QuestionBank {
       sendPort.send(0.1);
 
       sendPort.send('log: Extracting archive...');
-      try {
+    try {
         // 检查文件是否存在和可读
         if (!await file.exists()) {
           throw Exception('Archive file does not exist: ${file.path}');

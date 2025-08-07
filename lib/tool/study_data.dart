@@ -24,9 +24,9 @@ enum StudyType {
   String getDisplayName() {
     switch (this) {
       case StudyType.studyMode:
-        return "学习模式";
+        return "智能推荐";
       case StudyType.testMode:
-        return "测试模式";
+        return "智能推荐";
       case StudyType.recommandMode:
         return "推荐模式";
     }
@@ -108,7 +108,7 @@ class StudyData {
 
   StudyType get studyType {
     return StudyType.values[
-        sharedPreferences!.getInt("studyType") ?? StudyType.testMode.index];
+        sharedPreferences!.getInt("studyType") ?? StudyType.recommandMode.index];
   }
 
   set studyType(StudyType value) {
