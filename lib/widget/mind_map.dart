@@ -27,6 +27,7 @@ class MindMapNode<T> {
   double rightChildHeight = 0.0; // 新增：右侧子树总高度
   NodeSide side = NodeSide.none; // 新增：节点所在方向
   bool isHighlighted = false;
+  bool isCollapsed = false; // 新增：折叠状态
   T? data;
   ui.Image? _cachedImage; // 缓存加载的图片
   Size? _originalImageSize; // 原始图片尺寸
@@ -47,6 +48,8 @@ class MindMapNode<T> {
   bool get isLatex => text.contains(r'$$') || text.contains(r'$');
   String get latexContent => isLatex ? text : '';
   bool get hasImage => image != null && image!.isNotEmpty; // 添加图片检查方法
+  bool get hasChildren => children.isNotEmpty; // 检查是否有子节点
+  bool get canCollapse => hasChildren; // 是否可以折叠
 
   // 计算默认节点大小
   static Size _calculateDefaultSize(String text, String? image) {
@@ -84,28 +87,63 @@ class MindMapNode<T> {
     }
     
     final originalSize = _originalImageSize!;
-    
-    // 根据图片实际尺寸动态设置大小范围
-    // 小图片：最大400px，大图片：最大600px
-    double maxWidth = originalSize.width > 800 || originalSize.height > 600 ? 600.0 : 400.0;
-    double maxHeight = originalSize.width > 800 || originalSize.height > 600 ? 400.0 : 300.0;
-    
-    // 最小尺寸根据图片大小调整
-    double minWidth = originalSize.width < 200 ? 150.0 : 200.0;
-    double minHeight = originalSize.height < 150 ? 100.0 : 120.0;
-    
     const double textHeight = 40.0; // 为文本预留的高度（统一大小）
     
-    // 计算保持宽高比的缩放
-    double scaleX = maxWidth / originalSize.width;
-    double scaleY = (maxHeight - textHeight) / originalSize.height;
-    double scale = scaleX < scaleY ? scaleX : scaleY;
+    // 设置合理的显示尺寸范围
+    const double maxDisplayWidth = 400.0;
+    const double maxDisplayHeight = 300.0;
+    const double minDisplayWidth = 150.0;
+    const double minDisplayHeight = 100.0;
     
-    // 确保不会过度缩小
-    double finalWidth = (originalSize.width * scale).clamp(minWidth, maxWidth);
-    double finalHeight = (originalSize.height * scale).clamp(minHeight - textHeight, maxHeight - textHeight) + textHeight;
+    // 对于低像素图片，限制最大显示尺寸，避免过度放大
+    double targetWidth = originalSize.width.toDouble();
+    double targetHeight = originalSize.height.toDouble();
     
-    return Size(finalWidth, finalHeight);
+    // 如果图片太小，适当放大但不超过合理范围
+    if (targetWidth < 150) {
+      targetWidth = targetWidth * 1.5; // 轻微放大
+    } else if (targetWidth > 400) {
+      targetWidth = 400; // 限制最大宽度
+    }
+    
+    if (targetHeight < 100) {
+      targetHeight = targetHeight * 1.5; // 轻微放大
+    } else if (targetHeight > 300) {
+      targetHeight = 300; // 限制最大高度
+    }
+    
+    // 保持宽高比
+    final aspectRatio = originalSize.width / originalSize.height;
+    if (targetWidth / aspectRatio > targetHeight) {
+      targetWidth = targetHeight * aspectRatio;
+    } else {
+      targetHeight = targetWidth / aspectRatio;
+    }
+    
+    // 确保在合理范围内
+    targetWidth = targetWidth.clamp(minDisplayWidth, maxDisplayWidth);
+    targetHeight = targetHeight.clamp(minDisplayHeight, maxDisplayHeight);
+    
+    return Size(targetWidth, targetHeight + textHeight);
+  }
+
+  // 切换折叠状态
+  void toggleCollapse() {
+    if (canCollapse) {
+      isCollapsed = !isCollapsed;
+    }
+  }
+
+  // 展开节点
+  void expand() {
+    isCollapsed = false;
+  }
+
+  // 折叠节点
+  void collapse() {
+    if (canCollapse) {
+      isCollapsed = true;
+    }
   }
 
   // 设置原始图片尺寸并更新节点大小
@@ -188,9 +226,15 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
   late double _initialScale;
   late AnimationController _highlightController;
   late Animation<double> _highlightAnimation;
+  late AnimationController _layoutController;
+  late Animation<double> _layoutAnimation;
   final Map<String, ui.Image> _latexCache = {};
   final Map<String, ui.Image> _imageCache = {}; // 添加图片缓存
   final GlobalKey _repaintBoundaryKey = GlobalKey();
+  
+  // 存储节点的动画起始和结束位置
+  final Map<String, Offset> _nodeStartPositions = {};
+  final Map<String, Offset> _nodeEndPositions = {};
 
   @override
   void initState() {
@@ -204,6 +248,14 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
       parent: _highlightController,
       curve: Curves.easeInOut,
     );
+    _layoutController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _layoutAnimation = CurvedAnimation(
+      parent: _layoutController,
+      curve: Curves.easeInOutCubic,
+    );
     _precacheLatex(widget.rootNode);
     _precacheImages(widget.rootNode); // 添加图片预缓存
   }
@@ -211,6 +263,7 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
   @override
   void dispose() {
     _highlightController.dispose();
+    _layoutController.dispose();
     widget.controller?._detach();
     super.dispose();
   }
@@ -446,7 +499,7 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
         if (pointerSignal is PointerScrollEvent) {
           final scaleFactor = pointerSignal.scrollDelta.dy > 0 ? 0.9 : 1.1;
           setState(() {
-            _scale = (_scale * scaleFactor).clamp(0.5, 5.0);
+            _scale = (_scale * scaleFactor).clamp(0.1, 5.0);
           });
         }
       },
@@ -457,7 +510,7 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
           _initialFocalPoint = details.localFocalPoint;
         },
         onScaleUpdate: (details) {
-          final newScale = (_initialScale * details.scale).clamp(0.5, 5.0);
+          final newScale = (_initialScale * details.scale).clamp(0.1, 5.0);
           final currentFocalPoint = details.localFocalPoint;
           final newOffset = currentFocalPoint -
               ((_initialFocalPoint - _initialOffset) / _initialScale) *
@@ -510,8 +563,122 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
 
   void _handleTap(Offset localPosition) {
     final tapPos = (localPosition - _offset) / _scale;
+    
+    // 先检查是否点击了折叠指示器
+    final collapseNode = _findCollapseIndicatorAtPosition(widget.rootNode, tapPos);
+    if (collapseNode != null) {
+      _animateLayoutChange(() {
+        collapseNode.toggleCollapse();
+      });
+      return;
+    }
+    
+    // 如果没有点击折叠指示器，则检查是否点击了节点
     final node = _findNodeAtPosition(widget.rootNode, tapPos);
     if (node != null) widget.onNodeTap?.call(node);
+  }
+
+  // 执行布局动画
+  void _animateLayoutChange(VoidCallback stateChange) {
+    // 记录当前所有节点的位置
+    _recordNodePositions(widget.rootNode, _nodeStartPositions);
+    
+    // 执行状态改变
+    stateChange();
+    
+    // 重新计算布局
+    MindMapHelper.organizeTree(widget.rootNode);
+    
+    // 记录新的位置
+    _recordNodePositions(widget.rootNode, _nodeEndPositions);
+    
+    // 设置起始位置到节点
+    _applyNodePositions(widget.rootNode, _nodeStartPositions);
+    
+    // 添加动画监听器
+    late void Function() listener;
+    listener = () {
+      _interpolateNodePositions(widget.rootNode, _layoutAnimation.value);
+      setState(() {});
+    };
+    
+    _layoutAnimation.addListener(listener);
+    
+    // 重置动画并开始
+    _layoutController.reset();
+    _layoutController.forward().then((_) {
+      // 动画完成后设置最终位置并清理
+      _applyNodePositions(widget.rootNode, _nodeEndPositions);
+      _layoutAnimation.removeListener(listener);
+      _nodeStartPositions.clear();
+      _nodeEndPositions.clear();
+      setState(() {});
+    });
+  }
+
+  // 记录节点位置
+  void _recordNodePositions(MindMapNode<T> node, Map<String, Offset> positions) {
+    positions[node.id] = node.position;
+    if (!node.isCollapsed) {
+      for (final child in node.children) {
+        _recordNodePositions(child, positions);
+      }
+    }
+  }
+
+  // 将位置映射应用到节点
+  void _applyNodePositions(MindMapNode<T> node, Map<String, Offset> positions) {
+    final pos = positions[node.id];
+    if (pos != null) {
+      node.position = pos;
+    }
+    
+    if (!node.isCollapsed) {
+      for (final child in node.children) {
+        _applyNodePositions(child, positions);
+      }
+    }
+  }
+
+  // 在动画期间插值节点位置
+  void _interpolateNodePositions(MindMapNode<T> node, double progress) {
+    final startPos = _nodeStartPositions[node.id];
+    final endPos = _nodeEndPositions[node.id];
+    
+    if (startPos != null && endPos != null) {
+      node.position = Offset.lerp(startPos, endPos, progress) ?? node.position;
+    }
+    
+    if (!node.isCollapsed) {
+      for (final child in node.children) {
+        _interpolateNodePositions(child, progress);
+      }
+    }
+  }
+
+  // 查找点击位置是否在折叠指示器上
+  MindMapNode<T>? _findCollapseIndicatorAtPosition(MindMapNode<T> node, Offset position) {
+    // 检查当前节点的折叠指示器
+    if (node.canCollapse) {
+      final indicatorCenter = Offset(
+        node.position.dx + node.size.width / 2 + 15,
+        node.position.dy,
+      );
+      final distance = (position - indicatorCenter).distance;
+      if (distance <= 8.0) { // 指示器半径
+        return node;
+      }
+    }
+    
+    // 只在节点未折叠时检查子节点
+    if (!node.isCollapsed) {
+      for (final child in node.children) {
+        final result = _findCollapseIndicatorAtPosition(child, position);
+        if (result != null) return result;
+      }
+    }
+    
+    return null;
   }
 
   MindMapNode<T>? _findNodeAtPosition(MindMapNode<T> node, Offset position) {
@@ -520,14 +687,20 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
       width: node.size.width,
       height: node.size.height,
     );
-    return rect.contains(position)
-        ? node
-        : node.children
-            .expand((c) => [_findNodeAtPosition(c, position)])
-            .firstWhere(
-              (n) => n != null,
-              orElse: () => null,
-            );
+    
+    if (rect.contains(position)) {
+      return node;
+    }
+    
+    // 只在节点未折叠时检查子节点
+    if (!node.isCollapsed) {
+      for (final child in node.children) {
+        final result = _findNodeAtPosition(child, position);
+        if (result != null) return result;
+      }
+    }
+    
+    return null;
   }
 }
 
@@ -631,9 +804,12 @@ class _MindMapPainter extends CustomPainter {
   }
 
   void _drawNode(Canvas canvas, MindMapNode node) {
-    for (final child in node.children) {
-      _drawConnection(canvas, node, child);
-      _drawNode(canvas, child);
+    // 只有在节点未折叠时才绘制子节点
+    if (!node.isCollapsed) {
+      for (final child in node.children) {
+        _drawConnection(canvas, node, child);
+        _drawNode(canvas, child);
+      }
     }
 
     // 如果是隐藏的根节点（尺寸为0），不绘制节点本身
@@ -648,6 +824,58 @@ class _MindMapPainter extends CustomPainter {
       _drawLatexNode(canvas, node);
     } else {
       _drawTextNode(canvas, node);
+    }
+
+    // 如果节点有子节点，绘制折叠/展开指示器
+    if (node.canCollapse) {
+      _drawCollapseIndicator(canvas, node);
+    }
+  }
+
+  // 绘制折叠/展开指示器
+  void _drawCollapseIndicator(Canvas canvas, MindMapNode node) {
+    // 指示器位置在节点右侧
+    final indicatorCenter = Offset(
+      node.position.dx + node.size.width / 2 + 15,
+      node.position.dy,
+    );
+    
+    final indicatorRadius = 8.0;
+    
+    // 绘制圆形背景
+    final circlePaint = Paint()
+      ..color = node.isCollapsed ? Colors.grey[300]! : Colors.blue[300]!
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(indicatorCenter, indicatorRadius, circlePaint);
+    
+    // 绘制边框
+    final borderPaint = Paint()
+      ..color = node.isCollapsed ? Colors.grey[500]! : Colors.blue[500]!
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+    canvas.drawCircle(indicatorCenter, indicatorRadius, borderPaint);
+    
+    // 绘制 +/- 符号
+    final linePaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0
+      ..strokeCap = StrokeCap.round;
+    
+    // 横线（总是显示）
+    canvas.drawLine(
+      Offset(indicatorCenter.dx - 4, indicatorCenter.dy),
+      Offset(indicatorCenter.dx + 4, indicatorCenter.dy),
+      linePaint,
+    );
+    
+    // 竖线（只在折叠时显示，形成 + 号）
+    if (node.isCollapsed) {
+      canvas.drawLine(
+        Offset(indicatorCenter.dx, indicatorCenter.dy - 4),
+        Offset(indicatorCenter.dx, indicatorCenter.dy + 4),
+        linePaint,
+      );
     }
   }
 
@@ -1173,22 +1401,24 @@ class MindMapHelper {
       return node.childHeight;
 
     } else {
-    if (node.children.isEmpty) {
-        // 使用节点的实际高度，而不是固定的最小高度
-      node.childHeight = node.size.height;
+      // 如果节点被折叠或没有子节点，只返回节点自身的高度
+      if (node.isCollapsed || node.children.isEmpty) {
+        node.childHeight = node.size.height;
+        return node.childHeight;
+      }
+      
+      // 只有在节点展开时才计算子节点高度
+      node.childHeight = node.children.fold(0.0, (sum, child) {
+        return sum + _calculateTreeHeight(child) + _verticalSpacing;
+      }) - _verticalSpacing;
       return node.childHeight;
-    }
-    node.childHeight = node.children.fold(0.0, (sum, child) {
-          return sum + _calculateTreeHeight(child) + _verticalSpacing;
-        }) -
-        _verticalSpacing;
-    return node.childHeight;
     }
   }
 
   // 递归布局子树
   static void _layoutSubtree<T>(MindMapNode<T> node, Offset parentPosition) {
-    if (node.children.isEmpty) return;
+    // 如果节点被折叠或没有子节点，不布局子树
+    if (node.isCollapsed || node.children.isEmpty) return;
 
     final isRootNode = node.parent == null || (node.parent != null && node.parent!.size == const Size(0, 0));
 
