@@ -470,10 +470,10 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
     // Cap the maximum value to prevent extremely tall bars (max 8 hours = 480 minutes per day)
     final cappedMaxValue = maxValue > 480 ? 480 : maxValue;
     
-          for (int i = 0; i < 7; i++) {
-        // The dailyData is already in the right order (last 7 days in chronological order)
-        // so we can use i directly as the index
-        final value = dailyData[i];
+    for (int i = 0; i < 7; i++) {
+      // The dailyData is already in the right order (last 7 days in chronological order)
+      // so we can use i directly as the index
+      final value = dailyData[i];
         // Cap individual values to prevent extremely tall bars
         final displayValue = value > 480 ? 480.0 : value;
       

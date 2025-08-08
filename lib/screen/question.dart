@@ -9,7 +9,6 @@ import 'package:flutter_application_1/tool/question/question_controller.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/tool/question/wrong_question_book.dart';
 import 'package:flutter_application_1/widget/left_toast.dart';
-import 'package:flutter_application_1/widget/mind_map.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:uuid/uuid.dart';
@@ -149,10 +148,10 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                         TDSlidePopupRoute(
                           modalBarrierColor: TDTheme.of(context).fontGyColor2,
                           slideTransitionFrom: SlideTransitionFrom.bottom,
-                          builder: (context) {
+                          builder: (popupContext) {
                             return TDPopupBottomDisplayPanel(
                               closeClick: () {
-                                Navigator.maybePop(context);
+                                Navigator.maybePop(popupContext);
                               },
                               child: const SizedBox(
                                 height: 400,
@@ -207,7 +206,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
             List<Card> cards = [];
 
             // 公共处理逻辑
-            void addQuestionCard(SingleQuestionData q) {
+            void addQuestionCard(SingleQuestionData q, [QuestionBank? questionBank]) {
               allQuestions.add(q);
               questionRemoved.add(false);
               questionRemain++;
@@ -218,10 +217,11 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                 q.question['w'],
                 WrongQuestionBook.instance.getQuestion(q.question['id']!).note,
                 q, // Pass the current question data
+                questionBank,
               ));
             }
 
-            replaceQuestion(SingleQuestionData q, int pos) {
+            replaceQuestion(SingleQuestionData q, int pos, [QuestionBank? questionBank]) {
               allQuestions[pos] = q;
               questionRemoved[pos] = false;
               questionRemain++;
@@ -233,10 +233,11 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                 q.question['w'],
                 WrongQuestionBook.instance.getQuestion(q.question['id']!).note,
                 q, // Pass the current question data
+                questionBank,
               );
             }
 
-            insertQuestion(SingleQuestionData q, int pos) {
+            insertQuestion(SingleQuestionData q, int pos, [QuestionBank? questionBank]) {
               allQuestions.insert(pos, q);
               questionRemoved.insert(pos, false);
               questionRemain++;
@@ -252,6 +253,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                       .getQuestion(q.question['id']!)
                       .note,
                   q, // Pass the current question data
+                  questionBank,
                 ),
               );
             }
@@ -270,13 +272,13 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                 // Study only the selected plan
                 final selectedPlan = LearningPlanManager.instance.learningPlanItems[currentPlanId];
                 for (var q in selectedPlan.questionList) {
-                  addQuestionCard(q);
+                  addQuestionCard(q, selectedPlan.bank);
                 }
               } else {
                 // Fallback to studying all plans (original behavior)
                 for (var c in LearningPlanManager.instance.learningPlanItems) {
                   for (var q in c.questionList) {
-                    addQuestionCard(q);
+                    addQuestionCard(q, c.bank);
                 }
               }
             }
@@ -378,11 +380,11 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                         c.failSection();
                         for (var i = 0; i < c.questionList.length; i++) {
                           replaceQuestion(
-                              c.questionList[i], indexRecord[i]);
+                              c.questionList[i], indexRecord[i], c.bank);
                         }
                         Future.delayed(const Duration(milliseconds: 800))
                             .whenComplete(() {
-                          showKnowledgeCard(context, c.targetSection!);
+                          showKnowledgeCard(context, c.targetSection!, questionBank: c.bank);
                           controller
                               .moveTo(indexRecord.reduce((v, e) => min(v, e)));
                         });
@@ -495,79 +497,6 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
     );
   }
 
-  MindMap _buildMindMap(BuildContext context) {
-    var width = MediaQuery.of(context).size.width;
-    var height = 400.0;
-    
-    // 构建题库ID到缓存目录的映射
-    final questionBankCacheDirs = <String, String>{};
-    for (var bank in LearningPlanManager.instance.questionBanks) {
-      if (bank.id != null && bank.cacheDir != null) {
-        questionBankCacheDirs[bank.id!] = bank.cacheDir!;
-      }
-    }
-    
-    final questionBankCount = LearningPlanManager.instance.questionBanks.length;
-    
-    var mindMap = MindMap<Section>(
-        rootNode: MindMapHelper.createSmartRoot(
-          data: Section("", ""), 
-          questionBankCount: questionBankCount
-        ),
-        width: width,
-        controller: MindMapController(),
-        questionBankCacheDirs: questionBankCacheDirs, // 传递缓存目录映射
-        onNodeTap: (MindMapNode<Section> node) {
-          if (node.data == null) {
-            return;
-          }
-          showKnowledgeCard(buildContext!, node.data!);
-        },
-        height: height);
-    for (var c in LearningPlanManager.instance.questionBanks
-        .map((toElement) => LearningPlanItem(toElement))) {
-      c.buildMindMapNodes(
-          MindMapHelper.addChildNode(mindMap.rootNode, c.bank.displayName!));
-    }
-    MindMapHelper.organizeTree(mindMap.rootNode);
-    return mindMap;
-  }
-
-  void _showMindMap(BuildContext context, String? nodeId) {
-    final mindMap = _buildMindMap(context); // 创建实例并保存到局部变量
-    Navigator.of(context).push(
-      TDSlidePopupRoute(
-        modalBarrierColor: TDTheme.of(context).fontGyColor2,
-        slideTransitionFrom: SlideTransitionFrom.bottom,
-        builder: (context) {
-          return TDPopupBottomDisplayPanel(
-            closeClick: () {
-              Navigator.maybePop(context);
-            },
-            child: SizedBox(
-              height: 400,
-              width: double.infinity,
-              child: Scaffold(
-                body: Column(
-                  children: [
-                    Expanded(child: mindMap),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-    Future.delayed(const Duration(milliseconds: 100)).then((_) {
-      if (nodeId != null) {
-        // 确保在页面打开后执行定位
-        mindMap.controller!.centerNodeById(nodeId);
-        mindMap.controller!.highlightNodeById([nodeId]);
-      }
-    });
-  }
-
   ValueNotifier<bool> restartUpdater = ValueNotifier(true);
   //这修改页面2的内容
   @override
@@ -614,10 +543,10 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                   Navigator.of(context).push(TDSlidePopupRoute(
                     modalBarrierColor: TDTheme.of(context).fontGyColor2,
                     slideTransitionFrom: SlideTransitionFrom.bottom,
-                    builder: (context) {
+                    builder: (popupContext) {
                       return TDPopupBottomDisplayPanel(
                         closeClick: () {
-                          Navigator.maybePop(context);
+                          Navigator.maybePop(popupContext);
                         },
                         child: Padding(
                           padding: const EdgeInsets.all(15),

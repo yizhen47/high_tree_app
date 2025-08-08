@@ -11,6 +11,7 @@ import 'screen/home/home.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'tool/question/question_bank.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:video_player_win/video_player_win.dart';
 
 //整个软件入口（测试用）
 Future<void> main() async {

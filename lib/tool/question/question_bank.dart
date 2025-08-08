@@ -135,7 +135,9 @@ class Section {
     if (children == null || children!.isEmpty) {
       // 这是叶子节点，检查是否有学习价值（有题目）
       if (!hasLearnableContent()) return null;
-      var selectedQuestion = questions![_random!.nextInt(questions!.length)];
+      
+      // 优先选择有视频的题目
+      var selectedQuestion = _selectQuestionWithVideoPriority();
       return SingleQuestionData(selectedQuestion, fromId, fromName)
         ..fromKonwledgeIndex = (List.from(fromKonwledgeIndex)..add(index))
         ..fromKonwledgePoint = (List.from(fromKonwledgePoint)..add(title));
@@ -173,6 +175,37 @@ class Section {
         }
       }
     return null;
+  }
+
+  // 优先选择有视频的题目
+  Map<String, dynamic> _selectQuestionWithVideoPriority() {
+    if (questions == null || questions!.isEmpty) {
+      throw StateError('No questions available');
+    }
+    
+    // 分离有视频和无视频的题目
+    List<Map<String, dynamic>> questionsWithVideo = [];
+    List<Map<String, dynamic>> questionsWithoutVideo = [];
+    
+    for (var question in questions!) {
+      String? videoPath = question['video']?.toString();
+      if (videoPath != null && videoPath.isNotEmpty) {
+        questionsWithVideo.add(question);
+      } else {
+        questionsWithoutVideo.add(question);
+      }
+    }
+    
+    // 70% 概率选择有视频的题目，30% 概率选择无视频的题目
+    if (questionsWithVideo.isNotEmpty && 
+        (questionsWithoutVideo.isEmpty || _random!.nextDouble() < 0.7)) {
+      return questionsWithVideo[_random!.nextInt(questionsWithVideo.length)];
+    } else if (questionsWithoutVideo.isNotEmpty) {
+      return questionsWithoutVideo[_random!.nextInt(questionsWithoutVideo.length)];
+    } else {
+      // 如果没有任何题目，返回第一个题目
+      return questions![0];
+    }
   }
 
   // 检查此节点是否有可学习的内容（有题目）
@@ -265,13 +298,20 @@ class Section {
   List<SingleQuestionData> sectionQuestion(String fromId, String fromName,
       {List<SingleQuestionData>? questionsList}) {
     questionsList ??= [];
-    questionsList.addAll(sectionQuestionOnly(fromId, fromName));
+    
+    // 首先，添加当前节点自身的题目
+    if (questions != null) {
+      for (var q in questions!) {
+        questionsList.add(SingleQuestionData(q, fromId, fromName)
+          ..fromKonwledgeIndex = (List.from(fromKonwledgeIndex)..add(index))
+          ..fromKonwledgePoint = (List.from(fromKonwledgePoint)..add(title)));
+      }
+    }
+
+    // 然后，递归地从所有子节点中获取题目
     if (children != null) {
       for (var c in children!) {
-        // 只从有学习价值的子节点递归获取题目
-        if (c.hasLearnableContent()) {
         c.sectionQuestion(fromId, fromName, questionsList: questionsList);
-        }
       }
     }
     return questionsList;
@@ -281,15 +321,13 @@ class Section {
       {List<SingleQuestionData>? questionsList}) {
     questionsList ??= [];
     
-    // 只有有学习价值的叶子节点才能有题目
-    if (children == null || children!.isEmpty) {
-      if (hasLearnableContent() && questions != null) {
+    // 无论是否为叶子节点，都直接获取当前节点的题目
+    if (hasLearnableContent() && questions != null) {
       for (var q in questions!) {
         questionsList.add(SingleQuestionData(q, fromId, fromName)
           ..fromKonwledgeIndex = (List.from(fromKonwledgeIndex)..add(index))
           ..fromKonwledgePoint = (List.from(fromKonwledgePoint)..add(title)));
       }
-    }
     }
     
     return questionsList;
@@ -481,7 +519,17 @@ class QuestionBank {
   QuestionBank(this.filePath);
 
   Section findSectionByQuestion(SingleQuestionData q) {
-    return findSection(q.fromKonwledgeIndex);
+    // 根据调试信息，结构层次是：
+    // 顶层: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9, 4.10
+    // 4.6 下: 4.6.1, 4.6.2, 4.6.3
+    // 所以 "4.6.2" 应该直接作为完整路径 ["4.6.2"]
+    List<String> knowledgePath = [];
+    for (String index in q.fromKonwledgeIndex) {
+      // 直接使用完整的索引，不进行拆分
+      knowledgePath.add(index);
+    }
+    print('HighTree-Debug: Using direct path: $knowledgePath');
+    return findSection(knowledgePath);
   }
 
   Section findSection(List<String> knowledgePath) {
@@ -491,10 +539,41 @@ class QuestionBank {
     // 定位目标章节
     for (final index in knowledgePath) {
       if(index.isEmpty) continue;
-      currentSection =
-          currentSection.children!.firstWhere((e) => e.index == index);
+      try {
+        currentSection =
+            currentSection.children!.firstWhere((e) => e.index == index);
+      } catch (e) {
+        print('HighTree-Debug: Failed to find section with index: $index in path: $knowledgePath');
+        print('HighTree-Debug: Available sections: ${currentSection.children?.map((e) => e.index).toList()}');
+        
+        // 尝试深度搜索：递归查找所有子节点
+        Section? found = _findSectionRecursive(currentSection, index);
+        if (found != null) {
+          print('HighTree-Debug: Found section via recursive search: ${found.index}');
+          return found;
+        }
+        
+        throw Exception('Section not found: $index in path $knowledgePath');
+      }
     }
     return currentSection;
+  }
+  
+  Section? _findSectionRecursive(Section parent, String targetIndex) {
+    // 在当前层级查找
+    if (parent.children != null) {
+      for (Section child in parent.children!) {
+        if (child.index == targetIndex) {
+          return child;
+        }
+        // 递归查找子节点
+        Section? found = _findSectionRecursive(child, targetIndex);
+        if (found != null) {
+          return found;
+        }
+      }
+    }
+    return null;
   }
 
   Future<void> loadIntoData() async {
@@ -975,7 +1054,7 @@ class QuestionBankBuilder {
     return buildDataFileXml().toXmlString(pretty: pretty);
   }
 
-  int imageIndex = 0;
+
   void addImageFile(Uint8List contents, String name) {
     ArchiveFile archiveFile = ArchiveFile(
         //rId1.png
@@ -986,41 +1065,10 @@ class QuestionBankBuilder {
   }
 
   Future<void> addNeedImageForBuilder() async {
-    for (var bank in QuestionBank.getAllImportedQuestionBanksWithId()) {
-      var achieve =
-          ZipDecoder().decodeBytes(await File(bank.filePath).readAsBytes());
-      for (var aFile in achieve) {
-        if (aFile.isFile && aFile.name.startsWith("assets/images/")) {
-          var key = '${bank.id}/${path.basename(aFile.name)}';
-          if (customMap.containsKey(key)) {
-            addImageByOld(aFile.content, customMap[key]!);
-          }
-        }
-      }
-    }
+    // 图片引用格式已废除，此方法暂时保留但不执行任何操作
   }
-
-  var customMap = <String, int>{};
   void addQuestionByOld(SingleQuestionData oldQuestion) {
     oldQuestion = oldQuestion.clone();
-    var imgMatcher = RegExp(
-        r'\[image:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}:(rId[0-9]*.png)\]');
-    void handleKey(String key) {
-      if (oldQuestion.question[key] == null) return;
-      for (var m in imgMatcher.allMatches(oldQuestion.question[key]!)) {
-        String imgName = m.group(1)!;
-        if (!customMap.containsKey('${oldQuestion.fromId}/$imgName')) {
-          customMap['${oldQuestion.fromId}/$imgName'] = imageIndex;
-          imageIndex++;
-        }
-        oldQuestion.question[key] = oldQuestion.question[key]!.replaceAll(
-            imgMatcher,
-            '[image:$id:rId${customMap['${oldQuestion.fromId}/$imgName']!}.png]');
-      }
-    }
-
-    handleKey('q');
-    handleKey('w');
     var quedtionBankName = oldQuestion.fromDisplayName;
 
     //根据Section和index新建对应层级
@@ -1050,14 +1098,7 @@ class QuestionBankBuilder {
     current.questions!.add(oldQuestion.question);
   }
 
-  void addImageByOld(Uint8List contents, int index) {
-    ArchiveFile archiveFile = ArchiveFile(
-        //rId1.png
-        'assets/images/rId$index.png',
-        contents.length,
-        contents);
-    archive.addFile(archiveFile);
-  }
+
 
   void addTestFile(String textTester) {
     final jsonContentTester = utf8.encode(textTester);

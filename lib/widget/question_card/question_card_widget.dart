@@ -22,7 +22,8 @@ Card buildQuestionCard(
     final String question, 
     final String? answer, 
     final String? note,
-    [final SingleQuestionData? currentQuestionData]) {
+    [final SingleQuestionData? currentQuestionData,
+     final QuestionBank? questionBank]) {
   final ValueNotifier<bool> isExpanded = ValueNotifier(false);
   final ValueNotifier<String> activeFeature = ValueNotifier('none');
   
@@ -76,7 +77,7 @@ Card buildQuestionCard(
                           child: AnimatedSize(
                             duration: const Duration(milliseconds: 300),
                             child: expanded
-                                ? _buildAnswerSection(answer, note, context)
+                                ? _buildAnswerSection(answer, note, context, currentQuestionData, questionBank)
                                 : const SizedBox.shrink(),
                           ),
                         ),
@@ -93,12 +94,12 @@ Card buildQuestionCard(
                 valueListenable: activeFeature,
                 builder: (context, feature, _) {
                   if (feature == 'none') return const SizedBox.shrink();
-                  return _buildFeaturePanel(context, feature, question, knowledgepoint, currentQuestionData, activeFeature);
+                  return _buildFeaturePanel(context, feature, question, knowledgepoint, currentQuestionData, activeFeature, questionBank);
                 },
               ),
               
               // 底部功能按钮
-              _buildBottomFeatureButtons(context, activeFeature),
+              _buildBottomFeatureButtons(context, activeFeature, currentQuestionData),
             ],
           ),
         );
@@ -224,7 +225,7 @@ Widget _buildExpandButton(BuildContext context, ValueNotifier<bool> isExpanded, 
 }
 
 Widget _buildFeaturePanel(BuildContext context, String feature, String question, 
-    String knowledgepoint, SingleQuestionData? currentQuestionData, ValueNotifier<String> activeFeature) {
+    String knowledgepoint, SingleQuestionData? currentQuestionData, ValueNotifier<String> activeFeature, QuestionBank? questionBank) {
   return Container(
     decoration: const BoxDecoration(
       color: Colors.white,
@@ -277,7 +278,7 @@ Widget _buildFeaturePanel(BuildContext context, String feature, String question,
               
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                child: _buildFeatureContent(feature, question, knowledgepoint, context, currentQuestionData),
+                child: _buildFeatureContent(feature, question, knowledgepoint, context, currentQuestionData, questionBank),
               ),
             ],
           ),
@@ -287,7 +288,7 @@ Widget _buildFeaturePanel(BuildContext context, String feature, String question,
   );
 }
 
-Widget _buildBottomFeatureButtons(BuildContext context, ValueNotifier<String> activeFeature) {
+Widget _buildBottomFeatureButtons(BuildContext context, ValueNotifier<String> activeFeature, SingleQuestionData? currentQuestionData) {
   return Container(
     width: double.infinity,
     decoration: BoxDecoration(
@@ -307,14 +308,15 @@ Widget _buildBottomFeatureButtons(BuildContext context, ValueNotifier<String> ac
     ),
     padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
     child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         _buildBottomFeatureButton(
-          icon: Icons.video_library_outlined,
-          label: '视频',
-          feature: 'video',
+          icon: Icons.lightbulb_outline,
+          label: '知识点',
+          feature: 'knowledge',
           activeFeature: activeFeature,
           context: context,
+          currentQuestionData: currentQuestionData,
         ),
         _buildBottomFeatureButton(
           icon: Icons.chat_outlined,
@@ -322,6 +324,7 @@ Widget _buildBottomFeatureButtons(BuildContext context, ValueNotifier<String> ac
           feature: 'ai',
           activeFeature: activeFeature,
           context: context,
+          currentQuestionData: currentQuestionData,
         ),
         _buildBottomFeatureButton(
           icon: Icons.book_outlined,
@@ -329,13 +332,7 @@ Widget _buildBottomFeatureButtons(BuildContext context, ValueNotifier<String> ac
           feature: 'similar',
           activeFeature: activeFeature,
           context: context,
-        ),
-        _buildBottomFeatureButton(
-          icon: Icons.lightbulb_outline,
-          label: '知识点',
-          feature: 'knowledge',
-          activeFeature: activeFeature,
-          context: context,
+          currentQuestionData: currentQuestionData,
         ),
       ],
     ),
@@ -348,6 +345,7 @@ Widget _buildBottomFeatureButton({
   required String feature,
   required ValueNotifier<String> activeFeature,
   required BuildContext context,
+  SingleQuestionData? currentQuestionData,
 }) {
   final Color primaryColor = Theme.of(context).primaryColor;
   
@@ -359,6 +357,33 @@ Widget _buildBottomFeatureButton({
         color: Colors.transparent,
         child: InkWell(
           onTap: () {
+            // 知识点按钮特殊处理：直接弹出知识卡片
+            if (feature == 'knowledge') {
+              print('HighTree-Debug: Knowledge button clicked');
+              if (currentQuestionData != null) {
+                print('HighTree-Debug: currentQuestionData is not null');
+                try {
+                  final questionBank = LearningPlanManager.instance.questionBanks.firstOrNull;
+                  print('HighTree-Debug: questionBank = $questionBank');
+                  if (questionBank != null) {
+                    print('HighTree-Debug: currentQuestionData.fromKonwledgeIndex = ${currentQuestionData.fromKonwledgeIndex}');
+                    print('HighTree-Debug: currentQuestionData.fromKonwledgePoint = ${currentQuestionData.fromKonwledgePoint}');
+                    final knowledgeSection = questionBank.findSectionByQuestion(currentQuestionData);
+                    print('HighTree-Debug: knowledgeSection = $knowledgeSection');
+                    showKnowledgeCard(context, knowledgeSection, questionBank: questionBank);
+                  } else {
+                    print('HighTree-Debug: questionBank is null');
+                  }
+                } catch (e) {
+                  print('Error showing knowledge card: $e');
+                }
+              } else {
+                print('HighTree-Debug: currentQuestionData is null');
+              }
+              return;
+            }
+            
+            // 其他按钮的原有逻辑
             if (isActive) {
               activeFeature.value = 'none';
             } else {
@@ -394,21 +419,14 @@ Widget _buildBottomFeatureButton({
   );
 }
 
-Widget _buildFeatureContent(String feature, String question, String knowledgepoint, BuildContext context, [SingleQuestionData? currentQuestionData]) {
+Widget _buildFeatureContent(String feature, String question, String knowledgepoint, BuildContext context, [SingleQuestionData? currentQuestionData, QuestionBank? questionBank]) {
   final Color primaryColor = Theme.of(context).primaryColor;
   
   switch (feature) {
-    case 'video':
-      return VideoContentWidget(
-        primaryColor: primaryColor,
-        currentQuestionData: currentQuestionData,
-      );
     case 'ai':
       return _buildSimpleAIContent(question, context, primaryColor);
     case 'similar':
-      return _buildSimpleSimilarQuestionsContent(context, primaryColor, currentQuestionData);
-    case 'knowledge':
-      return _buildSimpleKnowledgeContent(knowledgepoint, context, primaryColor, currentQuestionData);
+      return _buildSimpleSimilarQuestionsContent(context, primaryColor, currentQuestionData, questionBank);
     default:
       return const SizedBox.shrink();
   }
@@ -495,7 +513,7 @@ Widget _buildSimpleAIContent(String question, BuildContext context, Color primar
 }
 
 // 同源题内容 - 简化版
-Widget _buildSimpleSimilarQuestionsContent(BuildContext context, Color primaryColor, [SingleQuestionData? currentQuestionData]) {
+Widget _buildSimpleSimilarQuestionsContent(BuildContext context, Color primaryColor, [SingleQuestionData? currentQuestionData, QuestionBank? questionBank]) {
   const int maxDisplayCount = 5;
   final similarQuestions = <SingleQuestionData>[];
   
@@ -572,6 +590,7 @@ Widget _buildSimpleSimilarQuestionsContent(BuildContext context, Color primaryCo
                 question.question['w'],
                 null,
                 question,
+                questionBank,
               ),
             ),
           ),
@@ -693,7 +712,6 @@ String _formatQuestionPreview(String question) {
   final cleanText = question
       .replaceAll(RegExp(r'\$\$(.*?)\$\$', dotAll: true), '[数学公式]')
       .replaceAll(RegExp(r'\$(.*?)\$', dotAll: true), '[数学公式]')
-      .replaceAll(RegExp(r'\[image:.*?\]'), '[图片]')
       .trim();
       
   if (cleanText.length > 40) {
@@ -706,10 +724,11 @@ String _formatQuestionPreview(String question) {
 Widget _buildSimpleKnowledgeContent(String knowledgepoint, BuildContext context, Color primaryColor, [SingleQuestionData? currentQuestionData]) {
   String knowledgePointContent = '';
   Section? knowledgeSection;
+  QuestionBank? questionBank;
   
   if (currentQuestionData != null && knowledgepoint.isNotEmpty) {
     try {
-      final questionBank = LearningPlanManager.instance.questionBanks.firstOrNull;
+      questionBank = LearningPlanManager.instance.questionBanks.firstOrNull;
       
       if (questionBank != null) {
         knowledgeSection = questionBank.findSectionByQuestion(currentQuestionData);
@@ -804,7 +823,7 @@ Widget _buildSimpleKnowledgeContent(String knowledgepoint, BuildContext context,
             padding: const EdgeInsets.only(top: 8, left: 20),
             child: GestureDetector(
               onTap: () {
-                showKnowledgeCard(context, knowledgeSection!);
+                showKnowledgeCard(context, knowledgeSection!, questionBank: questionBank);
               },
               child: Text(
                 '查看完整知识点',
@@ -821,9 +840,13 @@ Widget _buildSimpleKnowledgeContent(String knowledgepoint, BuildContext context,
   );
 }
 
-Widget _buildAnswerSection(String? answer, String? note, BuildContext context) {
+Widget _buildAnswerSection(String? answer, String? note, BuildContext context, [SingleQuestionData? currentQuestionData, QuestionBank? questionBank]) {
   final hasNote = note?.isNotEmpty ?? false;
   final Color primaryColor = Theme.of(context).primaryColor;
+  
+  // 检查是否有视频解析
+  String? videoPath = currentQuestionData?.question['video']?.toString();
+  final hasVideo = videoPath != null && videoPath.isNotEmpty;
 
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -842,13 +865,13 @@ Widget _buildAnswerSection(String? answer, String? note, BuildContext context) {
           children: [
             Row(
               children: [
-                Icon(Icons.analytics_outlined, 
+                Icon(hasVideo ? Icons.video_library_outlined : Icons.analytics_outlined, 
                   size: 14, 
                   color: primaryColor
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  '题目解析',
+                  hasVideo ? '视频解析' : '题目解析',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -859,49 +882,56 @@ Widget _buildAnswerSection(String? answer, String? note, BuildContext context) {
             ),
             const SizedBox(height: 8),
             
-            (answer?.isNotEmpty ?? false)
-              ? Builder(builder: (context) {
-                  final convertedAnswer = convertLatexDelimiters(answer!);
-                  try {
-                    return LaTeX(
-                      laTeXCode: ExtendedText(
-                        convertedAnswer,
+            // 如果有视频，显示视频解析；否则显示文本解析
+            hasVideo
+              ? VideoContentWidget(
+                  primaryColor: primaryColor,
+                  currentQuestionData: currentQuestionData,
+                  questionBank: questionBank,
+                )
+              : (answer?.isNotEmpty ?? false)
+                ? Builder(builder: (context) {
+                    final convertedAnswer = convertLatexDelimiters(answer!);
+                    try {
+                      return LaTeX(
+                        laTeXCode: ExtendedText(
+                          convertedAnswer,
+                          style: TextStyle(
+                            fontSize: 13,
+                            height: 1.5,
+                            color: Colors.grey.shade800,
+                          ),
+                        ),
+                        equationStyle: TextStyle(
+                          fontSize: latexStyleConfig.fontSize,
+                          fontWeight: latexStyleConfig.fontWeight,
+                          fontFamily: latexStyleConfig.mathFontFamily,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      );
+                    } catch (e, stackTrace) {
+                      print("HighTree-Debug: LaTeX rendering failed for analysis: $convertedAnswer");
+                      print("HighTree-Debug: Error: $e");
+                      print("HighTree-Debug: StackTrace: $stackTrace");
+                      // 降级到纯文本显示
+                      return ExtendedText(
+                        answer!,
                         style: TextStyle(
                           fontSize: 13,
                           height: 1.5,
                           color: Colors.grey.shade800,
                         ),
-                      ),
-                      equationStyle: TextStyle(
-                        fontSize: latexStyleConfig.fontSize,
-                        fontWeight: latexStyleConfig.fontWeight,
-                        fontFamily: latexStyleConfig.mathFontFamily,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    );
-                  } catch (e, stackTrace) {
-                    print("HighTree-Debug: LaTeX rendering failed for analysis: $convertedAnswer");
-                    print("HighTree-Debug: Error: $e");
-                    print("HighTree-Debug: StackTrace: $stackTrace");
-                    // 降级到纯文本显示
-                    return ExtendedText(
-                      answer!,
-                      style: TextStyle(
-                        fontSize: 13,
-                        height: 1.5,
-                        color: Colors.grey.shade800,
-                      ),
-                    );
-                  }
-                })
-              : Text(
-                  '等待老师添加解析中...',
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontStyle: FontStyle.italic,
-                    fontSize: 12,
+                      );
+                    }
+                  })
+                : Text(
+                    '等待老师添加解析中...',
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontStyle: FontStyle.italic,
+                      fontSize: 12,
+                    ),
                   ),
-                ),
                 
             if (hasNote) ...[
               const SizedBox(height: 12),

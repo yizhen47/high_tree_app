@@ -144,13 +144,28 @@ class _InnerState extends State<MindMapScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                node.text,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF1565C0),
-                ),
+              // 标题栏，包含标题和关闭按钮
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      node.text,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1565C0),
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close, size: 20),
+                    color: Colors.grey[600],
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    splashRadius: 16,
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               const Divider(height: 1, color: Color(0xFFE0E0E0)),
@@ -253,57 +268,58 @@ class _InnerState extends State<MindMapScreen> {
                   ],
                 ),
               const SizedBox(height: 24),
+              // 底部按钮区域 - 只显示功能按钮，关闭按钮已移到右上角
               Row(
-                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  TextButton(
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.blueAccent,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        side: const BorderSide(color: Color(0xFFE0E0E0)),
-                      ),
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('关闭'),
-                  ),
-                  if (hasKnowledgeContent) const SizedBox(width: 12),
                   if (hasKnowledgeContent)
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          minimumSize: const Size(0, 44),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
+                        onPressed: () {
+                          if (Navigator.canPop(context)) {
+                            Navigator.pop(context);
+                            Future.delayed(const Duration(milliseconds: 100), () {
+                              if (context.mounted) {
+                                _showKnowledgeDetail(context, node.data!);
+                              }
+                            });
+                          }
+                        },
+                        child: const Text('查看知识点', 
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
                       ),
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _showKnowledgeDetail(context, node.data!);
-                      },
-                      child: const Text('查看知识点'),
                     ),
-                  if (!isAlreadyInPlan && canAddToPlan) const SizedBox(width: 12),
+                  if (hasKnowledgeContent && (!isAlreadyInPlan && canAddToPlan)) 
+                    const SizedBox(width: 12),
                   if (!isAlreadyInPlan && canAddToPlan)
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueAccent,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 10),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueAccent,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          minimumSize: const Size(0, 44),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
+                        onPressed: () {
+                          if (Navigator.canPop(context)) {
+                            _addToLearningPlan(node.data!);
+                            Navigator.pop(context);
+                          }
+                        },
+                        child: const Text('加入今日计划',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
                       ),
-                      onPressed: () {
-                        _addToLearningPlan(node.data!);
-                        Navigator.pop(context);
-                      },
-                      child: const Text('加入今日计划'),
                     ),
                 ],
               ),
@@ -334,7 +350,8 @@ class _InnerState extends State<MindMapScreen> {
   }
 
   void _showKnowledgeDetail(BuildContext context, Section section) {
-    showKnowledgeCard(context, section);
+    final bank = findBank(section);
+    showKnowledgeCard(context, section, questionBank: bank);
   }
 
   QuestionBank? findBank(Section section) {

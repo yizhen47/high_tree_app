@@ -411,7 +411,7 @@ class StatisticsManager {
     
     return false;
   }
-
+  
   // 递归添加章节到树中
   void _addSectionToTree(List<Section> sections, List<Map<String, dynamic>> targetList, int topicIndex, [String? bankId]) {
     int currentIndex = topicIndex; // 使用局部变量跟踪当前索引
@@ -440,38 +440,38 @@ class StatisticsManager {
       if (hasLearnableContent) {
         learnableSections++;
         
-        // 获取章节学习进度数据
-        final progress = _getSectionProgress(section.id, bankId);
-        
-        // 确保进度信息包含计算后的完成率
-        _ensureProgressCompletionRate(progress);
-        
-        final childTopic = {
-          'name': section.title,
-          'index': currentIndex,
-          'children': <Map<String, dynamic>>[],
-          'id': section.id,
-          'progress': progress,
-          'isCompleted': progress['learnTimes'] > 0,
+      // 获取章节学习进度数据
+      final progress = _getSectionProgress(section.id, bankId);
+      
+      // 确保进度信息包含计算后的完成率
+      _ensureProgressCompletionRate(progress);
+      
+      final childTopic = {
+        'name': section.title,
+        'index': currentIndex,
+        'children': <Map<String, dynamic>>[],
+        'id': section.id,
+        'progress': progress,
+        'isCompleted': progress['learnTimes'] > 0,
           'hasLearnableContent': true,
-        };
-        
-        targetList.add(childTopic);
-        currentIndex++; // 每个章节递增索引
+      };
+      
+      targetList.add(childTopic);
+      currentIndex++; // 每个章节递增索引
         
 
-        
-        // 递归处理子章节
-        if (section.children != null && section.children!.isNotEmpty) {
-          // 递归调用并更新索引值（第一层深度为1）
-          currentIndex = _addSectionToTreeWithReturn(
-            section.children!,
-            childTopic['children'] as List<Map<String, dynamic>>,
-            currentIndex,
-            2,
-            bankId
-          );
-        }
+      
+      // 递归处理子章节
+      if (section.children != null && section.children!.isNotEmpty) {
+        // 递归调用并更新索引值（第一层深度为1）
+        currentIndex = _addSectionToTreeWithReturn(
+          section.children!,
+          childTopic['children'] as List<Map<String, dynamic>>,
+          currentIndex,
+          2,
+          bankId
+        );
+      }
       } else {
         filteredSections++;
 
@@ -516,35 +516,35 @@ class StatisticsManager {
       if (hasLearnableContent) {
         addedAtDepth++;
         
-        // 获取章节学习进度数据
-        final progress = _getSectionProgress(section.id, bankId);
-        
-        // 确保进度信息包含计算后的完成率
-        _ensureProgressCompletionRate(progress);
-        
-        final childTopic = {
-          'name': section.title,
-          'index': currentIndex,
-          'children': <Map<String, dynamic>>[],
-          'id': section.id,
-          'progress': progress,
-          'isCompleted': progress['learnTimes'] > 0,
+      // 获取章节学习进度数据
+      final progress = _getSectionProgress(section.id, bankId);
+      
+      // 确保进度信息包含计算后的完成率
+      _ensureProgressCompletionRate(progress);
+      
+      final childTopic = {
+        'name': section.title,
+        'index': currentIndex,
+        'children': <Map<String, dynamic>>[],
+        'id': section.id,
+        'progress': progress,
+        'isCompleted': progress['learnTimes'] > 0,
           'hasLearnableContent': true,
-        };
-        
-        targetList.add(childTopic);
-        currentIndex++; // 每个章节递增索引
-        
-        // 递归处理子章节
-        if (section.children != null && section.children!.isNotEmpty) {
-          currentIndex = _addSectionToTreeWithReturn(
-            section.children!,
-            childTopic['children'] as List<Map<String, dynamic>>,
-            currentIndex,
-            depth + 1,
-            bankId
-          );
-        }
+      };
+      
+      targetList.add(childTopic);
+      currentIndex++; // 每个章节递增索引
+      
+      // 递归处理子章节
+      if (section.children != null && section.children!.isNotEmpty) {
+        currentIndex = _addSectionToTreeWithReturn(
+          section.children!,
+          childTopic['children'] as List<Map<String, dynamic>>,
+          currentIndex,
+          depth + 1,
+          bankId
+        );
+      }
       } else {
         filteredAtDepth++;
         
