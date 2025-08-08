@@ -9,6 +9,7 @@ import 'package:flutter_application_1/widget/left_toast.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_markdown_latex/flutter_markdown_latex.dart';
 import 'package:markdown/markdown.dart' as md;
+import 'package:flutter_application_1/services/ai_service.dart';
 
 // 导入子组件
 import 'latex_config.dart';
@@ -26,6 +27,12 @@ Card buildQuestionCard(
      final QuestionBank? questionBank]) {
   final ValueNotifier<bool> isExpanded = ValueNotifier(false);
   final ValueNotifier<String> activeFeature = ValueNotifier('none');
+  
+  // AI相关状态管理 - 移到外层避免重建时丢失
+  final TextEditingController questionController = TextEditingController();
+  final ValueNotifier<String> aiResponseNotifier = ValueNotifier<String>('');
+  final ValueNotifier<bool> isLoadingNotifier = ValueNotifier<bool>(false);
+  final ValueNotifier<bool> hasQuestionedNotifier = ValueNotifier<bool>(false);
   
   final options = currentQuestionData?.question['options'] as List<dynamic>?;
   
@@ -94,7 +101,19 @@ Card buildQuestionCard(
                 valueListenable: activeFeature,
                 builder: (context, feature, _) {
                   if (feature == 'none') return const SizedBox.shrink();
-                  return _buildFeaturePanel(context, feature, question, knowledgepoint, currentQuestionData, activeFeature, questionBank);
+                  return _buildFeaturePanel(
+                    context, 
+                    feature, 
+                    question, 
+                    knowledgepoint, 
+                    currentQuestionData, 
+                    activeFeature, 
+                    questionBank,
+                    questionController,
+                    aiResponseNotifier,
+                    isLoadingNotifier,
+                    hasQuestionedNotifier,
+                  );
                 },
               ),
               
@@ -224,8 +243,19 @@ Widget _buildExpandButton(BuildContext context, ValueNotifier<bool> isExpanded, 
   );
 }
 
-Widget _buildFeaturePanel(BuildContext context, String feature, String question, 
-    String knowledgepoint, SingleQuestionData? currentQuestionData, ValueNotifier<String> activeFeature, QuestionBank? questionBank) {
+Widget _buildFeaturePanel(
+  BuildContext context, 
+  String feature, 
+  String question, 
+  String knowledgepoint, 
+  SingleQuestionData? currentQuestionData, 
+  ValueNotifier<String> activeFeature, 
+  QuestionBank? questionBank,
+  TextEditingController questionController,
+  ValueNotifier<String> aiResponseNotifier,
+  ValueNotifier<bool> isLoadingNotifier,
+  ValueNotifier<bool> hasQuestionedNotifier,
+) {
   return Container(
     decoration: const BoxDecoration(
       color: Colors.white,
@@ -278,7 +308,18 @@ Widget _buildFeaturePanel(BuildContext context, String feature, String question,
               
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                child: _buildFeatureContent(feature, question, knowledgepoint, context, currentQuestionData, questionBank),
+                child: _buildFeatureContent(
+                  feature, 
+                  question, 
+                  knowledgepoint, 
+                  context,
+                  questionController,
+                  aiResponseNotifier,
+                  isLoadingNotifier,
+                  hasQuestionedNotifier,
+                  currentQuestionData, 
+                  questionBank
+                ),
               ),
             ],
           ),
@@ -419,12 +460,31 @@ Widget _buildBottomFeatureButton({
   );
 }
 
-Widget _buildFeatureContent(String feature, String question, String knowledgepoint, BuildContext context, [SingleQuestionData? currentQuestionData, QuestionBank? questionBank]) {
+Widget _buildFeatureContent(
+  String feature, 
+  String question, 
+  String knowledgepoint, 
+  BuildContext context,
+  TextEditingController questionController,
+  ValueNotifier<String> aiResponseNotifier,
+  ValueNotifier<bool> isLoadingNotifier,
+  ValueNotifier<bool> hasQuestionedNotifier,
+  [SingleQuestionData? currentQuestionData, 
+   QuestionBank? questionBank]
+) {
   final Color primaryColor = Theme.of(context).primaryColor;
   
   switch (feature) {
     case 'ai':
-      return _buildSimpleAIContent(question, context, primaryColor);
+      return _buildSimpleAIContent(
+        question, 
+        context, 
+        primaryColor,
+        questionController,
+        aiResponseNotifier,
+        isLoadingNotifier,
+        hasQuestionedNotifier,
+      );
     case 'similar':
       return _buildSimpleSimilarQuestionsContent(context, primaryColor, currentQuestionData, questionBank);
     default:
@@ -433,7 +493,56 @@ Widget _buildFeatureContent(String feature, String question, String knowledgepoi
 }
 
 // AI解答内容
-Widget _buildSimpleAIContent(String question, BuildContext context, Color primaryColor) {
+Widget _buildSimpleAIContent(
+  String question, 
+  BuildContext context, 
+  Color primaryColor,
+  TextEditingController questionController,
+  ValueNotifier<String> aiResponseNotifier,
+  ValueNotifier<bool> isLoadingNotifier,
+  ValueNotifier<bool> hasQuestionedNotifier,
+) {
+  
+  Future<void> askAI() async {
+    final userQuestion = questionController.text.trim();
+    if (userQuestion.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('请输入您的问题')),
+      );
+      return;
+    }
+    
+    // 检查API密钥是否已配置
+    if (!AIService().isApiKeyConfigured()) {
+      aiResponseNotifier.value = '错误：AI服务暂不可用，请检查网络连接或联系开发者。';
+      hasQuestionedNotifier.value = true;
+      return;
+    }
+    
+    isLoadingNotifier.value = true;
+    hasQuestionedNotifier.value = true;
+    aiResponseNotifier.value = '';
+    
+    try {
+      final response = await AIService().askQuestionStream(
+        userQuestion, 
+        context: '题目内容：$question',
+        onStream: (chunk) {
+          // 实时更新UI显示流式输出
+          aiResponseNotifier.value += chunk;
+        },
+      );
+      // 确保最终结果完整
+      if (response.isNotEmpty) {
+        aiResponseNotifier.value = response;
+      }
+    } catch (e) {
+      aiResponseNotifier.value = '获取AI回答时出现错误：$e';
+    } finally {
+      isLoadingNotifier.value = false;
+    }
+  }
+  
   return Container(
     margin: const EdgeInsets.symmetric(vertical: 10),
     child: Column(
@@ -443,8 +552,9 @@ Widget _buildSimpleAIContent(String question, BuildContext context, Color primar
           children: [
             Expanded(
               child: TextField(
+                controller: questionController,
                 decoration: InputDecoration(
-                  hintText: '点此向AI提问...',
+                  hintText: '请输入您想向AI询问的问题...',
                   hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade500),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   border: OutlineInputBorder(
@@ -461,53 +571,221 @@ Widget _buildSimpleAIContent(String question, BuildContext context, Color primar
                   ),
                 ),
                 style: const TextStyle(fontSize: 13),
+                maxLines: 2,
+                onSubmitted: (_) => askAI(),
               ),
             ),
             const SizedBox(width: 8),
-            Container(
+            ValueListenableBuilder<bool>(
+              valueListenable: isLoadingNotifier,
+              builder: (context, isLoading, _) {
+                return Container(
               decoration: BoxDecoration(
-                color: primaryColor,
+                    color: isLoading ? Colors.grey.shade400 : primaryColor,
                 borderRadius: BorderRadius.circular(6),
               ),
               child: IconButton(
-                icon: const Icon(Icons.send, color: Colors.white, size: 16),
+                    icon: isLoading 
+                      ? SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Icon(Icons.send, color: Colors.white, size: 16),
                 padding: const EdgeInsets.all(8),
                 constraints: const BoxConstraints(
                   minWidth: 32,
                   minHeight: 32,
                 ),
-                onPressed: () {},
+                    onPressed: isLoading ? null : askAI,
               ),
+                );
+              },
             ),
           ],
         ),
-        Container(
+        
+        ValueListenableBuilder<bool>(
+          valueListenable: hasQuestionedNotifier,
+          builder: (context, hasQuestioned, _) {
+            if (!hasQuestioned) {
+              return Container(
           margin: const EdgeInsets.only(top: 8),
           width: double.infinity,
-          padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: Colors.blue.shade200, width: 1),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.lightbulb_outline, size: 16, color: Colors.blue.shade600),
+                        const SizedBox(width: 6),
+                        Text(
+                          '智能提问建议',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.blue.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        _buildQuickQuestionChip('这道题的解题思路是什么？', questionController, askAI, primaryColor),
+                        _buildQuickQuestionChip('这道题涉及哪些知识点？', questionController, askAI, primaryColor),
+                        _buildQuickQuestionChip('有没有更简单的解法？', questionController, askAI, primaryColor),
+                        _buildQuickQuestionChip('类似的题目怎么做？', questionController, askAI, primaryColor),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            }
+            
+            return ValueListenableBuilder<String>(
+              valueListenable: aiResponseNotifier,
+              builder: (context, aiResponse, _) {
+                return Container(
+                  margin: const EdgeInsets.only(top: 8),
+                  width: double.infinity,
           decoration: BoxDecoration(
             color: Colors.grey.shade50,
             borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: Colors.grey.shade200, width: 1),
           ),
-          child: LaTeX(
-            laTeXCode: ExtendedText(
-              convertLatexDelimiters('等待AI回答...'),
-              style: TextStyle(
-                fontSize: 13,
-                height: 1.5,
-                color: Colors.grey.shade500,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-            equationStyle: TextStyle(
-              fontSize: latexStyleConfig.fontSize,
-              fontWeight: latexStyleConfig.fontWeight,
-              fontFamily: latexStyleConfig.mathFontFamily,
-              fontStyle: FontStyle.italic,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 标题栏
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+                        child: Row(
+                          children: [
+                            Icon(Icons.smart_toy, size: 16, color: primaryColor),
+                            const SizedBox(width: 6),
+                            Text(
+                              'AI回答',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: primaryColor,
+                              ),
+                            ),
+                            const Spacer(),
+                            if (aiResponse.isNotEmpty && !aiResponse.startsWith('AI正在思考'))
+                              IconButton(
+                                icon: Icon(Icons.refresh, size: 16, color: Colors.grey.shade600),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                onPressed: () {
+                                  hasQuestionedNotifier.value = false;
+                                  aiResponseNotifier.value = '';
+                                  questionController.clear();
+                                },
+                              ),
+                          ],
+                        ),
+                      ),
+                      // 可滚动的回答内容
+                      Container(
+                        constraints: const BoxConstraints(
+                          maxHeight: 150, // 降低最大高度，让回答更紧凑
+                        ),
+                        padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                        child: SingleChildScrollView(
+                          child: aiResponse.isNotEmpty 
+                            ? Builder(
+                                builder: (context) {
+                                  try {
+                                    final convertedResponse = convertLatexDelimiters(aiResponse);
+                                    return LaTeX(
+                                      laTeXCode: ExtendedText(
+                                        convertedResponse,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          height: 1.5,
+                                          color: Colors.grey.shade800,
+                                        ),
+                                      ),
+                                      equationStyle: TextStyle(
+                                        fontSize: latexStyleConfig.fontSize,
+                                        fontWeight: latexStyleConfig.fontWeight,
+                                        fontFamily: latexStyleConfig.mathFontFamily,
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                    );
+                                  } catch (e, stackTrace) {
+                                    print("HighTree-Debug: LaTeX rendering failed for AI response: $aiResponse");
+                                    print("HighTree-Debug: Error: $e");
+                                    print("HighTree-Debug: StackTrace: $stackTrace");
+                                    // 降级到纯文本显示
+                                    return SelectableText(
+                                      aiResponse,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        height: 1.5,
+                                        color: Colors.grey.shade800,
+                                      ),
+                                    );
+                                  }
+                                },
+                              )
+                            : Text(
+                                '等待您的提问...',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  height: 1.5,
+                                  color: Colors.grey.shade500,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
             ),
           ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
         ),
       ],
+    ),
+  );
+}
+
+Widget _buildQuickQuestionChip(String question, TextEditingController controller, VoidCallback onTap, Color primaryColor) {
+  return GestureDetector(
+    onTap: () {
+      controller.text = question;
+      onTap();
+    },
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: primaryColor.withOpacity(0.3), width: 1),
+      ),
+      child: Text(
+        question,
+        style: TextStyle(
+          fontSize: 11,
+          color: primaryColor,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
     ),
   );
 }
@@ -694,11 +972,160 @@ Widget _buildSimpleSimilarQuestionsContent(BuildContext context, Color primaryCo
         Center(
           child: Padding(
             padding: const EdgeInsets.only(top: 4),
+            child: GestureDetector(
+              onTap: () {
+                // 显示所有同源题的对话框
+                showDialog(
+                  context: context,
+                  builder: (dialogContext) {
+                    return Dialog(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Container(
+                        constraints: BoxConstraints(
+                          maxHeight: MediaQuery.of(context).size.height * 0.8,
+                          maxWidth: MediaQuery.of(context).size.width * 0.9,
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // 标题栏
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: primaryColor.withOpacity(0.1),
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(16),
+                                  topRight: Radius.circular(16),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.quiz, color: primaryColor, size: 20),
+                                  const SizedBox(width: 8),
+                                  Expanded(
             child: Text(
-              '点击查看更多同源题',
+                                      '所有同源题 (${similarQuestions.length}题)',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: primaryColor,
+                                      ),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    onPressed: () => Navigator.of(dialogContext).pop(),
+                                    icon: const Icon(Icons.close, size: 20),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // 题目列表
+                            Expanded(
+                              child: ListView.builder(
+                                padding: const EdgeInsets.all(16),
+                                itemCount: similarQuestions.length,
+                                itemBuilder: (context, index) {
+                                  final question = similarQuestions[index];
+                                  return Container(
+                                    margin: const EdgeInsets.only(bottom: 8),
+                                    child: InkWell(
+                                      onTap: () {
+                                        Navigator.of(dialogContext).pop();
+                                        showQuestion(question);
+                                      },
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.shade50,
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(
+                                            color: Colors.grey.shade200,
+                                            width: 0.5,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Container(
+                                              width: 24,
+                                              height: 24,
+                                              alignment: Alignment.center,
+                                              decoration: BoxDecoration(
+                                                color: primaryColor.withOpacity(0.1),
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: Text(
+                                                '${index + 1}',
+                                                style: TextStyle(
+                                                  color: primaryColor,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Builder(
+                                                builder: (context) {
+                                                  try {
+                                                    final questionText = _formatQuestionPreview(question.question['q'] ?? '');
+                                                    final convertedQuestion = convertLatexDelimiters(questionText);
+                                                    return LaTeX(
+                                                      laTeXCode: ExtendedText(
+                                                        convertedQuestion,
+                                                        style: const TextStyle(
+                                                          fontSize: 14,
+                                                          height: 1.3,
+                                                        ),
+                                                        maxLines: 2,
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
+                                                      equationStyle: TextStyle(
+                                                        fontSize: 14.0,
+                                                        fontWeight: latexStyleConfig.fontWeight,
+                                                        fontFamily: latexStyleConfig.mathFontFamily,
+                                                        fontStyle: FontStyle.italic,
+                                                      ),
+                                                    );
+                                                  } catch (e) {
+                                                    // 如果LaTeX渲染失败，降级到纯文本显示
+                                                    return ExtendedText(
+                                                      _formatQuestionPreview(question.question['q'] ?? ''),
+                                                      style: const TextStyle(fontSize: 14),
+                                                      maxLines: 2,
+                                                      overflow: TextOverflow.ellipsis,
+                                                    );
+                                                  }
+                                                },
+                                              ),
+                                            ),
+                                            Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey.shade400),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+              child: Text(
+                '点击查看更多同源题 (${similarQuestions.length - maxDisplayCount})',
               style: TextStyle(
                 fontSize: 12,
                 color: primaryColor,
+                  decoration: TextDecoration.underline,
+                ),
               ),
             ),
           ),
@@ -890,48 +1317,48 @@ Widget _buildAnswerSection(String? answer, String? note, BuildContext context, [
                   questionBank: questionBank,
                 )
               : (answer?.isNotEmpty ?? false)
-                ? Builder(builder: (context) {
-                    final convertedAnswer = convertLatexDelimiters(answer!);
-                    try {
-                      return LaTeX(
-                        laTeXCode: ExtendedText(
-                          convertedAnswer,
-                          style: TextStyle(
-                            fontSize: 13,
-                            height: 1.5,
-                            color: Colors.grey.shade800,
-                          ),
-                        ),
-                        equationStyle: TextStyle(
-                          fontSize: latexStyleConfig.fontSize,
-                          fontWeight: latexStyleConfig.fontWeight,
-                          fontFamily: latexStyleConfig.mathFontFamily,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      );
-                    } catch (e, stackTrace) {
-                      print("HighTree-Debug: LaTeX rendering failed for analysis: $convertedAnswer");
-                      print("HighTree-Debug: Error: $e");
-                      print("HighTree-Debug: StackTrace: $stackTrace");
-                      // 降级到纯文本显示
-                      return ExtendedText(
-                        answer!,
+              ? Builder(builder: (context) {
+                  final convertedAnswer = convertLatexDelimiters(answer!);
+                  try {
+                    return LaTeX(
+                      laTeXCode: ExtendedText(
+                        convertedAnswer,
                         style: TextStyle(
                           fontSize: 13,
                           height: 1.5,
                           color: Colors.grey.shade800,
                         ),
-                      );
-                    }
-                  })
-                : Text(
-                    '等待老师添加解析中...',
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontStyle: FontStyle.italic,
-                      fontSize: 12,
-                    ),
+                      ),
+                      equationStyle: TextStyle(
+                        fontSize: latexStyleConfig.fontSize,
+                        fontWeight: latexStyleConfig.fontWeight,
+                        fontFamily: latexStyleConfig.mathFontFamily,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    );
+                  } catch (e, stackTrace) {
+                    print("HighTree-Debug: LaTeX rendering failed for analysis: $convertedAnswer");
+                    print("HighTree-Debug: Error: $e");
+                    print("HighTree-Debug: StackTrace: $stackTrace");
+                    // 降级到纯文本显示
+                    return ExtendedText(
+                      answer!,
+                      style: TextStyle(
+                        fontSize: 13,
+                        height: 1.5,
+                        color: Colors.grey.shade800,
+                      ),
+                    );
+                  }
+                })
+              : Text(
+                  '等待老师添加解析中...',
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontStyle: FontStyle.italic,
+                    fontSize: 12,
                   ),
+                ),
                 
             if (hasNote) ...[
               const SizedBox(height: 12),

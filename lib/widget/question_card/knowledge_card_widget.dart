@@ -364,7 +364,7 @@ Future<String?> _findAssetInQuestionBank(String assetPath, QuestionBank? questio
     developer.log('[findAsset] No question bank cache directory provided.', name: 'KnowledgeCard');
     return null;
   }
-  
+
   // 4. 在题库缓存目录中尝试多种路径组合
   final cacheDirPath = questionBank!.cacheDir!;
   final assetSubDir = isVideo ? 'videos' : 'images';

@@ -38,10 +38,10 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
       } else {
         _videoPlayerController = VideoPlayerController.file(File(widget.videoPath));
       }
-      
+
       await _videoPlayerController.initialize();
       
-      setState(() {
+        setState(() {
         _chewieController = ChewieController(
           videoPlayerController: _videoPlayerController,
           autoPlay: true,
@@ -52,10 +52,10 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
         );
         _isLoading = false;
         developer.log('[VideoPlayer] Initialization successful for: ${widget.videoPath}', name: 'VideoPlayer');
-      });
+        });
     } catch (e, stackTrace) {
-      setState(() {
-        _hasError = true;
+        setState(() {
+          _hasError = true;
         _isLoading = false;
       });
       developer.log(
@@ -90,15 +90,15 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
             : _hasError
                 ? Center(
                     child: SingleChildScrollView( // 解决溢出问题
-                      child: Column(
+                  child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
+                    children: [
                           Icon(Icons.error_outline, color: Colors.red.shade300, size: 48),
                           const SizedBox(height: 16),
                           const Text(
                             '视频加载失败',
                             style: TextStyle(color: Colors.white, fontSize: 16),
-                          ),
+                        ),
                           const SizedBox(height: 8),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -107,14 +107,14 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
                               style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
                               textAlign: TextAlign.center,
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
+                                ),
+                              ],
+                            ),
+                        ),
                   )
                 : ClipRect(
                     child: Chewie(controller: _chewieController!),
-                  ),
+        ),
       ),
     );
   }

@@ -84,18 +84,24 @@ class MindMapNode<T> {
     }
     
     final originalSize = _originalImageSize!;
-    const double maxWidth = 300.0; // 最大宽度
-    const double maxHeight = 200.0; // 最大高度
-    const double minWidth = 120.0; // 最小宽度
-    const double minHeight = 80.0; // 最小高度
-    const double textHeight = 30.0; // 为文本预留的高度
     
-    // 计算缩放比例
+    // 根据图片实际尺寸动态设置大小范围
+    // 小图片：最大400px，大图片：最大600px
+    double maxWidth = originalSize.width > 800 || originalSize.height > 600 ? 600.0 : 400.0;
+    double maxHeight = originalSize.width > 800 || originalSize.height > 600 ? 400.0 : 300.0;
+    
+    // 最小尺寸根据图片大小调整
+    double minWidth = originalSize.width < 200 ? 150.0 : 200.0;
+    double minHeight = originalSize.height < 150 ? 100.0 : 120.0;
+    
+    const double textHeight = 40.0; // 为文本预留的高度（统一大小）
+    
+    // 计算保持宽高比的缩放
     double scaleX = maxWidth / originalSize.width;
     double scaleY = (maxHeight - textHeight) / originalSize.height;
     double scale = scaleX < scaleY ? scaleX : scaleY;
     
-    // 如果图片太小，设置最小尺寸
+    // 确保不会过度缩小
     double finalWidth = (originalSize.width * scale).clamp(minWidth, maxWidth);
     double finalHeight = (originalSize.height * scale).clamp(minHeight - textHeight, maxHeight - textHeight) + textHeight;
     
@@ -655,19 +661,6 @@ class _MindMapPainter extends CustomPainter {
       return;
     }
 
-    // 计算图片的最佳显示尺寸
-    final imageAspectRatio = image.width / image.height;
-    final maxImageWidth = node.size.width - 20;
-    final maxImageHeight = node.size.height - 40; // 为文本预留空间
-
-    double imageWidth = maxImageWidth;
-    double imageHeight = imageWidth / imageAspectRatio;
-    
-    if (imageHeight > maxImageHeight) {
-      imageHeight = maxImageHeight;
-      imageWidth = imageHeight * imageAspectRatio;
-    }
-
     // 绘制节点背景 - 更像卡片的样式
     final rect = RRect.fromRectAndRadius(
       Rect.fromCenter(
@@ -703,9 +696,28 @@ class _MindMapPainter extends CustomPainter {
       canvas.drawRRect(rect.inflate(2), highlightPaint);
     }
 
-    // 绘制图片
+    // 计算图片的显示尺寸 - 占用除文字区域外的所有空间
+    const double textAreaHeight = 40.0; // 为文本预留的高度
+    const double padding = 10.0; // 图片四周的内边距
+    
+    final maxImageWidth = node.size.width - (padding * 2);
+    final maxImageHeight = node.size.height - textAreaHeight - (padding * 2);
+    
+    final imageAspectRatio = image.width / image.height;
+    double imageWidth = maxImageWidth;
+    double imageHeight = imageWidth / imageAspectRatio;
+    
+    if (imageHeight > maxImageHeight) {
+      imageHeight = maxImageHeight;
+      imageWidth = imageHeight * imageAspectRatio;
+    }
+
+    // 绘制图片 - 位置在节点上半部分居中
     final imageRect = Rect.fromCenter(
-      center: Offset(node.position.dx, node.position.dy - 10),
+      center: Offset(
+        node.position.dx, 
+        node.position.dy - (textAreaHeight / 2) // 向上偏移，为文字留出空间
+      ),
       width: imageWidth,
       height: imageHeight,
     );
@@ -723,24 +735,26 @@ class _MindMapPainter extends CustomPainter {
     canvas.save();
     canvas.scale(scale);
 
-    // 绘制文本标签
+    // 绘制文本标签（统一大小和样式）
     if (node.text.isNotEmpty) {
       final textPainter = TextPainter(
         text: TextSpan(
           text: node.text,
           style: TextStyle(
             color: Colors.grey[800],
-            fontSize: 12,
+            fontSize: 14, // 统一文字大小
             fontWeight: FontWeight.w600,
+            letterSpacing: 0.2,
           ),
         ),
         textDirection: TextDirection.ltr,
         textAlign: TextAlign.center,
       )..layout(maxWidth: node.size.width - 20);
 
+      // 文本位置：固定在节点底部
       final textPos = Offset(
         node.position.dx - textPainter.width / 2,
-        node.position.dy + imageHeight / 2 + 5,
+        node.position.dy + (node.size.height / 2) - 25, // 固定距底部25px
       );
       textPainter.paint(canvas, textPos);
     }

@@ -322,12 +322,12 @@ class Section {
     questionsList ??= [];
     
     // 无论是否为叶子节点，都直接获取当前节点的题目
-    if (hasLearnableContent() && questions != null) {
+      if (hasLearnableContent() && questions != null) {
       for (var q in questions!) {
         questionsList.add(SingleQuestionData(q, fromId, fromName)
           ..fromKonwledgeIndex = (List.from(fromKonwledgeIndex)..add(index))
           ..fromKonwledgePoint = (List.from(fromKonwledgePoint)..add(title)));
-      }
+    }
     }
     
     return questionsList;
@@ -540,8 +540,8 @@ class QuestionBank {
     for (final index in knowledgePath) {
       if(index.isEmpty) continue;
       try {
-        currentSection =
-            currentSection.children!.firstWhere((e) => e.index == index);
+      currentSection =
+          currentSection.children!.firstWhere((e) => e.index == index);
       } catch (e) {
         print('HighTree-Debug: Failed to find section with index: $index in path: $knowledgePath');
         print('HighTree-Debug: Available sections: ${currentSection.children?.map((e) => e.index).toList()}');

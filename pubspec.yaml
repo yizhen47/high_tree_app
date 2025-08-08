@@ -52,6 +52,7 @@ dependencies:
   flutter_ble_peripheral: ^1.1.0
   flutter_math_fork: 0.7.2
   chewie: ^1.10.0
+  http: ^1.1.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
