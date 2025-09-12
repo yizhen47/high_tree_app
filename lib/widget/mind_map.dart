@@ -171,7 +171,14 @@ class MindMapNode<T> {
   }
 
   static MindMapNode<Section> fromSection(Section section) {
-    throw UnimplementedError();
+    return MindMapNode<Section>(
+      id: section.id,
+      text: section.title,
+      position: Offset.zero, // 初始位置，会在布局时重新计算
+      data: section,
+      image: section.image, // 如果 Section 有图片属性
+      color: const Color(0xFF4F46E5), // 默认颜色
+    );
   }
 }
 

@@ -115,6 +115,8 @@ class WrongQuestionBook {
     wrongBox.clear();
     manualSectionsBox.clear();
   }
+
+  clear() {}
 }
 
 @HiveType(typeId: 1)

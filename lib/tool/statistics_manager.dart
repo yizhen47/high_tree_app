@@ -19,6 +19,8 @@ class StatisticsManager {
   // Current selected period
   final int selectedPeriod;
 
+  static var instance;
+
   // Constructor
   StatisticsManager(this.selectedPeriod);
 

@@ -14,6 +14,38 @@ import 'package:flutter_application_1/tool/question/question_bank.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/tool/question/wrong_question_book.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
+import 'dart:math';
+import 'package:path_provider/path_provider.dart';
+import 'package:flutter/foundation.dart';
+
+int _getDirSizeSync(Directory dir) {
+  int size = 0;
+  try {
+    if (dir.existsSync()) {
+      dir.listSync(recursive: false).forEach((entity) {
+        if (entity is File) {
+          try {
+            size += entity.lengthSync();
+          } catch (e) {
+            debugPrint("Couldn't read file length: $e");
+          }
+        } else if (entity is Directory) {
+          size += _getDirSizeSync(entity);
+        }
+      });
+    }
+  } catch (e) {
+    debugPrint("Couldn't list directory: $e");
+  }
+  return size;
+}
+
+String _formatBytes(int bytes, int decimals) {
+  if (bytes <= 0) return "0 B";
+  const suffixes = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+  var i = (log(bytes) / log(1024)).floor();
+  return '${(bytes / pow(1024, i)).toStringAsFixed(decimals)} ${suffixes[i]}';
+}
 
 // 添加文本缩放控制器，解决系统字体大小设置导致的UI错乱问题
 class TextScaler {
@@ -273,8 +305,45 @@ class _HomeScreenState extends State<HomeScreen> {
 
 
 // 个人中心界面
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  String _cacheSizeText = '计算中...';
+  // 添加一个用于触发FutureBuilder重建的键
+  int _cacheRefreshKey = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCacheSize();
+  }
+
+  Future<void> _loadCacheSize() async {
+    try {
+      final size = await _calculateCacheSize();
+      if (mounted) {
+        setState(() {
+          _cacheSizeText = _formatBytes(size, 2);
+          // 增加刷新键，触发FutureBuilder重建
+          _cacheRefreshKey++;
+        });
+      }
+    } catch (e, stackTrace) {
+      if (mounted) {
+        debugPrint('Failed to load cache size: $e');
+        debugPrint(stackTrace.toString());
+        setState(() {
+          _cacheSizeText = '计算失败';
+          _cacheRefreshKey++;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -366,6 +435,7 @@ class ProfilePage extends StatelessWidget {
                         },
                         icon: Icons.cached_outlined,
                         title: '数据清理',
+                        trailingText: _cacheSizeText,
                       ),
                       _buildDivider(),
                       _buildCompactListTile(
@@ -392,11 +462,13 @@ class ProfilePage extends StatelessWidget {
   Widget _buildProfileHeader() {
     // 获取用户学习等级
     final studyLevel = (StudyData.instance.studyMinute / 10).ceil();
-    final wrongQuestions = WrongQuestionBook.instance.getWrongQuestionIds().length;
+    final wrongQuestions =
+        WrongQuestionBook.instance.getWrongQuestionIds().length;
     final totalQuestions = WrongQuestionBook.instance.questionBox.length;
-    final accuracyRate = totalQuestions > 0 ? 
-      ((totalQuestions - wrongQuestions) / totalQuestions * 100).toInt() : 0;
-    
+    final accuracyRate = totalQuestions > 0
+        ? ((totalQuestions - wrongQuestions) / totalQuestions * 100).toInt()
+        : 0;
+
     return FlexibleSpaceBar(
       background: Container(
         decoration: const BoxDecoration(
@@ -429,7 +501,8 @@ class ProfilePage extends StatelessWidget {
                       ),
                       const SizedBox(height: 10),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(12),
@@ -456,16 +529,18 @@ class ProfilePage extends StatelessWidget {
                       ),
                     ],
                   ),
-                  
+
                   // 右侧头像
                   CircleAvatar(
                     radius: 22,
                     backgroundColor: Colors.white.withOpacity(0.2),
                     child: CircleAvatar(
                       radius: 20,
-                      backgroundImage: StudyData.instance.avatar == null || StudyData.instance.avatar!.isEmpty
+                      backgroundImage: StudyData.instance.avatar == null ||
+                              StudyData.instance.avatar!.isEmpty
                           ? const AssetImage("assets/logo.png")
-                          : FileImage(File(StudyData.instance.avatar!)) as ImageProvider,
+                          : FileImage(File(StudyData.instance.avatar!))
+                              as ImageProvider,
                     ),
                   ),
                 ],
@@ -476,7 +551,7 @@ class ProfilePage extends StatelessWidget {
       ),
     );
   }
-  
+
   Widget _buildProfileStatItem({required String label, required String value}) {
     return Column(
       children: [
@@ -499,7 +574,7 @@ class ProfilePage extends StatelessWidget {
       ],
     );
   }
-  
+
   Widget _buildProfileDivider() {
     return Container(
       height: 24,
@@ -508,11 +583,11 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildCompactListTile({
-    required IconData icon,
-    required String title,
-    VoidCallback? onTap,
-  }) {
+  Widget _buildCompactListTile(
+      {required IconData icon,
+      required String title,
+      VoidCallback? onTap,
+      String? trailingText}) {
     return ListTile(
       onTap: onTap,
       contentPadding:
@@ -523,9 +598,23 @@ class ProfilePage extends StatelessWidget {
             fontSize: 14, // 调小文字尺寸
             color: AppTheme.textPrimary,
           )),
-      trailing: const Icon(Icons.chevron_right,
-          size: 18, // 调小箭头
-          color: AppTheme.textSecondary),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (trailingText != null)
+            Text(
+              trailingText,
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppTheme.textSecondary,
+              ),
+            ),
+          const SizedBox(width: 6),
+          const Icon(Icons.chevron_right,
+              size: 18, // 调小箭头
+              color: AppTheme.textSecondary),
+        ],
+      ),
       minLeadingWidth: 24, // 减少图标间距
     );
   }
@@ -543,41 +632,161 @@ class ProfilePage extends StatelessWidget {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          title: Row(
-            children: const [
-              Icon(Icons.warning_amber_rounded, color: AppTheme.warningColor),
-              SizedBox(width: 10),
-              Text('警告', style: TextStyle(fontWeight: FontWeight.bold)),
-            ],
-          ),
-          content: const Text(
-              '此操作将清除所有本地学习数据，包括错题本、学习记录和个人设置，且无法恢复。您确定要继续吗？'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('取消',
-                  style: TextStyle(color: AppTheme.textSecondary)),
-              onPressed: () {
-                Navigator.of(dialogContext).pop(); // Close the dialog
-              },
-            ),
-            TextButton(
-              child: const Text('继续',
-                  style: TextStyle(color: AppTheme.warningColor)),
-              onPressed: () {
-                Navigator.of(dialogContext).pop(); // Close the dialog
-                QuestionBank.clearAllCache();
-                WrongQuestionBook.instance.clearData();
-                StudyData.instance.sharedPreferences!.clear();
-                TDToast.showSuccess("清理完毕", context: context);
-              },
-            ),
-          ],
+        return FutureBuilder<int>(
+          key: ValueKey(_cacheRefreshKey), // 使用键来触发重建
+          future: _calculateCacheSize(),
+          builder: (context, snapshot) {
+            String cacheSizeText = "计算中...";
+            if (snapshot.connectionState == ConnectionState.done &&
+                snapshot.hasData) {
+              cacheSizeText = "应用缓存: ${_formatBytes(snapshot.data!, 2)}";
+            } else if (snapshot.hasError) {
+              cacheSizeText = "缓存计算失败";
+            }
+
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              title: Row(
+                children: const [
+                  Icon(Icons.cached_outlined, color: AppTheme.primaryColor),
+                  SizedBox(width: 10),
+                  Text('数据清理',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(cacheSizeText),
+                  const SizedBox(height: 20),
+                  const Text(
+                    '清理缓存：删除临时文件\n清理数据：删除所有本地学习数据',
+                    style: TextStyle(
+                        fontSize: 12, color: AppTheme.textSecondary),
+                  ),
+                ],
+              ),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('关闭',
+                      style: TextStyle(color: AppTheme.textSecondary)),
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                  },
+                ),
+                TextButton(
+                  child: const Text('清理缓存',
+                      style: TextStyle(color: AppTheme.primaryColor)),
+                  onPressed: () async {
+                    Navigator.of(dialogContext).pop();
+                    TDToast.showLoadingWithoutText(context: context);
+                    try {
+                      final cacheDir = await getTemporaryDirectory();
+                      await _clearCache(cacheDir);
+                      // 等待缓存大小重新计算完成
+                      await _loadCacheSize();
+                      TDToast.dismissLoading();
+                      TDToast.showSuccess('缓存清理完成', context: context);
+                    } catch (e) {
+                      TDToast.dismissLoading();
+                      TDToast.showFail('清理失败: $e', context: context);
+                    }
+                  },
+                ),
+                TextButton(
+                  child: const Text('清理数据',
+                      style: TextStyle(color: AppTheme.warningColor)),
+                  onPressed: () async {
+                    Navigator.of(dialogContext).pop();
+                    TDToast.showLoadingWithoutText(context: context);
+                    try {
+                      await Future.wait([
+                        Future(() => QuestionBank.clearAllCache()),
+                        Future(() => WrongQuestionBook.instance.clearData()),
+                        Future(() => StudyData.instance.sharedPreferences!.clear()),
+                      ]);
+                      // 等待缓存大小重新计算完成
+                      await _loadCacheSize();
+                      TDToast.dismissLoading();
+                      TDToast.showSuccess("数据已清理", context: context);
+                    } catch (e) {
+                      TDToast.dismissLoading();
+                      TDToast.showFail("清理失败: $e", context: context);
+                    }
+                  },
+                ),
+              ],
+            );
+          },
         );
       },
     );
+  }
+
+  Future<int> _calculateCacheSize() async {
+    final cacheDir = await getTemporaryDirectory();
+    return await compute(_getDirSizeSync, cacheDir);
+  }
+
+  Future<void> _clearCache(Directory cacheDir) async {
+    int deletedFiles = 0;
+    int skippedFiles = 0;
+    
+    try {
+      if (await cacheDir.exists()) {
+        await for (final entity in cacheDir.list()) {
+          if (await _tryDeleteEntity(entity)) {
+            deletedFiles++;
+          } else {
+            skippedFiles++;
+          }
+        }
+      }
+      
+      debugPrint("缓存清理完成: 删除 $deletedFiles 个项目, 跳过 $skippedFiles 个项目");
+      
+      // 即使有文件被跳过，也不抛出错误，因为这是正常情况
+      if (skippedFiles > 0) {
+        debugPrint("提示: 有 $skippedFiles 个文件正在使用中，已跳过");
+      }
+    } catch (e) {
+      debugPrint("清理缓存时出错: $e");
+      // 只有在严重错误时才重新抛出，文件占用不算严重错误
+      if (!_isFileInUseError(e)) {
+        rethrow;
+      }
+    }
+  }
+
+  Future<bool> _tryDeleteEntity(FileSystemEntity entity) async {
+    try {
+      if (entity is Directory) {
+        await entity.delete(recursive: true);
+      } else if (entity is File) {
+        await entity.delete();
+      }
+      return true;
+    } catch (e) {
+      if (_isFileInUseError(e)) {
+        debugPrint("跳过正在使用的文件: ${entity.path}");
+        return false;
+      } else {
+        debugPrint("删除文件时出错 ${entity.path}: $e");
+        return false; // 其他错误也跳过，避免中断整个清理过程
+      }
+    }
+  }
+
+  bool _isFileInUseError(dynamic error) {
+    final errorString = error.toString().toLowerCase();
+    return errorString.contains('另一个程序正在使用') ||
+           errorString.contains('access is denied') ||
+           errorString.contains('being used by another process') ||
+           errorString.contains('permission denied') ||
+           errorString.contains('file is being used') ||
+           errorString.contains('sharing violation');
   }
 
   Widget _buildProfileStats() {

@@ -209,4 +209,6 @@ class QuestionBankAccessor {
     
     return totalQuestions;
   }
+
+  clearAllBanks() {}
 } 
