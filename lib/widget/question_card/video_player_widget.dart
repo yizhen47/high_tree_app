@@ -9,10 +9,10 @@ class VideoPlayerWidget extends StatefulWidget {
   final Color primaryColor;
 
   const VideoPlayerWidget({
-    Key? key,
+    super.key,
     required this.videoPath,
     required this.primaryColor,
-  }) : super(key: key);
+  });
 
   @override
   _VideoPlayerWidgetState createState() => _VideoPlayerWidgetState();
@@ -126,10 +126,10 @@ class FullscreenVideoPlayer extends StatefulWidget {
   final Color primaryColor;
 
   const FullscreenVideoPlayer({
-    Key? key,
+    super.key,
     required this.controller,
     required this.primaryColor,
-  }) : super(key: key);
+  });
 
   @override
   State<FullscreenVideoPlayer> createState() => _FullscreenVideoPlayerState();

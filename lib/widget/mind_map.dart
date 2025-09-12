@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_application_1/tool/question/question_bank.dart';
 import 'package:flutter_application_1/widget/latex.dart';
 import 'package:latext/latext.dart';
 
@@ -168,6 +168,10 @@ class MindMapNode<T> {
     for (final child in children) {
       child._updateHighlight(targetId);
     }
+  }
+
+  static MindMapNode<Section> fromSection(Section section) {
+    throw UnimplementedError();
   }
 }
 
@@ -840,7 +844,7 @@ class _MindMapPainter extends CustomPainter {
       node.position.dy,
     );
     
-    final indicatorRadius = 8.0;
+    const indicatorRadius = 8.0;
     
     // 绘制圆形背景
     final circlePaint = Paint()

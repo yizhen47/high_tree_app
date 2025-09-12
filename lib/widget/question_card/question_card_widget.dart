@@ -586,7 +586,7 @@ Widget _buildSimpleAIContent(
               ),
               child: IconButton(
                     icon: isLoading 
-                      ? SizedBox(
+                      ? const SizedBox(
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(
@@ -1342,7 +1342,7 @@ Widget _buildAnswerSection(String? answer, String? note, BuildContext context, [
                     print("HighTree-Debug: StackTrace: $stackTrace");
                     // 降级到纯文本显示
                     return ExtendedText(
-                      answer!,
+                      answer,
                       style: TextStyle(
                         fontSize: 13,
                         height: 1.5,

@@ -15,11 +15,11 @@ class _AboutScreenState extends State<AboutScreen>
   String _version = '0.0.0';
 
   final _decorationItems = [
-    const _DecorationItem(Icons.star, Colors.white30, Alignment(-0.8, -0.6)),
+    const _DecorationItem(Icons.star, Colors.white30, Alignment(-0.8, -0.6), 32),
     _DecorationItem(
-        Icons.wb_sunny, Colors.amber.withOpacity(0.2), const Alignment(0.7, -0.4)),
+        Icons.wb_sunny, Colors.amber.withOpacity(0.2), const Alignment(0.7, -0.4), 40),
     _DecorationItem(
-        Icons.circle, Colors.blueAccent.withOpacity(0.1), const Alignment(0.3, 0.8)),
+        Icons.circle, Colors.blueAccent.withOpacity(0.1), const Alignment(0.3, 0.8), 48),
   ];
 
   @override
@@ -243,12 +243,14 @@ class _SettingCard extends StatelessWidget {
 // 调整后的数据配置
 final _menuItems = [
   _MenuItem(
+    null,
     icon: Icons.verified_user,
     color: Colors.indigo,
     title: "当前版本",
     onTap: () {},
   ),
   _MenuItem(
+    null,
     icon: Icons.system_update,
     color: Colors.green,
     title: "版本更新",
@@ -256,6 +258,7 @@ final _menuItems = [
     onTap: () {},
   ),
   _MenuItem(
+    null,
     icon: Icons.contact_support,
     color: Colors.blue,
     title: "联系我们",
@@ -271,7 +274,7 @@ class _DecorationItem {
   final Alignment alignment;
   final double size;
 
-  const _DecorationItem(this.icon, this.color, this.alignment, [this.size = 24.0]);
+  const _DecorationItem(this.icon, this.color, this.alignment, this.size);
 }
 
 class _MenuItem {
@@ -282,11 +285,10 @@ class _MenuItem {
   final bool showArrow;
   final VoidCallback onTap;
 
-  const _MenuItem({
+  const _MenuItem(this.subtitle, {
     required this.icon,
     required this.color,
     required this.title,
-    this.subtitle,
     this.showArrow = false,
     required this.onTap,
   });

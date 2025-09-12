@@ -11,11 +11,11 @@ class VideoContentWidget extends StatelessWidget {
   final QuestionBank? questionBank;
 
   const VideoContentWidget({
-    Key? key,
+    super.key,
     required this.primaryColor,
     this.currentQuestionData,
     this.questionBank,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

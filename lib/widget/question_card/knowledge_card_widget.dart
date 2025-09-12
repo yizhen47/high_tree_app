@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:extended_text/extended_text.dart';
+import 'package:flutter_application_1/screen/fullscreen_video_page.dart';
 import 'package:flutter_application_1/widget/latex.dart';
-import 'package:latext/latext.dart';
+import 'package:flutter_application_1/widget/question_card/question_card_widget.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_markdown_latex/flutter_markdown_latex.dart';
 import 'package:markdown/markdown.dart' as md;
@@ -12,7 +12,7 @@ import 'latex_config.dart';
 import 'video_player_widget.dart';
 import 'package:path/path.dart' as path;
 import 'dart:developer' as developer;
-import 'question_card_widget.dart';
+import 'package.flutter_application_1/screen/fullscreen_video_page.dart';
 
 Card buildKnowledgeCard(BuildContext context, final String index,
     final String title, final String knowledge,
@@ -424,8 +424,25 @@ Widget _buildVideoSection(List<String> videos, QuestionBank? questionBank) {
             builder: (context) => Container(
               margin: const EdgeInsets.only(bottom: 8),
               child: InkWell(
-                onTap: () {
-                  _showVideoDialog(context, video, questionBank);
+                onTap: () async {
+                  // Collect all video paths
+                  final allVideoPaths = await Future.wait(videos.map(
+                      (v) async => await _findAssetInQuestionBank(v, questionBank,
+                          isVideo: true) ?? ''));
+                  final validVideoPaths =
+                      allVideoPaths.where((p) => p.isNotEmpty).toList();
+
+                  if (validVideoPaths.isNotEmpty && context.mounted) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => FullscreenVideoPage(
+                          videoPaths: validVideoPaths,
+                          initialIndex: index,
+                        ),
+                      ),
+                    );
+                  }
                 },
                 borderRadius: BorderRadius.circular(8),
                 child: Container(
@@ -489,77 +506,6 @@ Widget _buildVideoSection(List<String> videos, QuestionBank? questionBank) {
           );
         }),
       ],
-    ),
-  );
-}
-
-void _showVideoDialog(BuildContext context, String videoPath, QuestionBank? questionBank) {
-  developer.log('[showVideoDialog] Showing video dialog for: $videoPath', name: 'KnowledgeCard');
-  showDialog(
-    context: context,
-    builder: (context) => Dialog(
-      backgroundColor: Colors.transparent,
-      child: Container(
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.9,
-          maxHeight: MediaQuery.of(context).size.height * 0.7,
-        ),
-        child: FutureBuilder<String?>(
-          future: _findAssetInQuestionBank(videoPath, questionBank, isVideo: true),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return Container(
-                height: 200,
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Center(
-                  child: CircularProgressIndicator(color: Colors.white),
-                ),
-              );
-            }
-
-            if (snapshot.hasError) {
-              developer.log('[showVideoDialog] Error finding video path: ${snapshot.error}', name: 'KnowledgeCard', error: snapshot.error);
-              return Center(child: Text('加载视频出错: ${snapshot.error}'));
-            }
-
-            final foundPath = snapshot.data;
-            developer.log('[showVideoDialog] FutureBuilder result for video path: $foundPath', name: 'KnowledgeCard');
-
-            if (foundPath != null) {
-              return ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: VideoPlayerWidget(
-                  videoPath: foundPath,
-                  primaryColor: Theme.of(context).primaryColor,
-                ),
-              );
-            } else {
-              developer.log('[showVideoDialog] Video path not found, showing error.', name: 'KnowledgeCard');
-              return Container(
-                alignment: Alignment.center,
-                height: 200,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.video_library_outlined, size: 48, color: Colors.grey),
-                      SizedBox(height: 8),
-                      Text('视频文件不存在', style: TextStyle(color: Colors.grey)),
-                    ],
-                  ),
-                ),
-              );
-            }
-          },
-        ),
-      ),
     ),
   );
 }

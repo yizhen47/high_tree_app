@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/tool/question/question_bank.dart';
@@ -29,10 +28,17 @@ class LearningPlanItem {
   final QuestionBank bank;
   
   /// The list of questions to be studied in this learning plan item
-  List<SingleQuestionData> questionList = [];
+  final List<SingleQuestionData> _questionList = [];
 
   /// The section being studied in this learning plan item
   Section? targetSection;
+
+  /// Returns a shuffled list of questions for the current learning item.
+  List<SingleQuestionData> get questionList {
+    final shuffledList = List<SingleQuestionData>.from(_questionList);
+    shuffledList.shuffle();
+    return shuffledList;
+  }
 
   /// Access to the persistent storage for section learning data
   Box<SectionUserData> get learningDataBox =>
@@ -133,7 +139,7 @@ class LearningPlanItem {
     
     var sectionData = getSectionLearningData(targetSection!);
     replaceAllQuestions();
-    sectionData.allNeedCompleteQuestion = questionList.length;
+    sectionData.allNeedCompleteQuestion = _questionList.length;
     saveSectionLearningData(targetSection!, sectionData);
   }
 
@@ -144,11 +150,11 @@ class LearningPlanItem {
     }
 
     var newQuestions = targetSection!.randomMultipleSectionQuestions(
-        bank.id!, bank.displayName!, questionList.length,
+        bank.id!, bank.displayName!, _questionList.length,
         onlyLayer: true);
         
-    for (var i = 0; i < questionList.length; i++) {
-      questionList[i] = newQuestions[i];
+    for (var i = 0; i < _questionList.length; i++) {
+      _questionList[i] = newQuestions[i];
     }
     return this;
   }
@@ -159,7 +165,7 @@ class LearningPlanItem {
       throw "No target section selected";
     }
     
-    questionList.addAll(
+    _questionList.addAll(
         targetSection!.sectionQuestionOnly(bank.id!, bank.displayName!));
     return removeDuplicateQuestions();
   }
@@ -170,7 +176,7 @@ class LearningPlanItem {
       throw "No target section selected";
     }
 
-    questionList.addAll(targetSection!.randomMultipleSectionQuestions(
+    _questionList.addAll(targetSection!.randomMultipleSectionQuestions(
         bank.id!, bank.displayName!, count,
         onlyLayer: true));
 
@@ -216,7 +222,7 @@ class LearningPlanItem {
     var uniqueQuestions = <String, SingleQuestionData>{};
     var duplicates = [];
     
-    for (var question in questionList) {
+    for (var question in _questionList) {
       if (uniqueQuestions.containsKey(question.question['id']!)) {
         duplicates.add(question);
       } else {
@@ -225,7 +231,7 @@ class LearningPlanItem {
     }
     
     for (var duplicate in duplicates) {
-      questionList.remove(duplicate);
+      _questionList.remove(duplicate);
     }
     return this;
   }

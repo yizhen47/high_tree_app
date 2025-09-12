@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screen/question.dart';
-import 'package:flutter_application_1/tool/page_intent_trans.dart';
 import 'package:flutter_application_1/tool/question/question_bank.dart';
 import 'package:flutter_application_1/tool/question/question_controller.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
@@ -672,11 +671,8 @@ class _BankManagementScreenState extends State<BankManagementScreen>
     final fileName = path.basename(file.path);
 
     // 创建进度流控制器
-    late StreamController<double> progressController;
-    progressController = StreamController<double>.broadcast();
-
+    final progressController = StreamController<Object>.broadcast();
     bool importCompleted = false;
-    String? errorMessage;
 
     // 显示进度弹窗
     if (mounted) {
@@ -687,6 +683,14 @@ class _BankManagementScreenState extends State<BankManagementScreen>
           fileName: fileName,
           fileSizeMB: fileSizeMB,
           progressStream: progressController.stream,
+          onDialogClose: () {
+            Navigator.of(context).pop();
+            progressController.close();
+            // 只有成功才刷新
+            if (importCompleted) {
+              setState(() {});
+            }
+          },
           onCancel: fileSizeMB > 500
               ? () {
                   // 对于大文件提供取消选项
@@ -707,39 +711,12 @@ class _BankManagementScreenState extends State<BankManagementScreen>
       });
 
       importCompleted = true;
-
-      // 等待一小段时间显示完成状态
-      await Future.delayed(const Duration(milliseconds: 800));
-    } catch (e) {
-      errorMessage = e.toString();
-    } finally {
-      progressController.close();
-
-      // 关闭进度弹窗
-      if (mounted) {
-        Navigator.of(context).pop();
+      if (!progressController.isClosed) {
+        progressController.add('done');
       }
-    }
-
-    // 显示结果
-    if (mounted) {
-      if (importCompleted) {
-        TDToast.showSuccess('导入完毕', context: context);
-        setState(() {}); // 刷新列表
-      } else {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('导入失败'),
-            content: SingleChildScrollView(child: Text(errorMessage ?? '未知错误')),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('好的'),
-              ),
-            ],
-          ),
-        );
+    } catch (e) {
+      if (!progressController.isClosed) {
+        progressController.add(e);
       }
     }
   }

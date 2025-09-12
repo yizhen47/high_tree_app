@@ -10,10 +10,10 @@ class ChoiceOptionsWidget extends StatefulWidget {
   final SingleQuestionData? questionData;
 
   const ChoiceOptionsWidget({
-    Key? key,
+    super.key,
     required this.options,
     this.questionData,
-  }) : super(key: key);
+  });
 
   @override
   State<ChoiceOptionsWidget> createState() => _ChoiceOptionsWidgetState();
@@ -70,7 +70,7 @@ class _ChoiceOptionsWidgetState extends State<ChoiceOptionsWidget> {
 
                   if (checked) {
                     final bool isCorrect = isMultipleChoice
-                        ? (correctAnswer as List).contains(key)
+                        ? (correctAnswer).contains(key)
                         : correctAnswer == key;
 
                     if (isCorrect) {
@@ -145,7 +145,7 @@ class _ChoiceOptionsWidgetState extends State<ChoiceOptionsWidget> {
               );
             },
           );
-        }).toList(),
+        }),
         const SizedBox(height: 16),
         ValueListenableBuilder(
           valueListenable: answerChecked,

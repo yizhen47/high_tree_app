@@ -202,8 +202,8 @@ class _ITDCollapseState extends State<ITDCollapse> {
           horizontal: TDTheme.of(context).spacer16,
         ),
         child: ClipRRect(
-          child: collapse,
           borderRadius: BorderRadius.circular(TDTheme.of(context).radiusLarge),
+          child: collapse,
         ),
       );
     }

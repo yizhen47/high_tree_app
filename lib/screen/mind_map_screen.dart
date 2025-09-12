@@ -1,11 +1,7 @@
-import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/tool/page_intent_trans.dart';
 import 'package:flutter_application_1/tool/question/question_bank.dart';
 import 'package:flutter_application_1/tool/question/question_controller.dart';
-import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/widget/mind_map.dart';
 import 'package:flutter_application_1/widget/question_card/knowledge_card_widget.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
@@ -24,15 +20,52 @@ class _InnerState extends State<MindMapScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: TDNavBar(
-        title: '思维导图',
+        title: '知识点总览',
         onBack: () => Navigator.of(context).pop(),
       ),
-      body: Column(
-        children: [
-          Flexible(fit: FlexFit.tight, child: buildMindMap(context)),
-          buildNagBar()
-        ],
-      ),
+      body: buildChapterList(context),
+    );
+  }
+
+  Widget buildChapterList(BuildContext context) {
+    final questionBanks = LearningPlanManager.instance.questionBanks;
+    if (questionBanks.isEmpty) {
+      return const Center(child: Text('没有加载任何题库'));
+    }
+
+    return ListView.builder(
+      itemCount: questionBanks.length,
+      itemBuilder: (context, index) {
+        final bank = questionBanks[index];
+        return Card(
+          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          child: ExpansionTile(
+            title: Text(bank.displayName ?? '未命名题库',
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+            children: bank.sections
+                .map((section) => _buildSectionTile(context, section))
+                .toList(),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSectionTile(BuildContext context, Section section) {
+    if (section.children == null || section.children!.isEmpty) {
+      return ListTile(
+        title: Text(section.title),
+        onTap: () => _showNodeActionDialog(context, MindMapNode.fromSection(section)),
+        contentPadding: const EdgeInsets.only(left: 32),
+      );
+    }
+
+    return ExpansionTile(
+      title: Text(section.title),
+      tilePadding: const EdgeInsets.only(left: 32, right: 16),
+      children: section.children!
+          .map((child) => _buildSectionTile(context, child))
+          .toList(),
     );
   }
 
@@ -149,7 +182,7 @@ class _InnerState extends State<MindMapScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      node.text,
+                      node.data!.title,
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w600,
@@ -392,7 +425,7 @@ class _InnerState extends State<MindMapScreen> {
         
         for (var path in pathsToTry) {
           try {
-            Section bankSection = bank.findSection(path);
+            bank.findSection(path);
             return bank;
           } catch (e) {
             continue;

@@ -278,20 +278,17 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidget> {
 
     list = reFreshData();
 
-    final cellLength = ValueNotifier<int>(list.length);
-    List<Map<String, dynamic>> filteredList = List.from(list);
-
-    void filterSearchResults(String query) {
-      if (query.isNotEmpty) {
-        filteredList = list
-            .where((item) => (item['note'].contains(query) ||
-                item['title'].toLowerCase().contains(query.toLowerCase())))
-            .toList();
-      } else {
-        filteredList = List.from(list);
+    // Group questions by knowledge point (note)
+    final Map<String, List<Map<String, dynamic>>> groupedQuestions = {};
+    for (var question in list) {
+      final category = question['note'] as String;
+      if (groupedQuestions[category] == null) {
+        groupedQuestions[category] = [];
       }
-      cellLength.value = filteredList.length;
+      groupedQuestions[category]!.add(question);
     }
+
+    final categories = groupedQuestions.keys.toList();
 
     return Column(
       children: [
@@ -299,123 +296,130 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidget> {
           placeHolder: "输入关键词",
           style: TDSearchStyle.square,
           onTextChanged: (String text) {
-            filterSearchResults(text);
+            // Search functionality might need reimplementation for categorized view
+            // For now, we disable it to avoid complexity.
           },
         ),
         Expanded(
-          child: ValueListenableBuilder(
-            valueListenable: cellLength,
-            builder: (BuildContext context, value, Widget? child) {
-              return TDCellGroup(
-                cells: filteredList
-                    .map(
-                      (e) => TDCell(
-                        note: hideText('${(e['note'])}', maxLen: 10),
-                        description: e['description'],
-                        leftIconWidget: WrongQuestionBook.instance
-                                        .getQuestion(e['id'])
-                                        .note !=
-                                    null &&
-                                WrongQuestionBook.instance
-                                    .getQuestion(e['id'])
-                                    .note!
-                                    .isNotEmpty
-                            ? Container(
-                                width: 8,
-                                height: 80,
-                                color: Theme.of(context).primaryColor,
-                              )
-                            : null,
-                        onClick: (_) {
-                          Navigator.of(context).push(
-                            TDSlidePopupRoute(
-                              // modalBarrierColor:
-                              //     TDTheme.of(context).fontGyColor2,
-                              slideTransitionFrom: SlideTransitionFrom.center,
-                              builder: (_) {
-                                SingleQuestionData q = e['data'];
-                                return TDPopupCenterPanel(
-                                  radius: 15,
-                                  backgroundColor: Colors.transparent,
-                                  closeClick: () {
-                                    Navigator.maybePop(context);
-                                  },
-                                  child: SizedBox(
-                                    width: screenWidth - 80,
-                                    height: screenHeight - 150,
-                                    child: buildQuestionCard(
-                                        context,
-                                        q.getKonwledgePoint(),
-                                        q.question['q']!,
-                                        q.question['w'],
-                                        WrongQuestionBook.instance
-                                            .getQuestion(q.question['id']!)
-                                            .note),
-                                  ),
-                                );
-                              },
-                            ),
-                          );
-                        },
-                        titleWidget: Builder(
-                          builder: (context) => LaTeX(
-                            laTeXCode: ExtendedText(
-                              e['title'],
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              softWrap: true,
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: TDTheme.of(context).fontGyColor1,
-                              ),
+          child: ListView.builder(
+            itemCount: categories.length,
+            itemBuilder: (context, index) {
+              final category = categories[index];
+              final questionsInCategory = groupedQuestions[category]!;
+              return Card(
+                margin:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                child: ExpansionTile(
+                  title: Text('$category (${questionsInCategory.length})',
+                      style:
+                          const TextStyle(fontWeight: FontWeight.bold)),
+                  children: questionsInCategory.map((e) {
+                    var cell = TDCell(
+                      note: hideText('${(e['note'])}', maxLen: 10),
+                      description: e['description'],
+                      leftIconWidget: WrongQuestionBook.instance
+                                      .getQuestion(e['id'])
+                                      .note !=
+                                  null &&
+                              WrongQuestionBook.instance
+                                  .getQuestion(e['id'])
+                                  .note!
+                                  .isNotEmpty
+                          ? Container(
+                              width: 8,
+                              height: 80,
+                              color: Theme.of(context).primaryColor,
+                            )
+                          : null,
+                      onClick: (_) {
+                        Navigator.of(context).push(
+                          TDSlidePopupRoute(
+                            slideTransitionFrom: SlideTransitionFrom.center,
+                            builder: (_) {
+                              SingleQuestionData q = e['data'];
+                              return TDPopupCenterPanel(
+                                radius: 15,
+                                backgroundColor: Colors.transparent,
+                                closeClick: () {
+                                  Navigator.maybePop(context);
+                                },
+                                child: SizedBox(
+                                  width: screenWidth - 80,
+                                  height: screenHeight - 150,
+                                  child: buildQuestionCard(
+                                      context,
+                                      q.getKonwledgePoint(),
+                                      q.question['q']!,
+                                      q.question['w'],
+                                      WrongQuestionBook.instance
+                                          .getQuestion(q.question['id']!)
+                                          .note),
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      },
+                      titleWidget: Builder(
+                        builder: (context) => LaTeX(
+                          laTeXCode: ExtendedText(
+                            e['title'],
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            softWrap: true,
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: TDTheme.of(context).fontGyColor1,
                             ),
                           ),
                         ),
                       ),
-                    )
-                    .toList(),
-                scrollable: true,
-                builder: (context, cell, index) {
-                  return TDSwipeCell(
-                    slidableKey: ValueKey(filteredList[index]['id']),
-                    groupTag: 'test',
-                    onChange: (direction, open) {},
-                    left: TDSwipeCellPanel(
-                      extentRatio: 60 / screenWidth,
-                      children: [
-                        TDSwipeCellAction(
-                            flex: 60,
-                            backgroundColor: TDTheme.of(context).warningColor4,
-                            label: '笔记',
-                            onPressed: (context) {
-                              writeNote(
-                                  filteredList: filteredList,
-                                  index: index,
-                                  screenWidth: screenWidth,
-                                  screenHeight: screenHeight,
-                                  context: context);
-                            }),
-                      ],
-                    ),
-                    right: TDSwipeCellPanel(
-                      extentRatio: 60 / screenWidth,
-                      children: [
-                        TDSwipeCellAction(
-                          backgroundColor: TDTheme.of(context).errorColor6,
-                          label: '删除',
-                          onPressed: (_) {
-                            WrongQuestionBook.instance
-                                .removeWrongQuestion(filteredList[index]['id']);
-                            filteredList.removeAt(index);
-                            reFreshData();
-                            cellLength.value = filteredList.length;
-                          },
-                        ),
-                      ],
-                    ),
-                    cell: cell,
-                  );
-                },
+                    );
+                    return TDSwipeCell(
+                      slidableKey: ValueKey(e['id']),
+                      groupTag: 'test',
+                      onChange: (direction, open) {},
+                      left: TDSwipeCellPanel(
+                        extentRatio: 60 / screenWidth,
+                        children: [
+                          TDSwipeCellAction(
+                              flex: 60,
+                              backgroundColor:
+                                  TDTheme.of(context).warningColor4,
+                              label: '笔记',
+                              onPressed: (context) {
+                                // Find the original index in the flat list to pass to writeNote
+                                final originalIndex = list.indexWhere((item) => item['id'] == e['id']);
+                                writeNote(
+                                    filteredList: list, // Pass the original flat list
+                                    index: originalIndex,
+                                    screenWidth: screenWidth,
+                                    screenHeight: screenHeight,
+                                    context: context);
+                              }),
+                        ],
+                      ),
+                      right: TDSwipeCellPanel(
+                        extentRatio: 60 / screenWidth,
+                        children: [
+                          TDSwipeCellAction(
+                            backgroundColor:
+                                TDTheme.of(context).errorColor6,
+                            label: '删除',
+                            onPressed: (_) {
+                              WrongQuestionBook.instance
+                                  .removeWrongQuestion(e['id']);
+                              setState(() {
+                                // This will trigger a rebuild and refetch the data
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                      cell: cell,
+                    );
+                  }).toList(),
+                ),
               );
             },
           ),

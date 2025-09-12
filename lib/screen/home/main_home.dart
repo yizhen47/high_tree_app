@@ -115,7 +115,7 @@ class _MainHomePageState extends State<MainHomePage> {
                   child: LinearProgressIndicator(
                     value: 0.65,
                     backgroundColor: Colors.grey.withOpacity(0.2),
-                    valueColor: AlwaysStoppedAnimation(HomeComponents.AppTheme.primaryColor),
+                    valueColor: const AlwaysStoppedAnimation(HomeComponents.AppTheme.primaryColor),
                     minHeight: 24,
                   ),
                 ),

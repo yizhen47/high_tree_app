@@ -378,11 +378,11 @@ class Section {
               final questionElements = <XmlNode>[];
 
               // 序列化普通字段
-              ['q', 'w', 'note', 'video'].forEach((key) {
+              for (var key in ['q', 'w', 'note', 'video']) {
                 if (q[key] != null) {
                   questionElements.add(XmlElement(XmlName(key), [], [XmlText(q[key].toString())]));
                 }
-              });
+              }
 
               // 序列化答案字段
               if (q['answer'] != null) {
@@ -517,6 +517,8 @@ class QuestionBank {
   static late String loadedDirPath;
 
   QuestionBank(this.filePath);
+
+  get sections => null;
 
   Section findSectionByQuestion(SingleQuestionData q) {
     // 根据调试信息，结构层次是：
@@ -880,10 +882,6 @@ class QuestionBank {
       final filteredItems = items
           .where((entity) => entity is File && path.basename(entity.path) == 'data.xml')
           .firstOrNull;
-
-      if (filteredItems == null) {
-        throw Exception("题库压缩包中缺少 data.xml 文件");
-      }
       final xmlFile = filteredItems as File;
       sendPort.send(0.6);
 
@@ -1118,9 +1116,6 @@ class QuestionBankBuilder {
       print(e);
     }
     List<int>? outputData = ZipEncoder().encode(archive);
-    if (outputData == null) {
-      return;
-    }
     saveFile.writeAsBytesSync(outputData);
 
     print('Saved to ${saveFile.path}');

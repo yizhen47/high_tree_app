@@ -75,7 +75,7 @@ class StudyData {
   }
 
   String get userName {
-    return sharedPreferences!.getString("userName") ?? "未命名";
+    return sharedPreferences!.getString("userName") ?? "王同学";
   }
 
   set userName(String value) {

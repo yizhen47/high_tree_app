@@ -32,7 +32,7 @@ class StatisticsManager {
       case PERIOD_ALL_TIME:
         return '全部时间';
       default:
-        return '过去${period}天';
+        return '过去$period天';
     }
   }
 
@@ -76,7 +76,7 @@ class StatisticsManager {
       }
     }
     
-    print('[DEBUG] 总计: ${totalMinutes.toStringAsFixed(0)}分钟 = ${(totalMinutes/60).toStringAsFixed(1)}小时, 活跃天数: $activeDays/${selectedPeriod}天');
+    print('[DEBUG] 总计: ${totalMinutes.toStringAsFixed(0)}分钟 = ${(totalMinutes/60).toStringAsFixed(1)}小时, 活跃天数: $activeDays/$selectedPeriod天');
     return totalMinutes;
   }
 
@@ -1219,7 +1219,7 @@ class StatisticsManager {
       // 计算距离上次学习的天数
       final daysSinceLastStudy = DateTime.now().difference(lastStudyTime).inDays;
       
-      print('[ForgettingCurveCalculation] 应用遗忘曲线 - 距离上次学习: ${daysSinceLastStudy}天, 学习次数: $studyCount');
+      print('[ForgettingCurveCalculation] 应用遗忘曲线 - 距离上次学习: $daysSinceLastStudy天, 学习次数: $studyCount');
       
       // 基于艾宾浩斯遗忘曲线计算保留率
       // R = e^(-t/S)，其中t是时间，S是稳定性参数

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:latext/latext.dart';
 
 // 确保所有数学符号使用一致的数学模式渲染配置
 final latexStyleConfig = LatexStyleConfiguration(

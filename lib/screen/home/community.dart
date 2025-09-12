@@ -427,7 +427,7 @@ class _CommunityPageState extends State<CommunityPage> with SingleTickerProvider
           child: InkWell(
             onTap: _operationInProgress ? null : _connectToTeacher,
             borderRadius: BorderRadius.circular(12),
-            child: Row(
+            child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
@@ -435,7 +435,7 @@ class _CommunityPageState extends State<CommunityPage> with SingleTickerProvider
                   size: 12,
                   color: Colors.blue,
                 ),
-                const SizedBox(width: 4),
+                SizedBox(width: 4),
                 Text(
                   '连接课堂',
                   style: TextStyle(
@@ -459,7 +459,7 @@ class _CommunityPageState extends State<CommunityPage> with SingleTickerProvider
           child: InkWell(
             onTap: _operationInProgress ? null : _attendClass,
             borderRadius: BorderRadius.circular(12),
-            child: Row(
+            child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
@@ -467,7 +467,7 @@ class _CommunityPageState extends State<CommunityPage> with SingleTickerProvider
                   size: 12,
                   color: Colors.green,
                 ),
-                const SizedBox(width: 4),
+                SizedBox(width: 4),
                 Text(
                   '签到',
                   style: TextStyle(
@@ -867,11 +867,11 @@ class _CommunityPageState extends State<CommunityPage> with SingleTickerProvider
         CommonComponents.buildCommonCard(
           Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
                   children: [
-                    const Expanded(
+                    Expanded(
                       flex: 3,
                       child: Text(
                         '学生',
@@ -882,7 +882,7 @@ class _CommunityPageState extends State<CommunityPage> with SingleTickerProvider
                         ),
                       ),
                     ),
-                    const Expanded(
+                    Expanded(
                       flex: 2,
                       child: Text(
                         '连接时间',
@@ -893,7 +893,7 @@ class _CommunityPageState extends State<CommunityPage> with SingleTickerProvider
                         ),
                       ),
                     ),
-                    const Expanded(
+                    Expanded(
                       flex: 2,
                       child: Text(
                         '签到状态',

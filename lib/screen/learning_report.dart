@@ -2,8 +2,6 @@
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/tool/question/question_bank.dart';
-import 'package:flutter_application_1/tool/question/question_controller.dart';
 import 'package:flutter_application_1/tool/statistics_manager.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/tool/question/wrong_question_book.dart';

@@ -8,7 +8,6 @@ import 'package:flutter_application_1/tool/question/question_bank.dart';
 import 'package:flutter_application_1/tool/question/question_controller.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/tool/question/wrong_question_book.dart';
-import 'package:flutter_application_1/widget/left_toast.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:uuid/uuid.dart';

@@ -291,9 +291,96 @@ class ProfilePage extends StatelessWidget {
               delegate: SliverChildListDelegate([
                 _buildProfileStats(),
                 const SizedBox(height: 16),
-                _buildAccountSettings(context),
-                const SizedBox(height: 16),
-                _buildSystemSettings(context),
+                CommonComponents.buildCommonCard(
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Padding(
+                        padding:
+                            EdgeInsets.fromLTRB(12, 12, 12, 0), // 调整内边距
+                        child: Text(
+                          '账户设置',
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: AppTheme.textPrimary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      _buildCompactListTile(
+                        icon: Icons.person_outline,
+                        title: '个人资料',
+                        onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const PersonalScreen(
+                                      title: '',
+                                    ))),
+                      ),
+                      _buildDivider(),
+                      _buildCompactListTile(
+                        icon: Icons.security_outlined,
+                        title: '账户安全',
+                      ),
+                      _buildDivider(),
+                      _buildCompactListTile(
+                        icon: Icons.notifications_outlined,
+                        title: '通知设置',
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.fromLTRB(12, 16, 12, 0),
+                        child: Text('系统设置',
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: AppTheme.textPrimary,
+                              fontWeight: FontWeight.w500,
+                            )),
+                      ),
+                      _buildCompactListTile(
+                        icon: Icons.color_lens_outlined,
+                        title: '主题设置',
+                      ),
+                      _buildDivider(),
+                      _buildCompactListTile(
+                        icon: Icons.help_outline,
+                        title: '帮助中心',
+                      ),
+                      _buildDivider(),
+                      _buildCompactListTile(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const BankManagementScreen(),
+                            ),
+                          );
+                        },
+                        icon: Icons.menu_book_sharp,
+                        title: '题库管理',
+                      ),
+                      _buildDivider(),
+                      _buildCompactListTile(
+                        onTap: () {
+                          _showClearDataDialog(context);
+                        },
+                        icon: Icons.cached_outlined,
+                        title: '数据清理',
+                      ),
+                      _buildDivider(),
+                      _buildCompactListTile(
+                        icon: Icons.info_outline,
+                        title: '关于我们',
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const AboutScreen(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ]),
             ),
           ),
@@ -421,51 +508,6 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildAccountSettings(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          child: Text(
-            '账户设置',
-            style: TextStyle(
-              fontSize: 15, // 调小标题字体
-              color: AppTheme.textPrimary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-        CommonComponents.buildCommonCard(
-          Column(
-            children: [
-              _buildCompactListTile(
-                icon: Icons.person_outline,
-                title: '个人资料',
-                onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const PersonalScreen(
-                              title: '',
-                            ))),
-              ),
-              _buildDivider(),
-              _buildCompactListTile(
-                icon: Icons.security_outlined,
-                title: '账户安全',
-              ),
-              _buildDivider(),
-              _buildCompactListTile(
-                icon: Icons.notifications_outlined,
-                title: '通知设置',
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildCompactListTile({
     required IconData icon,
     required String title,
@@ -497,70 +539,44 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildSystemSettings(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          child: Text('系统设置',
-              style: TextStyle(
-                fontSize: 15,
-                color: AppTheme.textPrimary,
-                fontWeight: FontWeight.w500,
-              )),
-        ),
-        CommonComponents.buildCommonCard(
-          Column(
-            children: [
-              _buildCompactListTile(
-                icon: Icons.color_lens_outlined,
-                title: '主题设置',
-              ),
-              _buildDivider(),
-              _buildCompactListTile(
-                icon: Icons.help_outline,
-                title: '帮助中心',
-              ),
-              _buildDivider(),
-              _buildCompactListTile(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const BankManagementScreen(),
-                    ),
-                  );
-                },
-                icon: Icons.menu_book_sharp,
-                title: '题库管理',
-              ),
-              _buildDivider(),
-              _buildCompactListTile(
-                onTap: () {
-                  QuestionBank.clearAllCache();
-                  WrongQuestionBook.instance.clearData();
-                  TDToast.showSuccess("清理完毕", context: context);
-                  StudyData.instance.sharedPreferences!.clear();
-                },
-                icon: Icons.cached_outlined,
-                title: '数据清理',
-              ),
-              _buildDivider(),
-              _buildCompactListTile(
-                icon: Icons.info_outline,
-                title: '关于我们',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AboutScreen(),
-                  ),
-                ),
-              ),
+  void _showClearDataDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          title: Row(
+            children: const [
+              Icon(Icons.warning_amber_rounded, color: AppTheme.warningColor),
+              SizedBox(width: 10),
+              Text('警告', style: TextStyle(fontWeight: FontWeight.bold)),
             ],
           ),
-        ),
-      ],
+          content: const Text(
+              '此操作将清除所有本地学习数据，包括错题本、学习记录和个人设置，且无法恢复。您确定要继续吗？'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('取消',
+                  style: TextStyle(color: AppTheme.textSecondary)),
+              onPressed: () {
+                Navigator.of(dialogContext).pop(); // Close the dialog
+              },
+            ),
+            TextButton(
+              child: const Text('继续',
+                  style: TextStyle(color: AppTheme.warningColor)),
+              onPressed: () {
+                Navigator.of(dialogContext).pop(); // Close the dialog
+                QuestionBank.clearAllCache();
+                WrongQuestionBook.instance.clearData();
+                StudyData.instance.sharedPreferences!.clear();
+                TDToast.showSuccess("清理完毕", context: context);
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 
