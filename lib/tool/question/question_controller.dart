@@ -176,9 +176,16 @@ class LearningPlanItem {
       throw "No target section selected";
     }
 
-    _questionList.addAll(targetSection!.randomMultipleSectionQuestions(
+    final newQuestions = targetSection!.randomMultipleSectionQuestions(
         bank.id!, bank.displayName!, count,
-        onlyLayer: true));
+        onlyLayer: true);
+    
+    // 只添加非空的题目列表
+    if (newQuestions.isNotEmpty) {
+      _questionList.addAll(newQuestions);
+    } else {
+      print('HighTree-Debug: No valid questions found for section ${targetSection!.title}');
+    }
 
     return this;
   }
@@ -430,14 +437,17 @@ class LearningPlanManager {
     Map<String, QuestionBank> bankMap = {};
 
     // Clear existing plan and reload banks
+    print('HighTree-Debug: Clearing existing learning plan...');
     learningPlanItems.clear();
     questionBanks.clear();
     questionBanks.addAll(await QuestionBank.getAllLoadedQuestionBanks());
+    print('HighTree-Debug: Loaded ${questionBanks.length} question banks');
 
     // Create bank lookup map
     for (var bank in questionBanks) {
       bankMap[bank.id!] = bank;
     }
+    print('HighTree-Debug: Available question banks: ${bankMap.keys.toList()}');
 
     // First add auto-selected sections
     for (var bank in questionBanks) {
@@ -449,7 +459,13 @@ class LearningPlanManager {
         var planItem = LearningPlanItem(bank);
         planItem.targetSection = section;
         planItem.addRandomQuestions(StudyData.instance.needCompleteQuestionNum);
-        learningPlanItems.add(planItem);
+        
+        // 只添加有有效题目的计划项
+        if (planItem.questionList.isNotEmpty) {
+          learningPlanItems.add(planItem);
+        } else {
+          print('HighTree-Debug: Skipping section ${section.title} due to no valid questions');
+        }
       });
     }
 
@@ -472,7 +488,13 @@ class LearningPlanManager {
         if (!learningPlanItems.any((item) => item.targetSection?.id == section.id) &&
             planItem.needsToLearn(section)) {
           planItem.addRandomQuestions(StudyData.instance.needCompleteQuestionNum);
-          learningPlanItems.add(planItem);
+          
+          // 只添加有有效题目的计划项
+          if (planItem.questionList.isNotEmpty) {
+            learningPlanItems.add(planItem);
+          } else {
+            print('HighTree-Debug: Skipping manually selected section ${section.title} due to no valid questions');
+          }
         }
       }
     }

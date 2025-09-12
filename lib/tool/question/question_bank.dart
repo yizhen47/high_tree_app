@@ -121,8 +121,9 @@ class Section {
       }
     }
     if (q == null) {
+      print('HighTree-Debug: No questions found for section: $title (index: $index)');
       return SingleQuestionData(
-          {'q': '本章没有题目', 'w': '本章没有答案', 'id': const Uuid().v4()},
+          {'q': '本章没有题目', 'w': '本章暂时没有题目，请联系老师添加题目或选择其他章节学习', 'id': const Uuid().v4()},
           fromId,
           fromName);
     }
@@ -282,7 +283,7 @@ class Section {
       // 最终仍未找到新问题时的处理
       result.add(question ??
           SingleQuestionData(
-            {'q': '本章没有题目', 'w': '本章没有答案', 'id': const Uuid().v4()},
+            {'q': '本章没有题目', 'w': '本章暂时没有题目，请联系老师添加题目或选择其他章节学习', 'id': const Uuid().v4()},
             fromId,
             fromName,
           ));

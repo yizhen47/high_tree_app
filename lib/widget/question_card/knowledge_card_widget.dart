@@ -9,10 +9,11 @@ import 'package:markdown/markdown.dart' as md;
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:flutter_application_1/tool/question/question_bank.dart';
 import 'latex_config.dart';
-import 'video_player_widget.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:path/path.dart' as path;
 import 'dart:developer' as developer;
-import 'package.flutter_application_1/screen/fullscreen_video_page.dart';
+import 'package:video_player/video_player.dart';
+import 'dart:async';
 
 Card buildKnowledgeCard(BuildContext context, final String index,
     final String title, final String knowledge,
@@ -264,9 +265,9 @@ Widget _buildImageWidget(String imagePath, QuestionBank? questionBank) {
           child: const Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error, color: Colors.red, size: 48),
+              Icon(Icons.error, color: Colors.blue, size: 48),
               SizedBox(height: 8),
-              Text('图片加载失败', style: TextStyle(color: Colors.red)),
+              Text('图片加载失败', style: TextStyle(color: Colors.blue)),
             ],
           ),
         );
@@ -284,9 +285,9 @@ Widget _buildImageWidget(String imagePath, QuestionBank? questionBank) {
           child: const Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error, color: Colors.red, size: 48),
+              Icon(Icons.error, color: Colors.blue, size: 48),
               SizedBox(height: 8),
-              Text('图片加载失败', style: TextStyle(color: Colors.red)),
+              Text('图片加载失败', style: TextStyle(color: Colors.blue)),
             ],
           ),
         );
@@ -317,9 +318,9 @@ Widget _buildImageWidget(String imagePath, QuestionBank? questionBank) {
                 child: const Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.error, color: Colors.red, size: 48),
+                    Icon(Icons.error, color: Colors.blue, size: 48),
                     SizedBox(height: 8),
-                    Text('图片加载失败', style: TextStyle(color: Colors.red)),
+                    Text('图片加载失败', style: TextStyle(color: Colors.blue)),
                   ],
                 ),
               );
@@ -404,14 +405,14 @@ Widget _buildVideoSection(List<String> videos, QuestionBank? questionBank) {
       children: [
         Row(
           children: [
-            Icon(Icons.video_library, color: Colors.red[600], size: 20),
+            Icon(Icons.video_library, color: Colors.blue[600], size: 20),
             const SizedBox(width: 8),
             Text(
               '视频课程 (${videos.length})',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Colors.red[600],
+                color: Colors.blue[600],
               ),
             ),
           ],
@@ -420,94 +421,550 @@ Widget _buildVideoSection(List<String> videos, QuestionBank? questionBank) {
         ...videos.asMap().entries.map((entry) {
           final index = entry.key;
           final video = entry.value;
-          return Builder(
-            builder: (context) => Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              child: InkWell(
-                onTap: () async {
-                  // Collect all video paths
-                  final allVideoPaths = await Future.wait(videos.map(
-                      (v) async => await _findAssetInQuestionBank(v, questionBank,
-                          isVideo: true) ?? ''));
-                  final validVideoPaths =
-                      allVideoPaths.where((p) => p.isNotEmpty).toList();
-
-                  if (validVideoPaths.isNotEmpty && context.mounted) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => FullscreenVideoPage(
-                          videoPaths: validVideoPaths,
-                          initialIndex: index,
-                        ),
-                      ),
-                    );
-                  }
-                },
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.red[50],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red[200]!),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: Colors.red[600],
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.play_arrow,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '视频课程 ${index + 1}',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              video,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                      Icon(
-                        Icons.arrow_forward_ios,
-                        size: 16,
-                        color: Colors.grey[400],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+          return _VideoListItem(
+            video: video,
+            index: index,
+            videos: videos,
+            questionBank: questionBank,
           );
         }),
       ],
     ),
   );
+}
+
+class _VideoListItem extends StatefulWidget {
+  final String video;
+  final int index;
+  final List<String> videos;
+  final QuestionBank? questionBank;
+
+  const _VideoListItem({
+    required this.video,
+    required this.index,
+    required this.videos,
+    this.questionBank,
+  });
+
+  @override
+  State<_VideoListItem> createState() => _VideoListItemState();
+}
+
+class _VideoListItemState extends State<_VideoListItem> with TickerProviderStateMixin {
+  String? _thumbnailPath;
+  bool _isGeneratingThumbnail = false;
+  String? _resolvedVideoPath;
+  
+  // 预览相关状态
+  VideoPlayerController? _previewController;
+
+  Duration? _videoDuration;
+  bool _isPreviewInitialized = false;
+  bool _isPlaying = false; // 播放状态
+  Timer? _previewTimer;
+  
+  @override
+  void initState() {
+    super.initState();
+    _resolveVideoPathAndGenerateThumbnail().then((_) {
+      if (mounted && _resolvedVideoPath != null) {
+        _initPreview(); // 只初始化，不自动播放
+      }
+    });
+  }
+  
+
+
+  Future<void> _resolveVideoPathAndGenerateThumbnail() async {
+    try {
+      // 首先解析视频路径
+      final resolvedPath = await _findAssetInQuestionBank(
+        widget.video, 
+        widget.questionBank, 
+        isVideo: true
+      );
+      
+      if (resolvedPath != null && mounted) {
+        setState(() {
+          _resolvedVideoPath = resolvedPath;
+        });
+        
+        // 生成缩略图
+        await _generateThumbnail(resolvedPath);
+        // 获取视频时长
+        await _getVideoDuration(resolvedPath);
+      }
+    } catch (e) {
+      developer.log('[VideoListItem] Error resolving video path: $e', name: 'VideoListItem');
+    }
+  }
+  
+  Future<void> _getVideoDuration(String videoPath) async {
+    try {
+      VideoPlayerController tempController;
+      
+      if (videoPath.startsWith('http://') || videoPath.startsWith('https://')) {
+        tempController = VideoPlayerController.networkUrl(Uri.parse(videoPath));
+      } else {
+        tempController = VideoPlayerController.file(File(videoPath));
+      }
+      
+      await tempController.initialize();
+      
+      if (mounted) {
+        setState(() {
+          _videoDuration = tempController.value.duration;
+        });
+      }
+      
+      await tempController.dispose();
+    } catch (e) {
+      developer.log('[VideoListItem] Error getting video duration: $e', name: 'VideoListItem');
+    }
+  }
+
+  Future<void> _generateThumbnail(String videoPath) async {
+    if (_isGeneratingThumbnail) return;
+    
+    setState(() {
+      _isGeneratingThumbnail = true;
+    });
+
+    try {
+      String? thumbnailPath;
+      
+      if (videoPath.startsWith('http://') || videoPath.startsWith('https://')) {
+        // 网络视频
+        thumbnailPath = await VideoThumbnail.thumbnailFile(
+          video: videoPath,
+          thumbnailPath: (await Directory.systemTemp.createTemp()).path,
+          imageFormat: ImageFormat.JPEG,
+          maxHeight: 120,
+          quality: 75,
+        );
+      } else {
+        // 本地视频
+        final file = File(videoPath);
+        if (await file.exists()) {
+          thumbnailPath = await VideoThumbnail.thumbnailFile(
+            video: videoPath,
+            thumbnailPath: (await Directory.systemTemp.createTemp()).path,
+            imageFormat: ImageFormat.JPEG,
+            maxHeight: 120,
+            quality: 75,
+          );
+        }
+      }
+
+      if (thumbnailPath != null && mounted) {
+        setState(() {
+          _thumbnailPath = thumbnailPath;
+        });
+      }
+    } catch (e) {
+      developer.log('[VideoListItem] Error generating thumbnail: $e', name: 'VideoListItem');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isGeneratingThumbnail = false;
+        });
+      }
+    }
+  }
+  
+  Future<void> _initPreview() async {
+    if (_resolvedVideoPath == null || _isPreviewInitialized) return;
+    
+    try {
+      if (_resolvedVideoPath!.startsWith('http://') || _resolvedVideoPath!.startsWith('https://')) {
+        _previewController = VideoPlayerController.networkUrl(Uri.parse(_resolvedVideoPath!));
+      } else {
+        _previewController = VideoPlayerController.file(File(_resolvedVideoPath!));
+      }
+      
+      await _previewController!.initialize();
+      _previewController!.setLooping(false);
+      
+      if (mounted) {
+        setState(() {
+          _isPreviewInitialized = true;
+          _videoDuration = _previewController!.value.duration;
+        });
+      }
+    } catch (e) {
+      developer.log('[VideoListItem] Error initializing preview: $e', name: 'VideoListItem');
+    }
+  }
+  
+  void _startPreview() async {
+    if (!_isPreviewInitialized) {
+      await _initPreview();
+    }
+    
+    if (_previewController != null && _isPreviewInitialized) {
+      setState(() {
+        _isPlaying = true;
+      });
+
+      _previewController!.play();
+      
+      // 移除自动停止功能，改为手动控制
+      _previewTimer?.cancel();
+    }
+  }
+  
+  void _togglePlayPause() {
+    if (_previewController != null && _isPreviewInitialized) {
+      setState(() {
+        _isPlaying = !_isPlaying;
+      });
+      
+      if (_isPlaying) {
+        _previewController!.play();
+      } else {
+        _previewController!.pause();
+      }
+    }
+  }
+  
+  void _stopPreview() {
+    _previewTimer?.cancel();
+    setState(() {
+      _isPlaying = false;
+    });
+
+    _previewController?.pause();
+    _previewController?.seekTo(Duration.zero); // 回到开始位置
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: GestureDetector(
+        onTap: () {
+          // 单击切换播放/暂停
+          _togglePlayPause();
+        },
+        onDoubleTap: _openVideoPlayer, // 双击进入全屏
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.blue[50],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Colors.blue[200]!,
+              width: 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 视频区域 - 占据卡片全宽
+              _buildFullWidthVideo(),
+              const SizedBox(height: 12),
+              // 视频标题
+              Text(
+                '视频课程 ${widget.index + 1}',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 4),
+              // 视频简介
+              Text(
+                _getVideoDisplayName(),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[600],
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 8),
+              // 播放状态和时长信息
+              Row(
+                children: [
+                  Icon(
+                    _isPlaying ? Icons.pause_circle_outline : Icons.play_circle_outline,
+                    size: 16,
+                    color: Colors.blue[600],
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    _isPlaying ? '播放中' : '已暂停',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.blue[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  if (_videoDuration != null) ...[
+                    const Spacer(),
+                    Text(
+                      _buildTimeText(),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ],
+                  const Spacer(),
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                    color: Colors.grey[400],
+                  ),
+                ],
+              ),
+              // 进度条
+              if (_previewController != null && _isPreviewInitialized) 
+                _buildProgressIndicator(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFullWidthVideo() {
+    return Container(
+      width: double.infinity, // 占据卡片全宽
+      height: 200, // 设置固定高度
+      decoration: BoxDecoration(
+        color: Colors.black12,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: _previewController != null && _isPreviewInitialized
+            ? Stack(
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    height: double.infinity,
+                    child: VideoPlayer(_previewController!),
+                  ),
+                  // 播放状态指示器
+                  if (!_isPlaying)
+                    Positioned.fill(
+                      child: Container(
+                        color: Colors.black.withOpacity(0.3),
+                        child: Center(
+                          child: Icon(
+                            Icons.play_arrow,
+                            color: Colors.white,
+                            size: 48, // 增大播放按钮
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              )
+            : _thumbnailPath != null
+                ? Image.file(
+                    File(_thumbnailPath!),
+                    width: double.infinity,
+                    height: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return _buildDefaultThumbnail();
+                    },
+                  )
+                : _isGeneratingThumbnail
+                    ? Center(
+                        child: SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.blue[600]!),
+                          ),
+                        ),
+                      )
+                    : _buildDefaultThumbnail(),
+      ),
+    );
+  }
+
+  Widget _buildProgressIndicator() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: ValueListenableBuilder<VideoPlayerValue>(
+        valueListenable: _previewController!,
+        builder: (context, value, child) {
+          if (!value.isInitialized) return const SizedBox.shrink();
+          
+          final position = value.position;
+          final duration = value.duration;
+          
+          if (duration == Duration.zero) return const SizedBox.shrink();
+          
+          final progress = position.inMilliseconds / duration.inMilliseconds;
+          
+          return Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    _formatDuration(position),
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  Text(
+                    _formatDuration(duration),
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              SliderTheme(
+                data: SliderTheme.of(context).copyWith(
+                  activeTrackColor: Colors.blue[600],
+                  inactiveTrackColor: Colors.grey[300],
+                  thumbColor: Colors.blue[600],
+                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                  overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+                  trackHeight: 3,
+                ),
+                child: Slider(
+                  value: progress.clamp(0.0, 1.0),
+                  onChanged: (newValue) {
+                    final newPosition = Duration(
+                      milliseconds: (newValue * duration.inMilliseconds).round(),
+                    );
+                    _previewController!.seekTo(newPosition);
+                  },
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+  
+  String _buildTimeText() {
+    if (_previewController != null && _isPreviewInitialized) {
+      final position = _previewController!.value.position;
+      final duration = _previewController!.value.duration;
+      return '${_formatDuration(position)} / ${_formatDuration(duration)}';
+    } else if (_videoDuration != null) {
+      return _formatDuration(_videoDuration!);
+    }
+    return '';
+  }
+  
+  String _formatDuration(Duration duration) {
+    final minutes = duration.inMinutes;
+    final seconds = duration.inSeconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  Widget _buildDefaultThumbnail() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.blue[400]!,
+            Colors.blue[600]!,
+          ],
+        ),
+      ),
+      child: const Center(
+        child: Icon(
+          Icons.video_library,
+          color: Colors.white,
+          size: 32,
+        ),
+      ),
+    );
+  }
+
+  String _getVideoDisplayName() {
+    final filename = path.basenameWithoutExtension(widget.video);
+    return filename.isNotEmpty ? filename : widget.video;
+  }
+
+  Future<void> _openVideoPlayer() async {
+    try {
+      // 收集所有视频路径，确保正确解析
+      final allVideoPaths = <String>[];
+      for (final video in widget.videos) {
+        final resolvedPath = await _findAssetInQuestionBank(
+          video, 
+          widget.questionBank, 
+          isVideo: true
+        );
+        if (resolvedPath != null && resolvedPath.isNotEmpty) {
+          allVideoPaths.add(resolvedPath);
+        }
+      }
+
+      if (allVideoPaths.isNotEmpty && mounted) {
+        // 暂停预览
+        _stopPreview();
+        
+        // 找到当前视频在解析后列表中的索引
+        int actualIndex = 0;
+        if (_resolvedVideoPath != null) {
+          final foundIndex = allVideoPaths.indexOf(_resolvedVideoPath!);
+          if (foundIndex != -1) {
+            actualIndex = foundIndex;
+          }
+        }
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => FullscreenVideoPage(
+              videoPaths: allVideoPaths,
+              initialIndex: actualIndex,
+              enableTapToClose: true, // 启用点击空白处关闭
+            ),
+          ),
+        );
+      } else {
+        // 显示错误提示
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('视频文件未找到: ${widget.video}'),
+              backgroundColor: Colors.red[600],
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      developer.log('[VideoListItem] Error opening video player: $e', name: 'VideoListItem');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('播放视频时出错: $e'),
+            backgroundColor: Colors.red[600],
+          ),
+        );
+      }
+    }
+  }
+  
+  @override
+  void dispose() {
+    _previewTimer?.cancel();
+
+    _previewController?.dispose();
+    super.dispose();
+  }
 }
 
 void showKnowledgeCard(BuildContext context, Section section, {QuestionBank? questionBank}) {

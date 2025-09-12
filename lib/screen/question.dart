@@ -206,6 +206,12 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
 
             // 公共处理逻辑
             void addQuestionCard(SingleQuestionData q, [QuestionBank? questionBank]) {
+              // 跳过占位符题目
+              if (q.question['q'] == '本章没有题目') {
+                print('HighTree-Debug: Skipping placeholder question: ${q.question['q']}');
+                return;
+              }
+              
               allQuestions.add(q);
               questionRemoved.add(false);
               questionRemain++;
@@ -258,7 +264,13 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
             }
 
             isQuestionRemoved(SingleQuestionData q) {
-              return questionRemoved[allQuestions.indexOf(q)];
+              final index = allQuestions.indexOf(q);
+              if (index == -1) {
+                // 如果找不到题目，可能是占位符题目，默认认为未移除
+                print('HighTree-Debug: Question not found in allQuestions: ${q.question['q']}');
+                return false;
+              }
+              return questionRemoved[index];
             }
 
             questionAnsWasWrong(SingleQuestionData q) {
@@ -282,8 +294,14 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
               }
             }
             // 卡片滑动组件
+            // 如果没有卡片，直接显示完成界面
+            if (cards.isEmpty) {
+              return _buildCompleteCard(context);
+            }
+            
             return CardSwiper(
               controller: controller,
+              numberOfCardsDisplayed: cards.length > 0 ? (cards.length > 3 ? 3 : cards.length) : 1,
               onSwipe: (previousIndex, currentIndex, direction) {
                 if (questionRemain > 0) {
                   final index = previousIndex;
@@ -374,19 +392,30 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                         for (var q in c.questionList) {
                           leftQuestions.remove(q);
                           rightQuestions.remove(q);
-                          indexRecord.add(allQuestions.indexOf(q));
+                          final questionIndex = allQuestions.indexOf(q);
+                          if (questionIndex == -1) {
+                            print('HighTree-Debug: Question not found in allQuestions during refresh: ${q.question['q']}');
+                            // 如果找不到题目，跳过这个题目的处理
+                            continue;
+                          }
+                          indexRecord.add(questionIndex);
                         }
                         c.failSection();
-                        for (var i = 0; i < c.questionList.length; i++) {
-                          replaceQuestion(
-                              c.questionList[i], indexRecord[i], c.bank);
+                        // 只有当 indexRecord 不为空时才进行替换操作
+                        if (indexRecord.isNotEmpty) {
+                          for (var i = 0; i < indexRecord.length; i++) {
+                            replaceQuestion(
+                                c.questionList[i], indexRecord[i], c.bank);
+                          }
+                          Future.delayed(const Duration(milliseconds: 800))
+                              .whenComplete(() {
+                            showKnowledgeCard(context, c.targetSection!, questionBank: c.bank);
+                            controller
+                                .moveTo(indexRecord.reduce((v, e) => min(v, e)));
+                          });
+                        } else {
+                          print('HighTree-Debug: No valid questions to replace, skipping refresh');
                         }
-                        Future.delayed(const Duration(milliseconds: 800))
-                            .whenComplete(() {
-                          showKnowledgeCard(context, c.targetSection!, questionBank: c.bank);
-                          controller
-                              .moveTo(indexRecord.reduce((v, e) => min(v, e)));
-                        });
 
                         break;
                       } else if (pass) {

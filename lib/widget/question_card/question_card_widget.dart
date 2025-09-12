@@ -118,7 +118,7 @@ Card buildQuestionCard(
               ),
               
               // 底部功能按钮
-              _buildBottomFeatureButtons(context, activeFeature, currentQuestionData),
+              _buildBottomFeatureButtons(context, activeFeature, currentQuestionData, questionBank),
             ],
           ),
         );
@@ -329,7 +329,7 @@ Widget _buildFeaturePanel(
   );
 }
 
-Widget _buildBottomFeatureButtons(BuildContext context, ValueNotifier<String> activeFeature, SingleQuestionData? currentQuestionData) {
+Widget _buildBottomFeatureButtons(BuildContext context, ValueNotifier<String> activeFeature, SingleQuestionData? currentQuestionData, [QuestionBank? questionBank]) {
   return Container(
     width: double.infinity,
     decoration: BoxDecoration(
@@ -358,6 +358,7 @@ Widget _buildBottomFeatureButtons(BuildContext context, ValueNotifier<String> ac
           activeFeature: activeFeature,
           context: context,
           currentQuestionData: currentQuestionData,
+          questionBank: questionBank,
         ),
         _buildBottomFeatureButton(
           icon: Icons.chat_outlined,
@@ -366,6 +367,7 @@ Widget _buildBottomFeatureButtons(BuildContext context, ValueNotifier<String> ac
           activeFeature: activeFeature,
           context: context,
           currentQuestionData: currentQuestionData,
+          questionBank: questionBank,
         ),
         _buildBottomFeatureButton(
           icon: Icons.book_outlined,
@@ -374,6 +376,7 @@ Widget _buildBottomFeatureButtons(BuildContext context, ValueNotifier<String> ac
           activeFeature: activeFeature,
           context: context,
           currentQuestionData: currentQuestionData,
+          questionBank: questionBank,
         ),
       ],
     ),
@@ -387,6 +390,7 @@ Widget _buildBottomFeatureButton({
   required ValueNotifier<String> activeFeature,
   required BuildContext context,
   SingleQuestionData? currentQuestionData,
+  QuestionBank? questionBank,
 }) {
   final Color primaryColor = Theme.of(context).primaryColor;
   
@@ -404,14 +408,15 @@ Widget _buildBottomFeatureButton({
               if (currentQuestionData != null) {
                 print('HighTree-Debug: currentQuestionData is not null');
                 try {
-                  final questionBank = LearningPlanManager.instance.questionBanks.firstOrNull;
-                  print('HighTree-Debug: questionBank = $questionBank');
-                  if (questionBank != null) {
+                  // 优先使用传入的questionBank参数，如果没有则使用第一个可用的
+                  final targetQuestionBank = questionBank ?? LearningPlanManager.instance.questionBanks.firstOrNull;
+                  print('HighTree-Debug: questionBank = $targetQuestionBank');
+                  if (targetQuestionBank != null) {
                     print('HighTree-Debug: currentQuestionData.fromKonwledgeIndex = ${currentQuestionData.fromKonwledgeIndex}');
                     print('HighTree-Debug: currentQuestionData.fromKonwledgePoint = ${currentQuestionData.fromKonwledgePoint}');
-                    final knowledgeSection = questionBank.findSectionByQuestion(currentQuestionData);
+                    final knowledgeSection = targetQuestionBank.findSectionByQuestion(currentQuestionData);
                     print('HighTree-Debug: knowledgeSection = $knowledgeSection');
-                    showKnowledgeCard(context, knowledgeSection, questionBank: questionBank);
+                    showKnowledgeCard(context, knowledgeSection, questionBank: targetQuestionBank);
                   } else {
                     print('HighTree-Debug: questionBank is null');
                   }

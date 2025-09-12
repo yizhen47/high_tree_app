@@ -1,16 +1,198 @@
-# flutter_application_1
+# 高树学习应用 (High Tree Learning App)
 
-A new Flutter project.
+一个基于Flutter开发的智能学习应用，支持知识图谱、视频学习、题目练习等功能。
 
-## Getting Started
+## ✨ 最新更新
 
-This project is a starting point for a Flutter application.
+### 🎥 视频播放器增强 (2025.09.12)
+- **视频列表展示**: 知识点卡片中的视频课程现在以列表形式展示，左侧显示视频预览缩略图
+- **智能缩略图生成**: 自动为本地和网络视频生成预览图，提升用户体验
+- **点击空白关闭**: 全屏视频播放器支持点击空白区域关闭（保留左上角返回按钮）
+- **路径解析优化**: 修复视频路径传递的bug，支持更准确的视频文件定位
+- **错误处理改进**: 更好的错误提示和异常处理机制
 
-A few resources to get you started if this is your first Flutter project:
+### 🔧 视频功能特性
+1. **列表式展示**: 视频课程以卡片列表形式展示，信息更清晰
+2. **预览缩略图**: 自动生成视频第一帧作为预览图
+3. **渐进式加载**: 缩略图异步加载，不阻塞界面显示
+4. **多种交互方式**: 
+   - 点击列表项播放视频
+   - 全屏模式下垂直滑动切换视频
+   - 点击空白处或返回按钮退出全屏
+5. **智能路径解析**: 支持网络URL、绝对路径和相对路径
+6. **双层全屏模式**: 
+   - 竖屏全屏列表模式
+   - 横屏全屏播放模式
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## 🎯 主要功能
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### 📚 知识管理
+- 知识图谱可视化展示
+- 分层级的知识点结构
+- 智能知识点推荐
+
+### 🎥 视频学习
+- 全屏视频播放器
+- 视频列表管理
+- 自动生成预览缩略图
+- 多格式视频支持
+
+### 📝 练习系统
+- 多种题型支持（选择题、填空题、解答题）
+- 智能评分系统
+- 学习进度追踪
+
+### 📊 数据分析
+- 学习统计报告
+- 进度可视化图表
+- 个性化学习建议
+
+## 🛠️ 技术栈
+
+- **Flutter**: 3.5.4+
+- **视频播放**: video_player + flick_video_player
+- **缩略图生成**: video_thumbnail
+- **UI组件**: TDesign Flutter
+- **图表**: fl_chart
+- **状态管理**: Provider + Hive
+
+## 🚀 开始使用
+
+### 环境要求
+- Flutter SDK 3.5.4+
+- Dart SDK 3.5.4+
+- Windows 10+ / macOS 10.14+ / Linux
+
+### 安装步骤
+
+1. 克隆项目
+```bash
+git clone <repository-url>
+cd high_tree_app
+```
+
+2. 安装依赖
+```bash
+flutter pub get
+```
+
+3. 运行应用
+```bash
+flutter run
+```
+
+### 构建发布版本
+```bash
+# Windows
+flutter build windows
+
+# macOS
+flutter build macos
+
+# Linux
+flutter build linux
+```
+
+## 📱 使用说明
+
+### 视频学习功能
+1. 在知识点卡片中找到"视频课程"部分
+2. 浏览视频列表，每个视频显示预览缩略图
+3. 点击任意视频进入全屏播放模式
+4. 在全屏模式下：
+   - 垂直滑动切换不同视频
+   - 点击空白区域或左上角按钮退出
+   - 点击视频区域进入横屏全屏模式
+
+### 视频文件支持
+- **本地文件**: 支持相对路径和绝对路径
+- **网络视频**: 支持HTTP/HTTPS URL
+- **格式支持**: MP4, MOV, AVI等主流格式
+- **缓存管理**: 智能缓存管理，提升播放性能
+
+## 🔧 配置说明
+
+### 视频路径配置
+应用支持多种视频路径格式：
+
+```yaml
+# 相对路径（推荐）
+videos:
+  - "课程视频/第一章/1.1.mp4"
+  - "课程视频/第一章/1.2.mp4"
+
+# 网络URL
+videos:
+  - "https://example.com/video1.mp4"
+  - "https://example.com/video2.mp4"
+
+# 绝对路径
+videos:
+  - "/Users/username/Videos/course1.mp4"
+  - "C:\\Users\\username\\Videos\\course2.mp4"
+```
+
+### 缩略图设置
+```dart
+// 缩略图生成参数
+VideoThumbnail.thumbnailFile(
+  video: videoPath,
+  imageFormat: ImageFormat.JPEG,
+  maxHeight: 120,        // 缩略图高度
+  quality: 75,           // 图片质量 (0-100)
+)
+```
+
+## 🤝 贡献指南
+
+1. Fork 本项目
+2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 创建 Pull Request
+
+## 📄 许可证
+
+本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+
+## 🐛 问题反馈
+
+如果您发现任何问题或有改进建议，请创建 [Issue](../../issues)。
+
+---
+
+**开发团队**: High Tree Learning Team  
+**最后更新**: 2025年9月12日
+
+# 高数刷题 App
+
+## 新增功能：知识卡片视频内联播放
+
+### 功能描述
+在知识卡片的视频列表中，现在支持**视频内联播放功能**，视频默认在卡片内播放，提供类似视频流应用的体验。
+
+### 交互方式
+1. **默认播放**：视频列表项默认自动开始播放
+2. **播放控制**：单击视频区域可暂停/继续播放
+3. **进度拖动**：下方进度条支持拖动来跳转到指定时间点
+4. **进入全屏**：双击视频区域进入全屏播放模式
+
+### 视觉效果
+- **保持尺寸**：视频播放时保持原始列表项的宽度和高度
+- **暂停指示**：视频暂停时在中央显示播放按钮图标
+- **状态显示**：显示当前播放状态（播放中/已暂停）
+- **一致风格**：保持与原有设计风格的一致性
+
+### 信息显示
+- **实时时间**：显示当前播放时间和视频总时长（格式：00:00 / 05:30）
+- **可拖动进度条**：支持点击和拖动的滑块式进度条
+- **播放状态**：图标和文字显示当前播放状态
+
+### 技术实现
+- 使用`VideoPlayerController`进行视频播放
+- 支持本地文件和网络视频
+- 自动生成视频缩略图作为封面
+- 非循环播放：视频播放完毕后停在最后一帧
+- 可拖动的`Slider`进度条控件
+
+这个功能让用户可以在不离开当前页面的情况下直接观看视频内容，提供了更流畅的学习体验。
