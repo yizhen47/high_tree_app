@@ -6,8 +6,206 @@ import 'dart:developer' as developer;
 import 'dart:io';
 import 'dart:async';
 import 'package:path/path.dart' as path;
+import 'package:provider/provider.dart';
 
 import '../../widget/custom_flick_portrait_controls.dart';
+
+// 专门为全屏模式设计的控制器，不会干扰垂直滑动手势
+class FullscreenFlickControls extends StatefulWidget {
+  const FullscreenFlickControls({
+    super.key,
+    this.iconSize = 20,
+    this.fontSize = 12,
+    this.progressBarSettings,
+    this.onRotate,
+    this.flickManager,
+  });
+
+  final double iconSize;
+  final double fontSize;
+  final FlickProgressBarSettings? progressBarSettings;
+  final VoidCallback? onRotate;
+  final FlickManager? flickManager;
+
+  @override
+  State<FullscreenFlickControls> createState() => _FullscreenFlickControlsState();
+}
+
+class _FullscreenFlickControlsState extends State<FullscreenFlickControls> {
+  double _currentSpeed = 1.0;
+  
+  final List<double> _speedOptions = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeSpeed();
+  }
+
+  @override
+  void didUpdateWidget(FullscreenFlickControls oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.flickManager != oldWidget.flickManager) {
+      _initializeSpeed();
+    }
+  }
+
+  void _initializeSpeed() {
+    final flickManager = widget.flickManager;
+    if (flickManager != null && flickManager.flickVideoManager?.videoPlayerController != null) {
+      final currentSpeed = flickManager.flickVideoManager!.videoPlayerController!.value.playbackSpeed;
+      setState(() {
+        _currentSpeed = currentSpeed;
+      });
+      developer.log('[FullscreenFlickControls] Initialized speed to: ${currentSpeed}x', 
+                    name: 'FullscreenFlickControls');
+    } else {
+      developer.log('[FullscreenFlickControls] Cannot initialize speed - FlickManager or controller is null', 
+                    name: 'FullscreenFlickControls');
+    }
+  }
+
+  void _showSpeedDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('播放速度'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: _speedOptions.map((speed) {
+              return ListTile(
+                title: Text('${speed}x'),
+                leading: Radio<double>(
+                  value: speed,
+                  groupValue: _currentSpeed,
+                  onChanged: (value) {
+                    if (value != null) {
+                      _setPlaybackSpeed(value);
+                      Navigator.of(context).pop();
+                    }
+                  },
+                ),
+                onTap: () {
+                  _setPlaybackSpeed(speed);
+                  Navigator.of(context).pop();
+                },
+              );
+            }).toList(),
+          ),
+        );
+      },
+    );
+  }
+
+  void _setPlaybackSpeed(double speed) {
+    final flickManager = widget.flickManager;
+    if (flickManager != null) {
+      flickManager.flickVideoManager?.videoPlayerController?.setPlaybackSpeed(speed);
+      setState(() {
+        _currentSpeed = speed;
+      });
+      developer.log('[FullscreenFlickControls] Set playback speed to: ${speed}x', 
+                    name: 'FullscreenFlickControls');
+    } else {
+      developer.log('[FullscreenFlickControls] FlickManager is null, cannot set speed', 
+                    name: 'FullscreenFlickControls');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: <Widget>[
+        // 只处理点击显示/隐藏控制栏，不处理滑动手势
+        Positioned.fill(
+          child: FlickShowControlsAction(
+            child: Container(
+              color: Colors.transparent,
+              child: Center(
+                child: FlickVideoBuffer(
+                  child: FlickAutoHideChild(
+                    child: FlickPlayToggle(
+                      size: 30,
+                      color: Colors.white,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(40),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        Positioned.fill(
+          child: FlickAutoHideChild(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: <Widget>[
+                FlickVideoProgressBar(
+                  flickProgressBarSettings: widget.progressBarSettings,
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: <Widget>[
+                    FlickPlayToggle(
+                      size: widget.iconSize,
+                    ),
+                    FlickSoundToggle(
+                      size: widget.iconSize,
+                    ),
+                    Row(
+                      children: <Widget>[
+                        FlickCurrentPosition(
+                          fontSize: widget.fontSize,
+                        ),
+                        const Text(' / ', style: TextStyle(color: Colors.white)),
+                        FlickTotalDuration(
+                          fontSize: widget.fontSize,
+                        ),
+                      ],
+                    ),
+                    // 倍速按钮
+                    GestureDetector(
+                      onTap: _showSpeedDialog,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white24,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '${_currentSpeed}x',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: widget.fontSize,
+                          ),
+                        ),
+                      ),
+                    ),
+                    // 旋转按钮
+                    if (widget.onRotate != null)
+                      GestureDetector(
+                        onTap: widget.onRotate,
+                        child: Icon(
+                          Icons.rotate_90_degrees_ccw,
+                          color: Colors.white,
+                          size: widget.iconSize,
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
 
 class FullscreenVideoPage extends StatefulWidget {
   final List<String> videoPaths;
@@ -484,6 +682,7 @@ class _VideoPlayerItemState extends State<VideoPlayerItem> {
   bool _isActive = false;
   late TransformationController _transformationController;
   String? _error;
+  int _rotationAngle = 0; // 添加旋转角度状态
 
   @override
   void initState() {
@@ -583,6 +782,12 @@ class _VideoPlayerItemState extends State<VideoPlayerItem> {
     }
   }
 
+  void _rotateVideo() {
+    setState(() {
+      _rotationAngle = (_rotationAngle + 90) % 360;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_error != null) {
@@ -609,24 +814,24 @@ class _VideoPlayerItemState extends State<VideoPlayerItem> {
         maxScale: 5.0,
         panEnabled: true,
         scaleEnabled: true,
-        child: FlickVideoPlayer(
-          flickManager: _flickManager!,
-          flickVideoWithControls: FlickVideoWithControls(
-            controls: OrientationBuilder(
-              builder: (context, orientation) {
-                return orientation == Orientation.landscape
-                    ? const FlickLandscapeControls()
-                    : CustomFlickPortraitControls(
-                        progressBarSettings: FlickProgressBarSettings(
-                          playedColor: widget.primaryColor,
-                        ),
-                      );
-              },
-            ),
-            playerLoadingFallback: Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(widget.primaryColor),
+        child: Transform.rotate(
+          angle: _rotationAngle * 3.14159 / 180, // 将角度转换为弧度
+          child: FlickVideoPlayer(
+            flickManager: _flickManager!,
+            flickVideoWithControls: FlickVideoWithControls(
+              controls: FullscreenFlickControls(
+                progressBarSettings: FlickProgressBarSettings(
+                  playedColor: widget.primaryColor,
+                ),
+                onRotate: _rotateVideo, // 传入旋转回调
+                flickManager: _flickManager, // 传入FlickManager实例
               ),
+              playerLoadingFallback: Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(widget.primaryColor),
+                ),
+              ),
+              videoFit: BoxFit.contain, // 添加视频适应模式，保持比例并完全显示
             ),
           ),
         ),
@@ -737,6 +942,7 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
   VideoPlayerController? _videoPlayerController;
   bool _isInitialized = false;
   String? _error;
+  int _rotationAngle = 0; // 添加旋转角度状态
 
   @override
   void initState() {
@@ -810,6 +1016,12 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
     }
   }
 
+  void _rotateVideo() {
+    setState(() {
+      _rotationAngle = (_rotationAngle + 90) % 360;
+    });
+  }
+
   @override
   void dispose() {
     _videoPlayerController?.removeListener(_onControllerUpdated);
@@ -840,11 +1052,20 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
                 ? _buildLoadingWidget()
                 : Stack(
                     children: [
-                      FlickVideoPlayer(
-                        flickManager: _flickManager!,
-                        flickVideoWithControls: FlickVideoWithControls(
-                          controls: const FlickLandscapeControls(),
-                          playerLoadingFallback: _buildLoadingWidget(),
+                      Transform.rotate(
+                        angle: _rotationAngle * 3.14159 / 180, // 将角度转换为弧度
+                        child: FlickVideoPlayer(
+                          flickManager: _flickManager!,
+                          flickVideoWithControls: FlickVideoWithControls(
+                            controls: FullscreenFlickControls(
+                              progressBarSettings: FlickProgressBarSettings(
+                                playedColor: widget.primaryColor,
+                              ),
+                              onRotate: _rotateVideo, // 传入旋转回调
+                            ),
+                            playerLoadingFallback: _buildLoadingWidget(),
+                            videoFit: BoxFit.contain, // 添加视频适应模式，保持比例并完全显示
+                          ),
                         ),
                       ),
                       Positioned(

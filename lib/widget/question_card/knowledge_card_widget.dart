@@ -407,14 +407,6 @@ Widget _buildVideoSection(List<String> videos, QuestionBank? questionBank) {
           children: [
             Icon(Icons.video_library, color: Colors.blue[600], size: 20),
             const SizedBox(width: 8),
-            Text(
-              '视频课程 (${videos.length})',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.blue[600],
-              ),
-            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -663,15 +655,6 @@ class _VideoListItemState extends State<_VideoListItem> with TickerProviderState
               // 视频区域 - 占据卡片全宽
               _buildFullWidthVideo(),
               const SizedBox(height: 12),
-              // 视频标题
-              Text(
-                '视频课程 ${widget.index + 1}',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
-              ),
               const SizedBox(height: 4),
               // 视频简介
               Text(
@@ -730,15 +713,17 @@ class _VideoListItemState extends State<_VideoListItem> with TickerProviderState
   }
 
   Widget _buildFullWidthVideo() {
-    return Container(
-      width: double.infinity, // 占据卡片全宽
-      height: 200, // 设置固定高度
-      decoration: BoxDecoration(
-        color: Colors.black12,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
+    return GestureDetector(
+      onTap: _openVideoPlayer,
+      child: Container(
+        width: double.infinity, // 占据卡片全宽
+        height: 200, // 设置固定高度
+        decoration: BoxDecoration(
+          color: Colors.black12,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
         child: _previewController != null && _isPreviewInitialized
             ? Stack(
                 children: [
@@ -761,17 +746,61 @@ class _VideoListItemState extends State<_VideoListItem> with TickerProviderState
                         ),
                       ),
                     ),
+                  // 全屏按钮
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: GestureDetector(
+                      onTap: _openVideoPlayer,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.6),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Icon(
+                          Icons.fullscreen,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               )
             : _thumbnailPath != null
-                ? Image.file(
-                    File(_thumbnailPath!),
-                    width: double.infinity,
-                    height: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return _buildDefaultThumbnail();
-                    },
+                ? Stack(
+                    children: [
+                      Image.file(
+                        File(_thumbnailPath!),
+                        width: double.infinity,
+                        height: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return _buildDefaultThumbnail();
+                        },
+                      ),
+                      // 全屏按钮
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: GestureDetector(
+                          onTap: _openVideoPlayer,
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.6),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Icon(
+                              Icons.fullscreen,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   )
                 : _isGeneratingThumbnail
                     ? Center(
@@ -784,7 +813,32 @@ class _VideoListItemState extends State<_VideoListItem> with TickerProviderState
                           ),
                         ),
                       )
-                    : _buildDefaultThumbnail(),
+                    : Stack(
+                        children: [
+                          _buildDefaultThumbnail(),
+                          // 全屏按钮
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: GestureDetector(
+                              onTap: _openVideoPlayer,
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.6),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Icon(
+                                  Icons.fullscreen,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+        ),
       ),
     );
   }

@@ -7,6 +7,294 @@ import 'dart:io';
 
 import '../custom_flick_portrait_controls.dart';
 
+// 自定义播放控件，包含旋转、倍速和比例控制
+class CustomVideoControls extends StatefulWidget {
+  final FlickManager flickManager;
+  final Color primaryColor;
+  final VoidCallback onRotate;
+  final Function(double) onSpeedChange;
+  final Function(double) onAspectRatioChange;
+  final int rotationAngle;
+
+  const CustomVideoControls({
+    super.key,
+    required this.flickManager,
+    required this.primaryColor,
+    required this.onRotate,
+    required this.onSpeedChange,
+    required this.onAspectRatioChange,
+    required this.rotationAngle,
+  });
+
+  @override
+  State<CustomVideoControls> createState() => _CustomVideoControlsState();
+}
+
+class _CustomVideoControlsState extends State<CustomVideoControls> {
+  double _currentSpeed = 1.0;
+  double _currentAspectRatio = 16/9;
+  bool _showSpeedMenu = false;
+  bool _showAspectMenu = false;
+
+  final List<double> _speedOptions = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+  final List<MapEntry<String, double>> _aspectRatioOptions = [
+    const MapEntry('16:9', 16/9),
+    const MapEntry('4:3', 4/3),
+    const MapEntry('1:1', 1.0),
+    const MapEntry('9:16', 9/16),
+    const MapEntry('原始', 0), // 0 表示使用原始比例
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: <Widget>[
+        Positioned.fill(
+          child: FlickShowControlsAction(
+            child: FlickSeekVideoAction(
+              child: Center(
+                child: FlickVideoBuffer(
+                  child: FlickAutoHideChild(
+                    child: FlickPlayToggle(
+                      size: 30,
+                      color: Colors.white,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(40),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        Positioned.fill(
+          child: FlickAutoHideChild(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: <Widget>[
+                FlickVideoProgressBar(
+                  flickProgressBarSettings: FlickProgressBarSettings(
+                    playedColor: widget.primaryColor,
+                  ),
+                ),
+                // 主控制行
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: <Widget>[
+                    FlickPlayToggle(size: 20),
+                    FlickSoundToggle(size: 20),
+                    Row(
+                      children: <Widget>[
+                        FlickCurrentPosition(fontSize: 12),
+                        const Text(' / ', style: TextStyle(color: Colors.white, fontSize: 12)),
+                        FlickTotalDuration(fontSize: 12),
+                      ],
+                    ),
+                    const SizedBox(width: 44), // 移除全屏按钮后的占位符
+                  ],
+                ),
+                const SizedBox(height: 8),
+                // 扩展控制行（旋转、倍速、比例）
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    // 旋转按钮
+                    GestureDetector(
+                      onTap: widget.onRotate,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.rotate_90_degrees_ccw,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${widget.rotationAngle}°',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    // 倍速控制
+                    GestureDetector(
+                      onTap: () => setState(() => _showSpeedMenu = !_showSpeedMenu),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.speed,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${_currentSpeed}x',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    // 比例控制
+                    GestureDetector(
+                      onTap: () => setState(() => _showAspectMenu = !_showAspectMenu),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.aspect_ratio,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _getCurrentAspectRatioLabel(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        ),
+        // 倍速菜单
+        if (_showSpeedMenu)
+          Positioned(
+            bottom: 120,
+            right: 20,
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.black87,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.white24),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: _speedOptions.map((speed) {
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _currentSpeed = speed;
+                        _showSpeedMenu = false;
+                      });
+                      widget.onSpeedChange(speed);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      margin: const EdgeInsets.symmetric(vertical: 2),
+                      decoration: BoxDecoration(
+                        color: _currentSpeed == speed ? widget.primaryColor : Colors.transparent,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        '${speed}x',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+        // 比例菜单
+        if (_showAspectMenu)
+          Positioned(
+            bottom: 120,
+            left: 20,
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.black87,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.white24),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: _aspectRatioOptions.map((option) {
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _currentAspectRatio = option.value;
+                        _showAspectMenu = false;
+                      });
+                      widget.onAspectRatioChange(option.value);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      margin: const EdgeInsets.symmetric(vertical: 2),
+                      decoration: BoxDecoration(
+                        color: _currentAspectRatio == option.value ? widget.primaryColor : Colors.transparent,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        option.key,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  String _getCurrentAspectRatioLabel() {
+    for (var option in _aspectRatioOptions) {
+      if (option.value == _currentAspectRatio) {
+        return option.key;
+      }
+    }
+    return '16:9'; // 默认值
+  }
+}
+
 class VideoPlayerWidget extends StatefulWidget {
   final String videoPath;
   final Color primaryColor;
@@ -27,6 +315,8 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   bool _isDisposed = false; // 添加disposed标志
   String? _error;
   int _rotationAngle = 0; // 旋转角度 (0, 90, 180, 270)
+  double _currentAspectRatio = 16/9; // 当前宽高比
+  double _playbackSpeed = 1.0; // 播放速度
 
   @override
   void initState() {
@@ -143,7 +433,10 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
 
     // 获取屏幕宽度
     final screenWidth = MediaQuery.of(context).size.width;
-    final videoAspectRatio = _flickManager?.flickVideoManager?.videoPlayerController?.value.aspectRatio ?? 16/9;
+    // 使用当前设置的宽高比，如果为0则使用原始视频比例
+    final videoAspectRatio = _currentAspectRatio == 0 
+        ? (_flickManager?.flickVideoManager?.videoPlayerController?.value.aspectRatio ?? 16/9)
+        : _currentAspectRatio;
     
     // 计算视频容器的尺寸
     double containerWidth = screenWidth;
@@ -158,34 +451,37 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
       containerHeight = screenWidth / videoAspectRatio;
     }
 
-    return Stack(
-      children: [
-        GestureDetector(
-          onTap: () => _openFullscreen(),
-          child: Container(
-            width: containerWidth,
-            height: containerHeight,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              color: Colors.black,
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Center(
-                child: Transform.rotate(
-                  angle: _rotationAngle * 3.14159 / 180, // 转换为弧度
-                  child: SizedBox(
-                    width: _rotationAngle == 90 || _rotationAngle == 270 
-                        ? containerHeight 
-                        : containerWidth,
-                    height: _rotationAngle == 90 || _rotationAngle == 270 
-                        ? containerWidth 
-                        : containerHeight,
-                    child: FlickVideoPlayer(
+    return GestureDetector(
+      onTap: () => _openFullscreen(),
+      child: Container(
+        width: containerWidth,
+        height: containerHeight,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          color: Colors.black,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Center(
+            child: Transform.rotate(
+              angle: _rotationAngle * 3.14159 / 180, // 转换为弧度
+              child: SizedBox(
+                width: _rotationAngle == 90 || _rotationAngle == 270 
+                    ? containerHeight 
+                    : containerWidth,
+                height: _rotationAngle == 90 || _rotationAngle == 270 
+                    ? containerWidth 
+                    : containerHeight,
+                child: FlickVideoPlayer(
+                  flickManager: _flickManager!,
+                  flickVideoWithControls: FlickVideoWithControls(
+                    controls: CustomVideoControls(
                       flickManager: _flickManager!,
-                      flickVideoWithControls: FlickVideoWithControls(
-                        controls: FlickPortraitControls(),
-                      ),
+                      primaryColor: widget.primaryColor,
+                      onRotate: _rotateVideo,
+                      onSpeedChange: _changePlaybackSpeed,
+                      onAspectRatioChange: _changeAspectRatio,
+                      rotationAngle: _rotationAngle,
                     ),
                   ),
                 ),
@@ -193,31 +489,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
             ),
           ),
         ),
-        // 旋转按钮
-        Positioned(
-          top: 8,
-          right: 8,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.black87, // 更不透明
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white, width: 1), // 添加白色边框
-            ),
-            child: IconButton(
-              icon: const Icon(
-                Icons.rotate_90_degrees_ccw,
-                color: Colors.white,
-                size: 22, // 稍微大一点
-              ),
-              onPressed: _rotateVideo,
-              constraints: const BoxConstraints(
-                minWidth: 40, // 稍微大一点
-                minHeight: 40,
-              ),
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 
@@ -300,6 +572,21 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
     });
   }
 
+  // 改变播放速度
+  void _changePlaybackSpeed(double speed) {
+    setState(() {
+      _playbackSpeed = speed;
+    });
+    _flickManager?.flickVideoManager?.videoPlayerController?.setPlaybackSpeed(speed);
+  }
+
+  // 改变宽高比
+  void _changeAspectRatio(double aspectRatio) {
+    setState(() {
+      _currentAspectRatio = aspectRatio;
+    });
+  }
+
   // 公共方法：用于外部控制播放/暂停
   void play() {
     _flickManager?.flickControlManager?.play();
@@ -337,6 +624,7 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
   bool _isInitialized = false;
   String? _error;
   late TransformationController _transformationController;
+  int _rotationAngle = 0; // 0, 90, 180, 270
 
   @override
   void initState() {
@@ -451,20 +739,25 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
                           // 双击重置缩放
                           if (_transformationController.value != Matrix4.identity()) {
                             _transformationController.value = Matrix4.identity();
+                          } else {
+                            // 如果没有缩放，则旋转
+                            _rotateVideo();
                           }
                         },
                         child: InteractiveViewer(
                           transformationController: _transformationController,
                           minScale: 1.0,
                           maxScale: 4.0,
+                          child: Transform.rotate(
+                            angle: _rotationAngle * 3.14159 / 180,
                           child: FlickVideoPlayer(
                             flickManager: _flickManager!,
                             flickVideoWithControls: FlickVideoWithControls(
                               controls: OrientationBuilder(
                                 builder: (context, orientation) {
-                                  return orientation == Orientation.landscape
-                                      ? const FlickLandscapeControls()
-                                      : CustomFlickPortraitControls(
+                                    // 全屏时，我们总是希望有旋转按钮，所以直接使用 CustomFlickPortraitControls
+                                    return CustomFlickPortraitControls(
+                                      onRotate: _rotateVideo,
                                           progressBarSettings: FlickProgressBarSettings(
                                             playedColor: widget.primaryColor,
                                           ),
@@ -472,6 +765,7 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
                                 },
                               ),
                               playerLoadingFallback: _buildLoadingWidget(),
+                              ),
                             ),
                           ),
                         ),
@@ -530,5 +824,11 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
         ],
       ),
     );
+  }
+
+  void _rotateVideo() {
+    setState(() {
+      _rotationAngle = (_rotationAngle + 90) % 360;
+    });
   }
 } 

@@ -11,7 +11,7 @@ import 'package:flutter_application_1/screen/mind_map_screen.dart';
 import 'package:flutter_application_1/screen/learning_report.dart';
 import 'package:flutter_application_1/screen/question.dart';
 import 'package:flutter_application_1/screen/wrong_question.dart';
-import 'package:flutter_application_1/tool/page_intent_trans.dart';
+
 import 'package:flutter_application_1/tool/question/question_bank.dart';
 import 'package:flutter_application_1/tool/question/question_bank_accessor.dart';
 import 'package:flutter_application_1/tool/question/question_controller.dart';
@@ -144,9 +144,8 @@ class _MainHomePageState extends State<MainHomePage> {
                     Navigator.push(
                       context,
                       PageTransition(
-                        type: PageTransitionType.rightToLeftPop,
-                        childCurrent: widget,
-                        alignment: const Alignment(10, 20),
+                        type: PageTransitionType.scale,
+                        alignment: Alignment.center,
                         child: const MindMapScreen(),
                         duration: const Duration(milliseconds: 400),
                         curve: Curves.easeInOut,
@@ -165,9 +164,8 @@ class _MainHomePageState extends State<MainHomePage> {
                     Navigator.push(
                       context,
                       PageTransition(
-                        type: PageTransitionType.rightToLeftPop,
-                        childCurrent: widget,
-                        alignment: const Alignment(10, 20),
+                        type: PageTransitionType.scale,
+                        alignment: Alignment.center,
                         child: const BankManagementScreen(),
                         duration: const Duration(milliseconds: 400),
                         curve: Curves.easeInOut,
@@ -186,9 +184,8 @@ class _MainHomePageState extends State<MainHomePage> {
                     Navigator.push(
                       context,
                       PageTransition(
-                        type: PageTransitionType.rightToLeftPop,
-                        childCurrent: widget,
-                        alignment: const Alignment(10, 20),
+                        type: PageTransitionType.scale,
+                        alignment: Alignment.center,
                         child: const WrongQuestionScreen(),
                         duration: const Duration(milliseconds: 400),
                         curve: Curves.easeInOut,
@@ -204,9 +201,8 @@ class _MainHomePageState extends State<MainHomePage> {
                     Navigator.push(
                       context,
                       PageTransition(
-                        type: PageTransitionType.rightToLeftPop,
-                        childCurrent: widget,
-                        alignment: const Alignment(10, 20),
+                        type: PageTransitionType.scale,
+                        alignment: Alignment.center,
                         child: const LearningReportScreen(title: ''),
                         duration: const Duration(milliseconds: 400),
                         curve: Curves.easeInOut,
@@ -717,9 +713,7 @@ class _MainHomePageState extends State<MainHomePage> {
                     Navigator.push(
                       context,
                       PageTransition(
-                        type: PageTransitionType.rightToLeftPop,
-                        childCurrent: widget,
-                        alignment: const Alignment(10, 20),
+                        type: PageTransitionType.fade,
                         child: const QuestionScreen(title: ''),
                         duration: const Duration(milliseconds: 400),
                         curve: Curves.easeInOut,

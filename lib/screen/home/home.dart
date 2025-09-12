@@ -13,6 +13,7 @@ import 'package:flutter_application_1/screen/personal.dart';
 import 'package:flutter_application_1/tool/question/question_bank.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/tool/question/wrong_question_book.dart';
+import 'package:page_transition/page_transition.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'dart:math';
 import 'package:path_provider/path_provider.dart';
@@ -381,10 +382,10 @@ class _ProfilePageState extends State<ProfilePage> {
                         title: '个人资料',
                         onTap: () => Navigator.push(
                             context,
-                            MaterialPageRoute(
-                                builder: (context) => const PersonalScreen(
-                                      title: '',
-                                    ))),
+                            PageTransition(
+                              type: PageTransitionType.fade,
+                              child: const PersonalScreen(title: ''),
+                            )),
                       ),
                       _buildDivider(),
                       _buildCompactListTile(
@@ -416,15 +417,15 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                       _buildDivider(),
                       _buildCompactListTile(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const BankManagementScreen(),
-                            ),
-                          );
-                        },
+                                                  onTap: () {
+                           Navigator.push(
+                              context,
+                              PageTransition(
+                                type: PageTransitionType.fade,
+                                child: const BankManagementScreen(),
+                              ),
+                            );
+                          },
                         icon: Icons.menu_book_sharp,
                         title: '题库管理',
                       ),
