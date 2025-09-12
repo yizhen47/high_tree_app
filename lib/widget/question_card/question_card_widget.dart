@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:extended_text/extended_text.dart';
 import 'package:flutter_application_1/widget/latex.dart';
 import 'package:latext/latext.dart';
-import 'dart:math' show min;
+import 'dart:math' show min, Random;
 import 'package:flutter_application_1/tool/question/question_bank.dart';
 import 'package:flutter_application_1/tool/question/question_controller.dart';
 import 'package:flutter_application_1/widget/left_toast.dart';
@@ -426,6 +426,12 @@ Widget _buildBottomFeatureButton({
               } else {
                 print('HighTree-Debug: currentQuestionData is null');
               }
+              return;
+            }
+            
+            // 同源题按钮特殊处理：直接跳转到随机同源题
+            if (feature == 'similar') {
+              _showRandomSimilarQuestion(context, currentQuestionData, questionBank);
               return;
             }
             
@@ -1411,4 +1417,405 @@ Widget _buildAnswerSection(String? answer, String? note, BuildContext context, [
       ),
     ],
   );
+}
+
+// 显示随机同源题
+void _showRandomSimilarQuestion(BuildContext context, SingleQuestionData? currentQuestionData, QuestionBank? questionBank) {
+  if (currentQuestionData == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('无法获取当前题目信息')),
+    );
+    return;
+  }
+
+  try {
+    final targetQuestionBank = questionBank ?? LearningPlanManager.instance.questionBanks.firstOrNull;
+    
+    if (targetQuestionBank == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('无法获取题库信息')),
+      );
+      return;
+    }
+
+    final section = targetQuestionBank.findSectionByQuestion(currentQuestionData);
+    final questions = section.sectionQuestionOnly(
+      targetQuestionBank.id ?? '',
+      targetQuestionBank.displayName ?? ''
+    );
+    
+    // 过滤掉当前题目
+    final similarQuestions = questions.where((q) => q.question['id'] != currentQuestionData.question['id']).toList();
+    
+    if (similarQuestions.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('本章节没有其他同源题')),
+      );
+      return;
+    }
+    
+    // 随机选择一个题目
+    final random = Random();
+    final randomQuestion = similarQuestions[random.nextInt(similarQuestions.length)];
+    
+    // 显示随机选择的题目
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          backgroundColor: Colors.transparent,
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.8,
+            width: MediaQuery.of(context).size.width * 0.9,
+            child: Dismissible(
+              key: Key(randomQuestion.question['id'] ?? 'unknown'),
+              direction: DismissDirection.horizontal,
+              background: Container(
+                decoration: BoxDecoration(
+                  color: Colors.red.shade400,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                alignment: Alignment.centerLeft,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.bookmark_add, color: Colors.white, size: 24),
+                    SizedBox(height: 8),
+                    Text('加入错题本',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+              secondaryBackground: Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.bookmark_add, color: Colors.white, size: 24),
+                    SizedBox(height: 8),
+                    Text('加入错题本',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+              onDismissed: (direction) {
+                showVerticalToast(
+                  context: context,
+                  title: '错题本',
+                  message: '已添加题目',
+                  color: direction == DismissDirection.startToEnd 
+                      ? Colors.red.shade400 
+                      : Theme.of(context).primaryColor,
+                  icon: Icons.bookmark_added,
+                );
+                Navigator.of(dialogContext).pop();
+              },
+              confirmDismiss: (direction) async {
+                return true;
+              },
+              child: Stack(
+                children: [
+                  buildQuestionCard(
+                    dialogContext,
+                    randomQuestion.getKonwledgePoint(),
+                    randomQuestion.question['q']!,
+                    randomQuestion.question['w'],
+                    null,
+                    randomQuestion,
+                    questionBank,
+                  ),
+                  // 添加"查看更多同源题"按钮
+                  Positioned(
+                    bottom: 16,
+                    right: 16,
+                    child: FloatingActionButton.extended(
+                      onPressed: () {
+                        Navigator.of(dialogContext).pop();
+                        // 显示同源题列表
+                        _showSimilarQuestionsList(context, currentQuestionData, questionBank);
+                      },
+                      backgroundColor: Theme.of(context).primaryColor,
+                      foregroundColor: Colors.white,
+                      icon: const Icon(Icons.list, size: 18),
+                      label: const Text('查看更多同源题', style: TextStyle(fontSize: 12)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+    
+  } catch (e) {
+    print('Error showing random similar question: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('获取同源题失败')),
+    );
+  }
+}
+
+// 显示同源题列表（原来的逻辑）
+void _showSimilarQuestionsList(BuildContext context, SingleQuestionData? currentQuestionData, QuestionBank? questionBank) {
+  if (currentQuestionData == null) return;
+  
+  try {
+    final targetQuestionBank = questionBank ?? LearningPlanManager.instance.questionBanks.firstOrNull;
+    
+    if (targetQuestionBank == null) return;
+
+    final section = targetQuestionBank.findSectionByQuestion(currentQuestionData);
+    final questions = section.sectionQuestionOnly(
+      targetQuestionBank.id ?? '',
+      targetQuestionBank.displayName ?? ''
+    );
+    
+    final similarQuestions = questions.where((q) => q.question['id'] != currentQuestionData.question['id']).toList();
+    
+    if (similarQuestions.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('本章节没有其他同源题')),
+      );
+      return;
+    }
+    
+    // 显示同源题列表对话框
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.8,
+              maxWidth: MediaQuery.of(context).size.width * 0.9,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 标题栏
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                      topRight: Radius.circular(16),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.quiz, color: Theme.of(context).primaryColor, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '所有同源题 (${similarQuestions.length}题)',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).primaryColor,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(dialogContext).pop(),
+                        icon: const Icon(Icons.close, size: 20),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  ),
+                ),
+                // 题目列表
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: similarQuestions.length,
+                    itemBuilder: (context, index) {
+                      final question = similarQuestions[index];
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.of(dialogContext).pop();
+                            // 显示选中的题目
+                            showDialog(
+                              context: context,
+                              builder: (questionDialogContext) {
+                                return Dialog(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  backgroundColor: Colors.transparent,
+                                  child: SizedBox(
+                                    height: MediaQuery.of(context).size.height * 0.8,
+                                    width: MediaQuery.of(context).size.width * 0.9,
+                                    child: Dismissible(
+                                      key: Key(question.question['id'] ?? 'unknown'),
+                                      direction: DismissDirection.horizontal,
+                                      background: Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.red.shade400,
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        alignment: Alignment.centerLeft,
+                                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                                        child: const Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(Icons.bookmark_add, color: Colors.white, size: 24),
+                                            SizedBox(height: 8),
+                                            Text('加入错题本',
+                                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                          ],
+                                        ),
+                                      ),
+                                      secondaryBackground: Container(
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context).primaryColor,
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        alignment: Alignment.centerRight,
+                                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                                        child: const Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(Icons.bookmark_add, color: Colors.white, size: 24),
+                                            SizedBox(height: 8),
+                                            Text('加入错题本',
+                                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                          ],
+                                        ),
+                                      ),
+                                      onDismissed: (direction) {
+                                        showVerticalToast(
+                                          context: context,
+                                          title: '错题本',
+                                          message: '已添加题目',
+                                          color: direction == DismissDirection.startToEnd 
+                                              ? Colors.red.shade400 
+                                              : Theme.of(context).primaryColor,
+                                          icon: Icons.bookmark_added,
+                                        );
+                                        Navigator.of(questionDialogContext).pop();
+                                      },
+                                      confirmDismiss: (direction) async {
+                                        return true;
+                                      },
+                                      child: buildQuestionCard(
+                                        questionDialogContext,
+                                        question.getKonwledgePoint(),
+                                        question.question['q']!,
+                                        question.question['w'],
+                                        null,
+                                        question,
+                                        questionBank,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: Colors.grey.shade200,
+                                width: 0.5,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 24,
+                                  height: 24,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Text(
+                                    '${index + 1}',
+                                    style: TextStyle(
+                                      color: Theme.of(context).primaryColor,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Builder(
+                                    builder: (context) {
+                                      try {
+                                        final questionText = _formatQuestionPreview(question.question['q'] ?? '');
+                                        final convertedQuestion = convertLatexDelimiters(questionText);
+                                        return LaTeX(
+                                          laTeXCode: ExtendedText(
+                                            convertedQuestion,
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              height: 1.3,
+                                            ),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          equationStyle: TextStyle(
+                                            fontSize: 14.0,
+                                            fontWeight: latexStyleConfig.fontWeight,
+                                            fontFamily: latexStyleConfig.mathFontFamily,
+                                            fontStyle: FontStyle.italic,
+                                          ),
+                                        );
+                                      } catch (e) {
+                                        // 如果LaTeX渲染失败，降级到纯文本显示
+                                        return ExtendedText(
+                                          _formatQuestionPreview(question.question['q'] ?? ''),
+                                          style: const TextStyle(fontSize: 14),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        );
+                                      }
+                                    },
+                                  ),
+                                ),
+                                Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey.shade400),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    
+  } catch (e) {
+    print('Error showing similar questions list: $e');
+  }
 } 

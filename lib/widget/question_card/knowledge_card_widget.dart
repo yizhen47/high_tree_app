@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screen/fullscreen_video_page.dart';
 import 'package:flutter_application_1/widget/latex.dart';
@@ -70,7 +71,9 @@ Widget _buildPracticeButton(BuildContext context, Section section, QuestionBank?
       onPressed: () {
         final questions = section.sectionQuestion(questionBank?.id ?? '', questionBank?.displayName ?? '');
         if (questions.isNotEmpty) {
-          final question = questions.first;
+          // 随机选择一个题目
+          final random = Random();
+          final question = questions[random.nextInt(questions.length)];
           showDialog(
             context: context,
             builder: (dialogContext) {
