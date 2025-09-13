@@ -88,21 +88,6 @@ class MainEnterScreen extends StatelessWidget {
     //入口，一般不用改
     return MaterialApp(
       title: '高数',
-    themeMode: StudyData.instance.nightModeFollowSystem
-          ? ThemeMode.system
-          : StudyData.instance.nightMode
-              ? ThemeMode.dark
-              : ThemeMode.light,
-      darkTheme: ThemeData(
-        primaryColor: StudyData.instance.themeColor,
-        extensions: [
-          TDTheme.defaultData()
-            ..colorMap['brandColor7'] = StudyData.instance.themeColor
-        ],
-        scaffoldBackgroundColor: const Color.fromARGB(255, 24, 24, 24),
-        cardColor: const Color.fromRGBO(50, 50, 50, 1),
-        useMaterial3: true,
-      ),
       theme: ThemeData(
         fontFamily: Platform.isWindows ? "微软雅黑" : null,
         primaryColor: StudyData.instance.themeColor,

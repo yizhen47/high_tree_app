@@ -409,9 +409,11 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                           }
                           Future.delayed(const Duration(milliseconds: 800))
                               .whenComplete(() {
-                            showKnowledgeCard(context, c.targetSection!, questionBank: c.bank);
-                            controller
-                                .moveTo(indexRecord.reduce((v, e) => min(v, e)));
+                            if (mounted) {
+                              showKnowledgeCard(context, c.targetSection!, questionBank: c.bank);
+                              controller
+                                  .moveTo(indexRecord.reduce((v, e) => min(v, e)));
+                            }
                           });
                         } else {
                           print('HighTree-Debug: No valid questions to replace, skipping refresh');

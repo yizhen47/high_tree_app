@@ -23,18 +23,32 @@ class BankManagementScreen extends StatefulWidget {
 class _BankManagementScreenState extends State<BankManagementScreen>
     with TickerProviderStateMixin {
   late TabController _tabController;
-  List<String> selectIds = QuestionBank.getAllLoadedQuestionBankIds();
+  List<String> selectIds = [];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _refreshSelectIds();
+  }
+
+  void _refreshSelectIds() {
+    setState(() {
+      selectIds = QuestionBank.getAllLoadedQuestionBankIds();
+    });
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 当页面重新获得焦点时刷新状态
+    _refreshSelectIds();
   }
 
   @override
@@ -281,8 +295,15 @@ class _BankManagementScreenState extends State<BankManagementScreen>
                   ),
                 ),
                 onPressed: selectIds.isNotEmpty ? () async {
+                  if (!mounted) return;
                   TDToast.showLoadingWithoutText(context: context);
                   await _saveLoadedOption();
+                  
+                  if (!mounted) {
+                    TDToast.dismissLoading();
+                    return;
+                  }
+                  
                   TDToast.dismissLoading();
                   
                   // 直接设置为智能推荐模式并跳转到question页面
@@ -418,7 +439,7 @@ class _BankManagementScreenState extends State<BankManagementScreen>
                             rightBtnAction: () {
                               WrongQuestionBook.instance.clearWrongQuestion();
                               Navigator.of(context).pop();
-                              setState(() {});
+                              setState(() {}); // 只需要刷新错题本数量显示
                             });
                       },
                     );
@@ -627,8 +648,10 @@ class _BankManagementScreenState extends State<BankManagementScreen>
             rightBtnAction: () async {
               Navigator.of(context).pop();
               await QuestionBank.deleteQuestionBank(bank.id);
-              setState(() {});
-              TDToast.showSuccess('题库已删除', context: context);
+              if (mounted) {
+                _refreshSelectIds(); // 刷新选中的题库列表
+                TDToast.showSuccess('题库已删除', context: context);
+              }
             });
       },
     );
@@ -725,7 +748,7 @@ class _BankManagementScreenState extends State<BankManagementScreen>
     if (mounted) {
       if (importCompleted) {
         TDToast.showSuccess('导入完毕', context: context);
-        setState(() {}); // 刷新列表
+        _refreshSelectIds(); // 刷新选中的题库列表
       } else {
         showDialog(
           context: context,

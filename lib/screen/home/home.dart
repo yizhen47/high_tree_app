@@ -10,6 +10,7 @@ import 'package:flutter_application_1/screen/bank_management.dart';
 import 'package:flutter_application_1/screen/home/community.dart';
 import 'package:flutter_application_1/screen/home/main_home.dart';
 import 'package:flutter_application_1/screen/personal.dart';
+import 'package:flutter_application_1/screen/setting.dart';
 import 'package:flutter_application_1/tool/question/question_bank.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/tool/question/wrong_question_book.dart';
@@ -313,7 +314,11 @@ class ProfilePage extends StatefulWidget {
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> {
+class _ProfilePageState extends State<ProfilePage> 
+    with AutomaticKeepAliveClientMixin {
+  
+  @override
+  bool get wantKeepAlive => false;  // 不保持状态，每次都重新构建
   String _cacheSizeText = '计算中...';
   // 添加一个用于触发FutureBuilder重建的键
   int _cacheRefreshKey = 0;
@@ -348,6 +353,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);  // 必须调用，虽然 wantKeepAlive 为 false
     return Scaffold(
       body: CustomScrollView(
         slivers: [
@@ -409,6 +415,13 @@ class _ProfilePageState extends State<ProfilePage> {
                       _buildCompactListTile(
                         icon: Icons.color_lens_outlined,
                         title: '主题设置',
+                        onTap: () => Navigator.push(
+                          context,
+                          PageTransition(
+                            type: PageTransitionType.fade,
+                            child: const SettingScreen(),
+                          ),
+                        ),
                       ),
                       _buildDivider(),
                       _buildCompactListTile(
@@ -472,20 +485,18 @@ class _ProfilePageState extends State<ProfilePage> {
 
     return FlexibleSpaceBar(
       background: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
+        child: Stack(
+          children: [
+            // 背景层
+            _buildBackground(),
+            // 内容层
+            SafeArea(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   // 用户信息
                   Column(
@@ -548,6 +559,56 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
           ),
+        ),
+      ]
+          
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBackground() {
+    final studyData = StudyData.instance;
+    
+    // 如果启用了自定义背景且有背景图片
+    if (studyData.useCustomBackground && 
+        studyData.customBackgroundPath != null && 
+        File(studyData.customBackgroundPath!).existsSync()) {
+      
+      return Transform.scale(
+        scale: studyData.backgroundScale,
+        child: Transform.translate(
+          offset: Offset(
+            studyData.backgroundOffsetX * MediaQuery.of(context).size.width * 0.1,
+            studyData.backgroundOffsetY * MediaQuery.of(context).size.height * 0.1,
+          ),
+          child: Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: FileImage(File(studyData.customBackgroundPath!)),
+                fit: studyData.backgroundFit,
+                colorFilter: ColorFilter.mode(
+                  Colors.black.withOpacity(0.3),
+                  BlendMode.darken,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    
+    // 默认渐变背景
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
       ),
     );
@@ -682,16 +743,36 @@ class _ProfilePageState extends State<ProfilePage> {
                       style: TextStyle(color: AppTheme.primaryColor)),
                   onPressed: () async {
                     Navigator.of(dialogContext).pop();
+                    if (!mounted) return;
+                    
                     TDToast.showLoadingWithoutText(context: context);
+                    
                     try {
                       final cacheDir = await getTemporaryDirectory();
                       await _clearCache(cacheDir);
+                      
+                      // 检查Widget是否仍然存在后再继续执行
+                      if (!mounted) {
+                        TDToast.dismissLoading();
+                        return;
+                      }
+                      
                       // 等待缓存大小重新计算完成
                       await _loadCacheSize();
+                      
+                      // 再次检查Widget是否仍然存在
+                      if (!mounted) {
+                        TDToast.dismissLoading();
+                        return;
+                      }
+                      
                       TDToast.dismissLoading();
                       TDToast.showSuccess('缓存清理完成', context: context);
                     } catch (e) {
+                      // 确保在异常情况下也关闭loading
                       TDToast.dismissLoading();
+                      if (!mounted) return;
+                      
                       TDToast.showFail('清理失败: $e', context: context);
                     }
                   },
@@ -701,19 +782,39 @@ class _ProfilePageState extends State<ProfilePage> {
                       style: TextStyle(color: AppTheme.warningColor)),
                   onPressed: () async {
                     Navigator.of(dialogContext).pop();
+                    if (!mounted) return;
+                    
                     TDToast.showLoadingWithoutText(context: context);
+                    
                     try {
                       await Future.wait([
                         Future(() => QuestionBank.clearAllCache()),
                         Future(() => WrongQuestionBook.instance.clearData()),
                         Future(() => StudyData.instance.sharedPreferences!.clear()),
                       ]);
+                      
+                      // 检查Widget是否仍然存在后再继续执行
+                      if (!mounted) {
+                        TDToast.dismissLoading();
+                        return;
+                      }
+                      
                       // 等待缓存大小重新计算完成
                       await _loadCacheSize();
+                      
+                      // 再次检查Widget是否仍然存在
+                      if (!mounted) {
+                        TDToast.dismissLoading();
+                        return;
+                      }
+                      
                       TDToast.dismissLoading();
                       TDToast.showSuccess("数据已清理", context: context);
                     } catch (e) {
+                      // 确保在异常情况下也关闭loading
                       TDToast.dismissLoading();
+                      if (!mounted) return;
+                      
                       TDToast.showFail("清理失败: $e", context: context);
                     }
                   },
@@ -738,6 +839,12 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       if (await cacheDir.exists()) {
         await for (final entity in cacheDir.list()) {
+          // 在每次迭代时检查Widget是否仍然mounted
+          if (!mounted) {
+            debugPrint("清理操作被取消: Widget已不存在");
+            return;
+          }
+          
           if (await _tryDeleteEntity(entity)) {
             deletedFiles++;
           } else {

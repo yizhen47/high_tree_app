@@ -19,7 +19,7 @@ enum StudyDifficulty {
 enum StudyType {
   studyMode,
   testMode,
-  recommandMode;
+  recommandMode, freeMode;
 
   String getDisplayName() {
     switch (this) {
@@ -29,6 +29,8 @@ enum StudyType {
         return "智能推荐";
       case StudyType.recommandMode:
         return "推荐模式";
+      case StudyType.freeMode:
+        return "自由模式";
     }
   }
 }
@@ -169,24 +171,23 @@ class StudyData {
     sharedPreferences!.setInt("themeColor", value.value);
   }
 
-  bool get nightModeFollowSystem {
-    return sharedPreferences!.getBool("nightModeFollowSystem") ?? false;
+  String? get homeBackground {
+    return sharedPreferences!.getString("homeBackground") == null
+        ? null
+        : path.join(dataDir!, "homeBackground");
   }
 
-  // Fixed: Removed async
-  set nightModeFollowSystem(bool value) {
-    sharedPreferences!.setBool("nightModeFollowSystem", value);
-  }
-
-  bool get nightMode {
-    return nightModeFollowSystem
-        ? true
-        : sharedPreferences!.getBool("nightMode") ?? false;
-  }
-
-  // Fixed: Removed async
-  set nightMode(bool value) {
-    sharedPreferences!.setBool("nightMode", value);
+  set homeBackground(String? value) {
+    if (value != null) {
+      sharedPreferences!.setString("homeBackground", value);
+      File(value).copy(path.join(dataDir!, "homeBackground"));
+    } else {
+      sharedPreferences!.remove("homeBackground");
+      final backgroundFile = File(path.join(dataDir!, "homeBackground"));
+      if (backgroundFile.existsSync()) {
+        backgroundFile.deleteSync();
+      }
+    }
   }
 
   int get today {
@@ -578,5 +579,69 @@ class StudyData {
       getCurrentTopicMastery(a).compareTo(getCurrentTopicMastery(b)));
     
     return result;
+  }
+
+  // 背景自定义相关
+  String? get customBackgroundPath {
+    return sharedPreferences?.getString('customBackgroundPath');
+  }
+  
+  set customBackgroundPath(String? value) {
+    if (value != null) {
+      sharedPreferences?.setString('customBackgroundPath', value);
+    } else {
+      sharedPreferences?.remove('customBackgroundPath');
+    }
+  }
+  
+  bool get useCustomBackground {
+    return sharedPreferences?.getBool('useCustomBackground') ?? false;
+  }
+  
+  set useCustomBackground(bool value) {
+    sharedPreferences?.setBool('useCustomBackground', value);
+  }
+  
+  double get backgroundScale {
+    return sharedPreferences?.getDouble('backgroundScale') ?? 1.0;
+  }
+  
+  set backgroundScale(double value) {
+    sharedPreferences?.setDouble('backgroundScale', value);
+  }
+  
+  double get backgroundOffsetX {
+    return sharedPreferences?.getDouble('backgroundOffsetX') ?? 0.0;
+  }
+  
+  set backgroundOffsetX(double value) {
+    sharedPreferences?.setDouble('backgroundOffsetX', value);
+  }
+  
+  double get backgroundOffsetY {
+    return sharedPreferences?.getDouble('backgroundOffsetY') ?? 0.0;
+  }
+  
+  set backgroundOffsetY(double value) {
+    sharedPreferences?.setDouble('backgroundOffsetY', value);
+  }
+  
+  int get backgroundFitIndex {
+    return sharedPreferences?.getInt('backgroundFitIndex') ?? 0;
+  }
+  
+  set backgroundFitIndex(int value) {
+    sharedPreferences?.setInt('backgroundFitIndex', value);
+  }
+  
+  BoxFit get backgroundFit {
+    switch (backgroundFitIndex) {
+      case 1: return BoxFit.contain;
+      case 2: return BoxFit.fill;
+      case 3: return BoxFit.fitWidth;
+      case 4: return BoxFit.fitHeight;
+      case 5: return BoxFit.scaleDown;
+      default: return BoxFit.cover;
+    }
   }
 }

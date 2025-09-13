@@ -28,9 +28,15 @@ class MainHomePage extends StatefulWidget {
   State<StatefulWidget> createState() => _MainHomePageState();
 }
 
-class _MainHomePageState extends State<MainHomePage> {
+class _MainHomePageState extends State<MainHomePage> 
+    with AutomaticKeepAliveClientMixin {
+  
+  @override
+  bool get wantKeepAlive => false;  // 不保持状态，每次都重新构建
+  
   @override
   Widget build(BuildContext context) {
+    super.build(context);  // 必须调用，虽然 wantKeepAlive 为 false
     return Scaffold(
       body: CustomScrollView(
         slivers: [
@@ -283,9 +289,10 @@ class _MainHomePageState extends State<MainHomePage> {
     // 计算累计进度百分比
     final progressPercentage = totalLearnableSections > 0 ? ((completedLearnableSections / totalLearnableSections) * 100).toInt() : 0;
     
-    // 计算当日学习时间 - 使用实际数据
-    final dailyStudyHours = (StudyData.instance.studyMinute / max(StudyData.instance.studyCount, 1)).toStringAsFixed(1);
-    const targetHours = "5.0";
+    // 计算当日学习时间 - 使用今日实际学习时间（分钟）
+    final todayStudyMinutes = StudyData.instance.getStudyTimeForDate(DateTime.now());
+    final dailyStudyMinutes = todayStudyMinutes.toStringAsFixed(0);
+    const targetMinutes = "300"; // 5小时 = 300分钟
     
     // 计算正确率变化 - 使用实际数据
     final wrongQuestions = WrongQuestionBook.instance.getWrongQuestionIds().length;
@@ -322,8 +329,8 @@ class _MainHomePageState extends State<MainHomePage> {
                     context,
                     Icons.today, 
                     "今日学习", 
-                    "$dailyStudyHours h", 
-                    "/$targetHours h目标"
+                    "$dailyStudyMinutes 分钟", 
+                    "/$targetMinutes 分钟目标"
                   ),
                 ),
                 Expanded(
@@ -474,79 +481,79 @@ class _MainHomePageState extends State<MainHomePage> {
     
     return FlexibleSpaceBar(
       background: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // 用户信息
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
+          children: [
+            // 背景层
+            _buildBackground(),
+            // 内容层
+            SafeArea(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text(
-                        StudyData.instance.userName,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.military_tech_outlined,
+                      // 用户信息
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            StudyData.instance.userName,
+                            style: const TextStyle(
                               color: Colors.white,
-                              size: 12,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
                             ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Lv.$studyLevel',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                              ),
+                          ),
+                          const SizedBox(height: 10),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                          ],
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.military_tech_outlined,
+                                  color: Colors.white,
+                                  size: 12,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Lv.$studyLevel',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      
+                      // 右侧头像
+                      CircleAvatar(
+                        radius: 22,
+                        backgroundColor: Colors.white.withOpacity(0.2),
+                        child: CircleAvatar(
+                          radius: 20,
+                          backgroundImage: StudyData.instance.avatar == null || StudyData.instance.avatar!.isEmpty
+                              ? const AssetImage("assets/logo.png")
+                              : FileImage(File(StudyData.instance.avatar!)) as ImageProvider,
                         ),
                       ),
                     ],
                   ),
-                  
-                  // 右侧头像
-                  CircleAvatar(
-                    radius: 22,
-                    backgroundColor: Colors.white.withOpacity(0.2),
-                    child: CircleAvatar(
-                      radius: 20,
-                      backgroundImage: StudyData.instance.avatar == null || StudyData.instance.avatar!.isEmpty
-                          ? const AssetImage("assets/logo.png")
-                          : FileImage(File(StudyData.instance.avatar!)) as ImageProvider,
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -874,5 +881,52 @@ class _MainHomePageState extends State<MainHomePage> {
     }
 
     return {'total': total, 'completed': completed};
+  }
+
+  Widget _buildBackground() {
+    final studyData = StudyData.instance;
+    
+    // 如果启用了自定义背景且有背景图片
+    if (studyData.useCustomBackground && 
+        studyData.customBackgroundPath != null && 
+        File(studyData.customBackgroundPath!).existsSync()) {
+      
+      return Transform.scale(
+        scale: studyData.backgroundScale,
+        child: Transform.translate(
+          offset: Offset(
+            studyData.backgroundOffsetX * MediaQuery.of(context).size.width * 0.1,
+            studyData.backgroundOffsetY * MediaQuery.of(context).size.height * 0.1,
+          ),
+          child: Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: FileImage(File(studyData.customBackgroundPath!)),
+                fit: studyData.backgroundFit,
+                colorFilter: ColorFilter.mode(
+                  Colors.black.withOpacity(0.3),
+                  BlendMode.darken,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    
+    // 默认渐变背景
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+    );
   }
 }

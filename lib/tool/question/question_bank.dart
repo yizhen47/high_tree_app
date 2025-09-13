@@ -582,6 +582,20 @@ class QuestionBank {
     
     if (cacheDir == null) throw Exception("cache dir not found");
     
+    // 检查缓存目录是否已经存在解压文件
+    final cacheDirInstance = Directory(cacheDir!);
+    if (await cacheDirInstance.exists()) {
+      final dataXmlFile = File(path.join(cacheDir!, 'data.xml'));
+      if (await dataXmlFile.exists()) {
+        // 缓存目录已存在且包含data.xml，无需重新解压
+        print('Cache directory already exists with data.xml, skipping extraction: $cacheDir');
+        return;
+      }
+    }
+    
+    // 确保缓存目录存在
+    await cacheDirInstance.create(recursive: true);
+    
     try {
       final fileExtension = path.extension(filePath).toLowerCase();
       
@@ -793,7 +807,7 @@ class QuestionBank {
 
       final isolate = await Isolate.spawn(
         _importQuestionBankIsolate,
-        _IsolateData(file.path, receivePort.sendPort, tempPath, importedPath),
+        _IsolateData(file.path, receivePort.sendPort, tempPath, importedPath, QuestionBank.loadedDirPath),
       );
 
       receivePort.listen((message) {
@@ -908,11 +922,48 @@ class QuestionBank {
       }
       sendPort.send(0.8);
 
+      // 复制压缩包到导入目录
       final newPath = path.join(importedPath, "$id.zip");
       sendPort.send('log: Copying file to $newPath');
       await file.copy(newPath);
       sendPort.send('log: File copied.');
 
+      // 将解压文件移动到最终缓存目录
+      // 通过传入的参数获取loadedDirPath
+      final loadedDirPath = data.loadedDirPath;
+      final finalCacheDir = Directory(path.join(loadedDirPath, id));
+      
+      sendPort.send('log: Moving extracted files to final cache directory: ${finalCacheDir.path}');
+      
+      // 确保目标目录存在
+      if (await finalCacheDir.exists()) {
+        await finalCacheDir.delete(recursive: true);
+      }
+      await finalCacheDir.create(recursive: true);
+      
+      // 移动所有解压文件到最终缓存目录
+      final allItems = await tempDir.list(recursive: true).toList();
+      for (final item in allItems) {
+        final relativePath = path.relative(item.path, from: tempDir.path);
+        final targetPath = path.join(finalCacheDir.path, relativePath);
+        
+        if (item is File) {
+          // 确保目标目录存在
+          final targetDir = Directory(path.dirname(targetPath));
+          if (!await targetDir.exists()) {
+            await targetDir.create(recursive: true);
+          }
+          await item.copy(targetPath);
+          sendPort.send('log: Copied file: $relativePath');
+        } else if (item is Directory) {
+          await Directory(targetPath).create(recursive: true);
+          sendPort.send('log: Created directory: $relativePath');
+        }
+      }
+      
+      sendPort.send('log: All files moved to final cache directory.');
+
+      // 删除临时目录
       if (await tempDir.exists()) {
         await tempDir.delete(recursive: true);
         sendPort.send('log: Temp directory deleted.');
@@ -1133,6 +1184,7 @@ class _IsolateData {
   final SendPort sendPort;
   final String tempPath;
   final String importedPath;
+  final String loadedDirPath;
 
-  _IsolateData(this.filePath, this.sendPort, this.tempPath, this.importedPath);
+  _IsolateData(this.filePath, this.sendPort, this.tempPath, this.importedPath, this.loadedDirPath);
 }

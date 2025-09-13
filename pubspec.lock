@@ -1594,14 +1594,6 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "6.5.0"
-  yako_theme_switch:
-    dependency: "direct main"
-    description:
-      name: yako_theme_switch
-      sha256: "16f32705d52e1dfe3a7f37a52a25ced4b1dcbd84af81048bce26632f8ce3bdac"
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "1.0.0+1"
   yaml:
     dependency: transitive
     description:

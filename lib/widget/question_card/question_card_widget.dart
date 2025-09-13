@@ -5,6 +5,7 @@ import 'package:latext/latext.dart';
 import 'dart:math' show min, Random;
 import 'package:flutter_application_1/tool/question/question_bank.dart';
 import 'package:flutter_application_1/tool/question/question_controller.dart';
+import 'package:flutter_application_1/tool/question/wrong_question_book.dart';
 import 'package:flutter_application_1/widget/left_toast.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_markdown_latex/flutter_markdown_latex.dart';
@@ -823,7 +824,7 @@ Widget _buildSimpleSimilarQuestionsContent(BuildContext context, Color primaryCo
               direction: DismissDirection.horizontal,
               background: Container(
                 decoration: BoxDecoration(
-                  color: Colors.red.shade400,
+                  color: Colors.green.shade400,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 alignment: Alignment.centerLeft,
@@ -832,16 +833,16 @@ Widget _buildSimpleSimilarQuestionsContent(BuildContext context, Color primaryCo
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.bookmark_add, color: Colors.white, size: 24),
+                    Icon(Icons.check, color: Colors.white, size: 24),
                     SizedBox(height: 8),
-                    Text('加入错题本',
+                    Text('答对了',
                       style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
               secondaryBackground: Container(
                 decoration: BoxDecoration(
-                  color: primaryColor,
+                  color: Colors.red.shade400,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 alignment: Alignment.centerRight,
@@ -850,23 +851,33 @@ Widget _buildSimpleSimilarQuestionsContent(BuildContext context, Color primaryCo
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.bookmark_add, color: Colors.white, size: 24),
+                    Icon(Icons.close, color: Colors.white, size: 24),
                     SizedBox(height: 8),
-                    Text('加入错题本',
+                    Text('答错了',
                       style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
               onDismissed: (direction) {
-                showVerticalToast(
-                  context: context,
-                  title: '错题本',
-                  message: '已添加题目',
-                  color: direction == DismissDirection.startToEnd 
-                      ? Colors.red.shade400 
-                      : primaryColor,
-                  icon: Icons.bookmark_added,
-                );
+                if (direction == DismissDirection.startToEnd) {
+                  // 左滑：答对了
+                  showVerticalToast(
+                    context: context,
+                    title: '答题结果',
+                    message: '答对了！',
+                    color: Colors.green.shade400,
+                    icon: Icons.check,
+                  );
+                } else {
+                  // 右滑：答错了，加入错题本
+                  showVerticalToast(
+                    context: context,
+                    title: '错题本',
+                    message: '答错了，已添加到错题本',
+                    color: Colors.red.shade400,
+                    icon: Icons.bookmark_added,
+                  );
+                }
                 Navigator.of(dialogContext).pop();
               },
               confirmDismiss: (direction) async {
@@ -1475,7 +1486,7 @@ void _showRandomSimilarQuestion(BuildContext context, SingleQuestionData? curren
               direction: DismissDirection.horizontal,
               background: Container(
                 decoration: BoxDecoration(
-                  color: Colors.red.shade400,
+                  color: Colors.green.shade400,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 alignment: Alignment.centerLeft,
@@ -1484,16 +1495,16 @@ void _showRandomSimilarQuestion(BuildContext context, SingleQuestionData? curren
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.bookmark_add, color: Colors.white, size: 24),
+                    Icon(Icons.check, color: Colors.white, size: 24),
                     SizedBox(height: 8),
-                    Text('加入错题本',
+                    Text('答对了',
                       style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
               secondaryBackground: Container(
                 decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor,
+                  color: Colors.red.shade400,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 alignment: Alignment.centerRight,
@@ -1502,23 +1513,33 @@ void _showRandomSimilarQuestion(BuildContext context, SingleQuestionData? curren
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.bookmark_add, color: Colors.white, size: 24),
+                    Icon(Icons.close, color: Colors.white, size: 24),
                     SizedBox(height: 8),
-                    Text('加入错题本',
+                    Text('答错了',
                       style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
               onDismissed: (direction) {
-                showVerticalToast(
-                  context: context,
-                  title: '错题本',
-                  message: '已添加题目',
-                  color: direction == DismissDirection.startToEnd 
-                      ? Colors.red.shade400 
-                      : Theme.of(context).primaryColor,
-                  icon: Icons.bookmark_added,
-                );
+                if (direction == DismissDirection.startToEnd) {
+                  // 左滑：答对了
+                  showVerticalToast(
+                    context: context,
+                    title: '答题结果',
+                    message: '答对了！',
+                    color: Colors.green.shade400,
+                    icon: Icons.check,
+                  );
+                } else {
+                  // 右滑：答错了，加入错题本
+                  showVerticalToast(
+                    context: context,
+                    title: '错题本',
+                    message: '答错了，已添加到错题本',
+                    color: Colors.red.shade400,
+                    icon: Icons.bookmark_added,
+                  );
+                }
                 Navigator.of(dialogContext).pop();
               },
               confirmDismiss: (direction) async {
@@ -1535,9 +1556,9 @@ void _showRandomSimilarQuestion(BuildContext context, SingleQuestionData? curren
                     randomQuestion,
                     questionBank,
                   ),
-                  // 添加"查看更多同源题"按钮
+                  // 添加"查看更多同源题"按钮 - 上移到中间位置
                   Positioned(
-                    bottom: 16,
+                    top: MediaQuery.of(dialogContext).size.height * 0.35,
                     right: 16,
                     child: FloatingActionButton.extended(
                       onPressed: () {
@@ -1640,167 +1661,144 @@ void _showSimilarQuestionsList(BuildContext context, SingleQuestionData? current
                     ],
                   ),
                 ),
-                // 题目列表
+                // 题目列表 - 简洁的网格布局
                 Expanded(
-                  child: ListView.builder(
+                  child: GridView.builder(
                     padding: const EdgeInsets.all(16),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 5, // 每行5个
+                      childAspectRatio: 1, // 正方形
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                    ),
                     itemCount: similarQuestions.length,
                     itemBuilder: (context, index) {
                       final question = similarQuestions[index];
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        child: InkWell(
-                          onTap: () {
-                            Navigator.of(dialogContext).pop();
-                            // 显示选中的题目
-                            showDialog(
-                              context: context,
-                              builder: (questionDialogContext) {
-                                return Dialog(
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  backgroundColor: Colors.transparent,
-                                  child: SizedBox(
-                                    height: MediaQuery.of(context).size.height * 0.8,
-                                    width: MediaQuery.of(context).size.width * 0.9,
-                                    child: Dismissible(
-                                      key: Key(question.question['id'] ?? 'unknown'),
-                                      direction: DismissDirection.horizontal,
-                                      background: Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.red.shade400,
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        alignment: Alignment.centerLeft,
-                                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                                        child: const Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Icon(Icons.bookmark_add, color: Colors.white, size: 24),
-                                            SizedBox(height: 8),
-                                            Text('加入错题本',
-                                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                          ],
-                                        ),
+                      final questionId = question.question['id'] ?? '';
+                      
+                      // 判断题目状态
+                      Color backgroundColor;
+                      Color textColor = Colors.white;
+                      
+                      if (WrongQuestionBook.instance.hasWrongQuestion(questionId)) {
+                        // 错题：红色
+                        backgroundColor = Colors.red;
+                      } else if (WrongQuestionBook.instance.hasQuestion(questionId)) {
+                        // 做过且正确：绿色
+                        backgroundColor = Colors.green;
+                      } else {
+                        // 未做过：蓝色
+                        backgroundColor = Colors.blue;
+                      }
+                      
+                      return InkWell(
+                        onTap: () {
+                          Navigator.of(dialogContext).pop();
+                          // 显示选中的题目
+                          showDialog(
+                            context: context,
+                            builder: (questionDialogContext) {
+                              return Dialog(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                backgroundColor: Colors.transparent,
+                                child: SizedBox(
+                                  height: MediaQuery.of(context).size.height * 0.8,
+                                  width: MediaQuery.of(context).size.width * 0.9,
+                                  child: Dismissible(
+                                    key: Key(question.question['id'] ?? 'unknown'),
+                                    direction: DismissDirection.horizontal,
+                                    background: Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.green.shade400,
+                                        borderRadius: BorderRadius.circular(12),
                                       ),
-                                      secondaryBackground: Container(
-                                        decoration: BoxDecoration(
-                                          color: Theme.of(context).primaryColor,
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        alignment: Alignment.centerRight,
-                                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                                        child: const Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Icon(Icons.bookmark_add, color: Colors.white, size: 24),
-                                            SizedBox(height: 8),
-                                            Text('加入错题本',
-                                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                          ],
-                                        ),
+                                      alignment: Alignment.centerLeft,
+                                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                                      child: const Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(Icons.check, color: Colors.white, size: 24),
+                                          SizedBox(height: 8),
+                                          Text('答对了',
+                                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                        ],
                                       ),
-                                      onDismissed: (direction) {
+                                    ),
+                                    secondaryBackground: Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.red.shade400,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      alignment: Alignment.centerRight,
+                                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                                      child: const Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(Icons.close, color: Colors.white, size: 24),
+                                          SizedBox(height: 8),
+                                          Text('答错了',
+                                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                        ],
+                                      ),
+                                    ),
+                                    onDismissed: (direction) {
+                                      if (direction == DismissDirection.startToEnd) {
+                                        // 左滑：答对了
+                                        showVerticalToast(
+                                          context: context,
+                                          title: '答题结果',
+                                          message: '答对了！',
+                                          color: Colors.green.shade400,
+                                          icon: Icons.check,
+                                        );
+                                      } else {
+                                        // 右滑：答错了，加入错题本
                                         showVerticalToast(
                                           context: context,
                                           title: '错题本',
-                                          message: '已添加题目',
-                                          color: direction == DismissDirection.startToEnd 
-                                              ? Colors.red.shade400 
-                                              : Theme.of(context).primaryColor,
+                                          message: '答错了，已添加到错题本',
+                                          color: Colors.red.shade400,
                                           icon: Icons.bookmark_added,
                                         );
-                                        Navigator.of(questionDialogContext).pop();
-                                      },
-                                      confirmDismiss: (direction) async {
-                                        return true;
-                                      },
-                                      child: buildQuestionCard(
-                                        questionDialogContext,
-                                        question.getKonwledgePoint(),
-                                        question.question['q']!,
-                                        question.question['w'],
-                                        null,
-                                        question,
-                                        questionBank,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                          borderRadius: BorderRadius.circular(8),
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade50,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: Colors.grey.shade200,
-                                width: 0.5,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 24,
-                                  height: 24,
-                                  alignment: Alignment.center,
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context).primaryColor.withOpacity(0.1),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Text(
-                                    '${index + 1}',
-                                    style: TextStyle(
-                                      color: Theme.of(context).primaryColor,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Builder(
-                                    builder: (context) {
-                                      try {
-                                        final questionText = _formatQuestionPreview(question.question['q'] ?? '');
-                                        final convertedQuestion = convertLatexDelimiters(questionText);
-                                        return LaTeX(
-                                          laTeXCode: ExtendedText(
-                                            convertedQuestion,
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                              height: 1.3,
-                                            ),
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          equationStyle: TextStyle(
-                                            fontSize: 14.0,
-                                            fontWeight: latexStyleConfig.fontWeight,
-                                            fontFamily: latexStyleConfig.mathFontFamily,
-                                            fontStyle: FontStyle.italic,
-                                          ),
-                                        );
-                                      } catch (e) {
-                                        // 如果LaTeX渲染失败，降级到纯文本显示
-                                        return ExtendedText(
-                                          _formatQuestionPreview(question.question['q'] ?? ''),
-                                          style: const TextStyle(fontSize: 14),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        );
                                       }
+                                      Navigator.of(questionDialogContext).pop();
                                     },
+                                    confirmDismiss: (direction) async {
+                                      return true;
+                                    },
+                                    child: buildQuestionCard(
+                                      questionDialogContext,
+                                      question.getKonwledgePoint(),
+                                      question.question['q']!,
+                                      question.question['w'],
+                                      null,
+                                      question,
+                                      questionBank,
+                                    ),
                                   ),
                                 ),
-                                Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey.shade400),
-                              ],
+                              );
+                            },
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: backgroundColor,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Center(
+                            child: Text(
+                              '${index + 1}',
+                              style: TextStyle(
+                                color: textColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
                             ),
                           ),
                         ),

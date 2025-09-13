@@ -25,9 +25,18 @@ class WrongQuestionBook {
   static init() async {
     Hive.init(
         path.join((await getApplicationDocumentsDirectory()).path, "hive"));
-    Hive.registerAdapter(QuestionUserDataAdapter());
-    Hive.registerAdapter(SectionUserDataAdapter());
-    Hive.registerAdapter(BankLearnDataAdapter());
+    
+    // 检查并注册 TypeAdapter，避免重复注册
+    if (!Hive.isAdapterRegistered(1)) {
+      Hive.registerAdapter(QuestionUserDataAdapter());
+    }
+    if (!Hive.isAdapterRegistered(2)) {
+      Hive.registerAdapter(SectionUserDataAdapter());
+    }
+    if (!Hive.isAdapterRegistered(3)) {
+      Hive.registerAdapter(BankLearnDataAdapter());
+    }
+    
     // We'll need to run code generation to create this adapter
     // For now, we'll remove this line until the adapter is generated
     await Hive.openBox<String>("wrong_question_book");
