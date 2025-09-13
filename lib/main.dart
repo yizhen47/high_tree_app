@@ -11,6 +11,7 @@ import 'screen/home/home.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'tool/question/question_bank.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:palette_generator/palette_generator.dart';
 
 //整个软件入口（测试用）
 Future<void> main() async {
@@ -118,12 +119,15 @@ class _MainEnterScreen extends StatefulWidget {
 class _MainEnterScreenState extends State<_MainEnterScreen>
     with TickerProviderStateMixin {
   late AnimationController _fadeController;
-  final double _opacity = 1.0;
   bool _initCompleted = false;
+  Color? _extractedColor;
 
   @override
   void initState() {
     super.initState();
+
+    // 提取图标颜色
+    _extractLogoColor();
 
     Future(
       () async {
@@ -154,6 +158,60 @@ class _MainEnterScreenState extends State<_MainEnterScreen>
     );
   }
 
+  Future<void> _extractLogoColor() async {
+    try {
+      // 检查是否已有提取的颜色缓存
+      if (StudyData.instance.extractedLogoColor != null) {
+        setState(() {
+          _extractedColor = StudyData.instance.extractedLogoColor!;
+        });
+        return;
+      }
+
+      // 从logo.png提取颜色
+      final imageProvider = AssetImage('assets/logo.png');
+      final paletteGenerator = await PaletteGenerator.fromImageProvider(
+        imageProvider,
+        maximumColorCount: 20,
+      );
+
+      Color? dominantColor;
+      
+      // 优先选择有活力的颜色
+      if (paletteGenerator.vibrantColor != null) {
+        dominantColor = paletteGenerator.vibrantColor!.color;
+      } 
+      // 其次选择明亮的有活力颜色
+      else if (paletteGenerator.lightVibrantColor != null) {
+        dominantColor = paletteGenerator.lightVibrantColor!.color;
+      }
+      // 然后选择深色有活力颜色
+      else if (paletteGenerator.darkVibrantColor != null) {
+        dominantColor = paletteGenerator.darkVibrantColor!.color;
+      }
+      // 最后选择主导色
+      else if (paletteGenerator.dominantColor != null) {
+        dominantColor = paletteGenerator.dominantColor!.color;
+      }
+      
+      if (dominantColor != null && mounted) {
+        // 缓存提取的颜色
+        StudyData.instance.extractedLogoColor = dominantColor;
+        setState(() {
+          _extractedColor = dominantColor;
+        });
+      }
+    } catch (e) {
+      print('Error extracting logo color: $e');
+      // 使用默认主题色作为后备
+      if (mounted) {
+        setState(() {
+          _extractedColor = StudyData.instance.themeColor;
+        });
+      }
+    }
+  }
+
   void _navigateToHome() {
     if (!mounted) return;
 
@@ -175,73 +233,89 @@ class _MainEnterScreenState extends State<_MainEnterScreen>
 
   @override
   Widget build(BuildContext context) {
-    final themeColor = StudyData.instance.themeColor;
+    // 获取背景颜色
+    Color backgroundColor;
+    if (StudyData.instance.useExtractedSplashColor) {
+      // 使用提取的颜色或自定义颜色
+      backgroundColor = StudyData.instance.customSplashColor ?? 
+                      _extractedColor ?? 
+                      StudyData.instance.themeColor;
+    } else {
+      // 使用主题色
+      backgroundColor = StudyData.instance.themeColor;
+    }
 
     return Scaffold(
-      body: AnimatedBuilder(
-        animation: _fadeController,
-        builder: (context, child) {
-          return Opacity(
-            opacity: 1 - _fadeController.value,
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Logo容器（修复空白框问题）
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(24),
-                      gradient: LinearGradient(
-                        colors: [
-                          themeColor,
-                          themeColor.withOpacity(0.8),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          // 全屏纯色背景
+          color: backgroundColor,
+        ),
+        child: AnimatedBuilder(
+          animation: _fadeController,
+          builder: (context, child) {
+            return Opacity(
+              opacity: 1 - _fadeController.value,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Logo容器 - 简化设计，去掉背景装饰
+                    SizedBox(
+                      width: 120,
+                      height: 120,
                       child: Image.asset(
                         'assets/logo.png',
                         filterQuality: FilterQuality.high,
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 32),
+                    const SizedBox(height: 32),
 
-                  // 加载状态提示
-                  _initCompleted
-                      ? Text("加载完成", style: TextStyle(color: themeColor))
-                      : const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
+                    // 加载状态提示
+                    _initCompleted
+                        ? Text(
+                            "加载完成", 
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            )
+                          )
+                        : const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          ),
 
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                  // 轻触跳过提示（保留原有交互）
-                  GestureDetector(
-                    onTap: _navigateToHome,
-                    child: AnimatedOpacity(
-                      opacity: _initCompleted ? 0.0 : 1.0,
-                      duration: const Duration(milliseconds: 300),
-                      child: Text("轻触跳过",
+                    // 轻触跳过提示
+                    GestureDetector(
+                      onTap: _navigateToHome,
+                      child: AnimatedOpacity(
+                        opacity: _initCompleted ? 0.0 : 1.0,
+                        duration: const Duration(milliseconds: 300),
+                        child: Text(
+                          "轻触跳过",
                           style: TextStyle(
-                            color: Colors.grey[600],
+                            color: Colors.white.withOpacity(0.8),
                             fontSize: 14,
-                          )),
+                          )
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

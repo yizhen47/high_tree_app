@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screen/about.dart';
 import 'package:flutter_application_1/screen/background_customization.dart';
+import 'package:flutter_application_1/screen/splash_customization.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:rebirth/rebirth.dart';
@@ -129,6 +130,21 @@ class _InnerState extends State<SettingScreen> {
                     )),
                 TDCellGroup(
                   cells: [
+                    TDCell(
+                      leftIcon: Icons.phone_android,
+                      title: "启动页面自定义",
+                      onClick: (_) async {
+                        Navigator.push(
+                          context,
+                          CupertinoPageRoute(
+                            builder: (context) => const SplashCustomizationPage(),
+                          ),
+                        ).then((_) => setState(() {}));
+                      },
+                      rightIconWidget: StudyData.instance.useExtractedSplashColor
+                          ? const Icon(Icons.auto_awesome, color: Colors.orange)
+                          : const Icon(Icons.palette, color: Colors.blue),
+                    ),
                     TDCell(
                       leftIcon: Icons.wallpaper,
                       title: "自定义背景",

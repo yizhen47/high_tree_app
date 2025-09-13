@@ -644,4 +644,39 @@ class StudyData {
       default: return BoxFit.cover;
     }
   }
+
+  // 启动页面自定义相关
+  bool get useExtractedSplashColor {
+    return sharedPreferences?.getBool('useExtractedSplashColor') ?? true;
+  }
+  
+  set useExtractedSplashColor(bool value) {
+    sharedPreferences?.setBool('useExtractedSplashColor', value);
+  }
+  
+  Color? get customSplashColor {
+    final colorValue = sharedPreferences?.getInt('customSplashColor');
+    return colorValue != null ? Color(colorValue) : null;
+  }
+  
+  set customSplashColor(Color? value) {
+    if (value != null) {
+      sharedPreferences?.setInt('customSplashColor', value.value);
+    } else {
+      sharedPreferences?.remove('customSplashColor');
+    }
+  }
+  
+  Color? get extractedLogoColor {
+    final colorValue = sharedPreferences?.getInt('extractedLogoColor');
+    return colorValue != null ? Color(colorValue) : null;
+  }
+  
+  set extractedLogoColor(Color? value) {
+    if (value != null) {
+      sharedPreferences?.setInt('extractedLogoColor', value.value);
+    } else {
+      sharedPreferences?.remove('extractedLogoColor');
+    }
+  }
 }
