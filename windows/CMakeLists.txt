@@ -10,6 +10,11 @@ set(BINARY_NAME "flutter_application_1")
 # versions of CMake.
 cmake_policy(VERSION 3.14...3.25)
 
+# Suppress warning from flutter_ble_peripheral plugin about deprecated exec_program
+if(POLICY CMP0153)
+  cmake_policy(SET CMP0153 OLD)
+endif()
+
 # Define build configuration option.
 get_property(IS_MULTICONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 if(IS_MULTICONFIG)

@@ -14,6 +14,7 @@ class CustomVideoControls extends StatefulWidget {
   final VoidCallback onRotate;
   final Function(double) onSpeedChange;
   final Function(double) onAspectRatioChange;
+  final VoidCallback onFullscreen;
   final int rotationAngle;
 
   const CustomVideoControls({
@@ -23,6 +24,7 @@ class CustomVideoControls extends StatefulWidget {
     required this.onRotate,
     required this.onSpeedChange,
     required this.onAspectRatioChange,
+    required this.onFullscreen,
     required this.rotationAngle,
   });
 
@@ -32,16 +34,16 @@ class CustomVideoControls extends StatefulWidget {
 
 class _CustomVideoControlsState extends State<CustomVideoControls> {
   double _currentSpeed = 1.0;
-  double _currentAspectRatio = 16/9;
+  double _currentAspectRatio = 16 / 9;
   bool _showSpeedMenu = false;
   bool _showAspectMenu = false;
 
   final List<double> _speedOptions = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
   final List<MapEntry<String, double>> _aspectRatioOptions = [
-    const MapEntry('16:9', 16/9),
-    const MapEntry('4:3', 4/3),
+    const MapEntry('16:9', 16 / 9),
+    const MapEntry('4:3', 4 / 3),
     const MapEntry('1:1', 1.0),
-    const MapEntry('9:16', 9/16),
+    const MapEntry('9:16', 9 / 16),
     const MapEntry('原始', 0), // 0 表示使用原始比例
   ];
 
@@ -89,11 +91,24 @@ class _CustomVideoControlsState extends State<CustomVideoControls> {
                     Row(
                       children: <Widget>[
                         FlickCurrentPosition(fontSize: 12),
-                        const Text(' / ', style: TextStyle(color: Colors.white, fontSize: 12)),
+                        const Text(' / ',
+                            style:
+                                TextStyle(color: Colors.white, fontSize: 12)),
                         FlickTotalDuration(fontSize: 12),
                       ],
                     ),
-                    const SizedBox(width: 44), // 移除全屏按钮后的占位符
+                    // 全屏按钮
+                    GestureDetector(
+                      onTap: widget.onFullscreen,
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        child: const Icon(
+                          Icons.fullscreen,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -132,7 +147,8 @@ class _CustomVideoControlsState extends State<CustomVideoControls> {
                     ),
                     // 倍速控制
                     GestureDetector(
-                      onTap: () => setState(() => _showSpeedMenu = !_showSpeedMenu),
+                      onTap: () =>
+                          setState(() => _showSpeedMenu = !_showSpeedMenu),
                       child: Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
@@ -161,7 +177,8 @@ class _CustomVideoControlsState extends State<CustomVideoControls> {
                     ),
                     // 比例控制
                     GestureDetector(
-                      onTap: () => setState(() => _showAspectMenu = !_showAspectMenu),
+                      onTap: () =>
+                          setState(() => _showAspectMenu = !_showAspectMenu),
                       child: Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
@@ -219,10 +236,13 @@ class _CustomVideoControlsState extends State<CustomVideoControls> {
                       widget.onSpeedChange(speed);
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
                       margin: const EdgeInsets.symmetric(vertical: 2),
                       decoration: BoxDecoration(
-                        color: _currentSpeed == speed ? widget.primaryColor : Colors.transparent,
+                        color: _currentSpeed == speed
+                            ? widget.primaryColor
+                            : Colors.transparent,
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
@@ -262,10 +282,13 @@ class _CustomVideoControlsState extends State<CustomVideoControls> {
                       widget.onAspectRatioChange(option.value);
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
                       margin: const EdgeInsets.symmetric(vertical: 2),
                       decoration: BoxDecoration(
-                        color: _currentAspectRatio == option.value ? widget.primaryColor : Colors.transparent,
+                        color: _currentAspectRatio == option.value
+                            ? widget.primaryColor
+                            : Colors.transparent,
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
@@ -315,7 +338,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   bool _isDisposed = false; // 添加disposed标志
   String? _error;
   int _rotationAngle = 0; // 旋转角度 (0, 90, 180, 270)
-  double _currentAspectRatio = 16/9; // 当前宽高比
+  double _currentAspectRatio = 16 / 9; // 当前宽高比
   double _playbackSpeed = 1.0; // 播放速度
 
   @override
@@ -345,32 +368,34 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
       try {
         _flickManager!.dispose();
       } catch (e) {
-        developer.log('[VideoPlayerWidget] Error disposing flick manager: $e', 
-                      name: 'VideoPlayerWidget');
+        developer.log('[VideoPlayerWidget] Error disposing flick manager: $e',
+            name: 'VideoPlayerWidget');
       }
       _flickManager = null;
+    } else {
+      developer.log(
+          '[VideoPlayerWidget] Flick manager is already null during dispose',
+          name: 'VideoPlayerWidget');
     }
-    
-    if (mounted) {
-      setState(() {
-        _isInitialized = false;
-        _error = null;
-      });
-    }
+    _isInitialized = false;
+    _error = null;
   }
 
   Future<void> _initializePlayer() async {
     if (_isDisposed) return; // 如果已经被disposed，不要初始化
-    
+
     try {
-      developer.log('[VideoPlayerWidget] Initializing video player for: ${widget.videoPath}', 
-                    name: 'VideoPlayerWidget');
+      developer.log(
+          '[VideoPlayerWidget] Initializing video player for: ${widget.videoPath}',
+          name: 'VideoPlayerWidget');
 
       VideoPlayerController videoPlayerController;
-      
+
       // 判断是网络URL还是本地文件
-      if (widget.videoPath.startsWith('http://') || widget.videoPath.startsWith('https://')) {
-        videoPlayerController = VideoPlayerController.networkUrl(Uri.parse(widget.videoPath));
+      if (widget.videoPath.startsWith('http://') ||
+          widget.videoPath.startsWith('https://')) {
+        videoPlayerController =
+            VideoPlayerController.networkUrl(Uri.parse(widget.videoPath));
       } else {
         // 检查本地文件是否存在
         final file = File(widget.videoPath);
@@ -382,7 +407,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
 
       // 等待初始化完成
       await videoPlayerController.initialize();
-      
+
       if (_isDisposed || !mounted) {
         // 如果在初始化过程中组件被disposed，清理资源
         videoPlayerController.dispose();
@@ -400,12 +425,13 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
         setState(() {
           _isInitialized = true;
         });
-        developer.log('[VideoPlayerWidget] Video player initialized successfully', 
-                      name: 'VideoPlayerWidget');
+        developer.log(
+            '[VideoPlayerWidget] Video player initialized successfully',
+            name: 'VideoPlayerWidget');
       }
     } catch (e) {
-      developer.log('[VideoPlayerWidget] Error initializing video player: $e', 
-                    name: 'VideoPlayerWidget', error: e);
+      developer.log('[VideoPlayerWidget] Error initializing video player: $e',
+          name: 'VideoPlayerWidget', error: e);
       if (mounted && !_isDisposed) {
         setState(() {
           _error = e.toString();
@@ -434,14 +460,16 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
     // 获取屏幕宽度
     final screenWidth = MediaQuery.of(context).size.width;
     // 使用当前设置的宽高比，如果为0则使用原始视频比例
-    final videoAspectRatio = _currentAspectRatio == 0 
-        ? (_flickManager?.flickVideoManager?.videoPlayerController?.value.aspectRatio ?? 16/9)
+    final videoAspectRatio = _currentAspectRatio == 0
+        ? (_flickManager
+                ?.flickVideoManager?.videoPlayerController?.value.aspectRatio ??
+            16 / 9)
         : _currentAspectRatio;
-    
+
     // 计算视频容器的尺寸
     double containerWidth = screenWidth;
     double containerHeight;
-    
+
     // 根据旋转角度调整容器尺寸
     if (_rotationAngle == 90 || _rotationAngle == 270) {
       // 旋转90°或270°时，需要交换宽高比
@@ -466,11 +494,11 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
             child: Transform.rotate(
               angle: _rotationAngle * 3.14159 / 180, // 转换为弧度
               child: SizedBox(
-                width: _rotationAngle == 90 || _rotationAngle == 270 
-                    ? containerHeight 
+                width: _rotationAngle == 90 || _rotationAngle == 270
+                    ? containerHeight
                     : containerWidth,
-                height: _rotationAngle == 90 || _rotationAngle == 270 
-                    ? containerWidth 
+                height: _rotationAngle == 90 || _rotationAngle == 270
+                    ? containerWidth
                     : containerHeight,
                 child: FlickVideoPlayer(
                   flickManager: _flickManager!,
@@ -481,6 +509,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
                       onRotate: _rotateVideo,
                       onSpeedChange: _changePlaybackSpeed,
                       onAspectRatioChange: _changeAspectRatio,
+                      onFullscreen: _openFullscreen,
                       rotationAngle: _rotationAngle,
                     ),
                   ),
@@ -495,8 +524,8 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
 
   Widget _buildLoadingWidget() {
     final screenWidth = MediaQuery.of(context).size.width;
-    final containerHeight = screenWidth / (16/9); // 默认16:9比例
-    
+    final containerHeight = screenWidth / (16 / 9); // 默认16:9比例
+
     return Container(
       width: screenWidth,
       height: containerHeight,
@@ -514,8 +543,8 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
 
   Widget _buildErrorWidget(String error) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final containerHeight = screenWidth / (16/9); // 默认16:9比例
-    
+    final containerHeight = screenWidth / (16 / 9); // 默认16:9比例
+
     return Container(
       width: screenWidth,
       height: containerHeight,
@@ -549,10 +578,18 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   }
 
   void _openFullscreen() {
-    if (_flickManager?.flickVideoManager?.videoPlayerController?.value.isInitialized == true) {
-      final currentPosition = _flickManager!.flickVideoManager!.videoPlayerController!.value.position;
-      
-      Navigator.of(context).push(
+    if (_flickManager
+            ?.flickVideoManager?.videoPlayerController?.value.isInitialized ==
+        true) {
+      final currentPosition = _flickManager!
+          .flickVideoManager!.videoPlayerController!.value.position;
+      final isPlaying = _flickManager!.flickVideoManager!.isPlaying;
+
+      // 暂停当前播放器
+      _flickManager?.flickControlManager?.pause();
+
+      Navigator.of(context)
+          .push(
         MaterialPageRoute(
           builder: (context) => FullscreenVideoPlayer(
             videoPath: widget.videoPath,
@@ -561,7 +598,19 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
           ),
           fullscreenDialog: true,
         ),
-      );
+      )
+          .then((_) {
+        // 从全屏返回后，如果之前在播放，则继续播放
+        if (isPlaying && mounted && !_isDisposed && _flickManager != null) {
+          try {
+            _flickManager?.flickControlManager?.play();
+          } catch (e) {
+            print('Error resuming video playback: $e');
+          }
+        }
+      }).catchError((error) {
+        print('Error in fullscreen navigation: $error');
+      });
     }
   }
 
@@ -577,7 +626,8 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
     setState(() {
       _playbackSpeed = speed;
     });
-    _flickManager?.flickVideoManager?.videoPlayerController?.setPlaybackSpeed(speed);
+    _flickManager?.flickVideoManager?.videoPlayerController
+        ?.setPlaybackSpeed(speed);
   }
 
   // 改变宽高比
@@ -625,6 +675,7 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
   String? _error;
   late TransformationController _transformationController;
   int _rotationAngle = 0; // 0, 90, 180, 270
+  bool _isDisposed = false;
 
   @override
   void initState() {
@@ -643,10 +694,13 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
 
   Future<void> _initializePlayer() async {
     try {
-      if (widget.videoPath.startsWith('http://') || widget.videoPath.startsWith('https://')) {
-        _videoPlayerController = VideoPlayerController.networkUrl(Uri.parse(widget.videoPath));
+      if (widget.videoPath.startsWith('http://') ||
+          widget.videoPath.startsWith('https://')) {
+        _videoPlayerController =
+            VideoPlayerController.networkUrl(Uri.parse(widget.videoPath));
       } else {
-        _videoPlayerController = VideoPlayerController.file(File(widget.videoPath));
+        _videoPlayerController =
+            VideoPlayerController.file(File(widget.videoPath));
       }
 
       // Add a listener to handle post-initialization logic
@@ -673,14 +727,14 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
   }
 
   void _onControllerUpdated() {
-    if (!mounted || _videoPlayerController == null) return;
-    
+    if (!mounted || _isDisposed || _videoPlayerController == null) return;
+
     // Once initialized, seek to the start position and update the state
     if (_videoPlayerController!.value.isInitialized && !_isInitialized) {
       if (widget.startPosition != Duration.zero) {
         _videoPlayerController!.seekTo(widget.startPosition);
       }
-      
+
       if (mounted) {
         setState(() {
           _isInitialized = true;
@@ -703,6 +757,7 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
 
   @override
   void dispose() {
+    _isDisposed = true;
     _transformationController.dispose();
     _videoPlayerController?.removeListener(_onControllerUpdated);
     _flickManager?.dispose();
@@ -722,8 +777,12 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
     return PopScope(
       canPop: true,
       onPopInvokedWithResult: (didPop, result) {
-        if (didPop) {
-          _flickManager?.flickControlManager?.pause();
+        if (didPop && mounted && !_isDisposed && _flickManager != null) {
+          try {
+            _flickManager?.flickControlManager?.pause();
+          } catch (e) {
+            print('Error pausing video on pop: $e');
+          }
         }
       },
       child: Scaffold(
@@ -737,8 +796,10 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
                       GestureDetector(
                         onDoubleTap: () {
                           // 双击重置缩放
-                          if (_transformationController.value != Matrix4.identity()) {
-                            _transformationController.value = Matrix4.identity();
+                          if (_transformationController.value !=
+                              Matrix4.identity()) {
+                            _transformationController.value =
+                                Matrix4.identity();
                           } else {
                             // 如果没有缩放，则旋转
                             _rotateVideo();
@@ -750,21 +811,22 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
                           maxScale: 4.0,
                           child: Transform.rotate(
                             angle: _rotationAngle * 3.14159 / 180,
-                          child: FlickVideoPlayer(
-                            flickManager: _flickManager!,
-                            flickVideoWithControls: FlickVideoWithControls(
-                              controls: OrientationBuilder(
-                                builder: (context, orientation) {
+                            child: FlickVideoPlayer(
+                              flickManager: _flickManager!,
+                              flickVideoWithControls: FlickVideoWithControls(
+                                controls: OrientationBuilder(
+                                  builder: (context, orientation) {
                                     // 全屏时，我们总是希望有旋转按钮，所以直接使用 CustomFlickPortraitControls
                                     return CustomFlickPortraitControls(
                                       onRotate: _rotateVideo,
-                                          progressBarSettings: FlickProgressBarSettings(
-                                            playedColor: widget.primaryColor,
-                                          ),
-                                        );
-                                },
-                              ),
-                              playerLoadingFallback: _buildLoadingWidget(),
+                                      progressBarSettings:
+                                          FlickProgressBarSettings(
+                                        playedColor: widget.primaryColor,
+                                      ),
+                                    );
+                                  },
+                                ),
+                                playerLoadingFallback: _buildLoadingWidget(),
                               ),
                             ),
                           ),
@@ -775,8 +837,14 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
                         left: 16,
                         child: SafeArea(
                           child: IconButton(
-                            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
-                            onPressed: () => Navigator.of(context).pop(),
+                            icon: const Icon(Icons.arrow_back,
+                                color: Colors.white, size: 28),
+                            onPressed: () {
+                              if (mounted) {
+                                _flickManager?.flickControlManager?.pause();
+                                Navigator.of(context).pop();
+                              }
+                            },
                           ),
                         ),
                       ),
@@ -815,7 +883,11 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
           ),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () {
+              if (mounted) {
+                Navigator.of(context).pop();
+              }
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: widget.primaryColor,
             ),
@@ -831,4 +903,4 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
       _rotationAngle = (_rotationAngle + 90) % 360;
     });
   }
-} 
+}

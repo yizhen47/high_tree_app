@@ -25,7 +25,9 @@ Card buildQuestionCard(
     final String? answer, 
     final String? note,
     [final SingleQuestionData? currentQuestionData,
-     final QuestionBank? questionBank]) {
+     final QuestionBank? questionBank,
+     final bool showBottomButtons = true,
+     final bool useFixedHeight = true]) {
   final ValueNotifier<bool> isExpanded = ValueNotifier(false);
   final ValueNotifier<String> activeFeature = ValueNotifier('none');
   
@@ -47,7 +49,8 @@ Card buildQuestionCard(
     child: ValueListenableBuilder<bool>(
       valueListenable: isExpanded,
       builder: (context, expanded, _) {
-        return SizedBox(
+        return useFixedHeight 
+          ? SizedBox(
           height: double.infinity,
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -119,9 +122,79 @@ Card buildQuestionCard(
               ),
               
               // 底部功能按钮
+              if (showBottomButtons)
               _buildBottomFeatureButtons(context, activeFeature, currentQuestionData, questionBank),
             ],
-          ),
+          )
+        ) : Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 内容区域（非固定高度）
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 知识点标签
+                  _buildKnowledgePointTag(context, knowledgepoint),
+                  const SizedBox(height: 12),
+                  
+                  // 题目内容
+                  _buildQuestionContent(context, question),
+                  
+                  // 显示选项UI (如果题目包含选项)
+                  if (options != null && options.isNotEmpty)
+                    ChoiceOptionsWidget(
+                      options: options,
+                      questionData: currentQuestionData,
+                    ),
+
+                  // 解析切换按钮
+                  _buildExpandButton(context, isExpanded, expanded),
+                      
+                  // 解析内容
+                  AnimatedOpacity(
+                    duration: const Duration(milliseconds: 200),
+                    opacity: expanded ? 1 : 0,
+                    child: AnimatedSize(
+                      duration: const Duration(milliseconds: 300),
+                      child: expanded
+                          ? _buildAnswerSection(answer, note, context, currentQuestionData, questionBank)
+                          : const SizedBox.shrink(),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 16),
+                ],
+              ),
+            ),
+            
+            // 功能内容区域
+            ValueListenableBuilder<String>(
+              valueListenable: activeFeature,
+              builder: (context, feature, _) {
+                if (feature == 'none') return const SizedBox.shrink();
+                return _buildFeaturePanel(
+                  context, 
+                  feature, 
+                  question, 
+                  knowledgepoint, 
+                  currentQuestionData, 
+                  activeFeature, 
+                  questionBank,
+                  questionController,
+                  aiResponseNotifier,
+                  isLoadingNotifier,
+                  hasQuestionedNotifier,
+                );
+              },
+            ),
+            
+            // 底部功能按钮
+            if (showBottomButtons)
+              _buildBottomFeatureButtons(context, activeFeature, currentQuestionData, questionBank),
+          ],
         );
       },
     ),

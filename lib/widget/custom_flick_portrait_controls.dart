@@ -26,6 +26,7 @@ class _CustomFlickPortraitControlsState extends State<CustomFlickPortraitControl
   final List<double> _speedOptions = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
 
   void _showSpeedDialog() {
+    if (!mounted) return;
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -40,15 +41,17 @@ class _CustomFlickPortraitControlsState extends State<CustomFlickPortraitControl
                   value: speed,
                   groupValue: _currentSpeed,
                   onChanged: (value) {
-                    if (value != null) {
+                    if (value != null && mounted) {
                       _setPlaybackSpeed(value);
                       Navigator.of(context).pop();
                     }
                   },
                 ),
                 onTap: () {
-                  _setPlaybackSpeed(speed);
-                  Navigator.of(context).pop();
+                  if (mounted) {
+                    _setPlaybackSpeed(speed);
+                    Navigator.of(context).pop();
+                  }
                 },
               );
             }).toList(),
@@ -59,11 +62,14 @@ class _CustomFlickPortraitControlsState extends State<CustomFlickPortraitControl
   }
 
   void _setPlaybackSpeed(double speed) {
+    if (!mounted) return;
     final flickManager = Provider.of<FlickManager>(context, listen: false);
     flickManager.flickVideoManager?.videoPlayerController?.setPlaybackSpeed(speed);
-    setState(() {
-      _currentSpeed = speed;
-    });
+    if (mounted) {
+      setState(() {
+        _currentSpeed = speed;
+      });
+    }
   }
 
   @override

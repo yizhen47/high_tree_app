@@ -50,7 +50,7 @@ class _ChoiceOptionsWidgetState extends State<ChoiceOptionsWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         ...widget.options.map((option) {
           final String key = option['key'].toString();
           final String value = option['value'].toString();
@@ -93,7 +93,7 @@ class _ChoiceOptionsWidgetState extends State<ChoiceOptionsWidget> {
 
                   return Card(
                     elevation: 0,
-                    margin: const EdgeInsets.only(bottom: 8),
+                    margin: const EdgeInsets.only(bottom: 6),
                     color: tileColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -103,13 +103,13 @@ class _ChoiceOptionsWidgetState extends State<ChoiceOptionsWidget> {
                       onTap: () => handleTap(key),
                       borderRadius: BorderRadius.circular(8),
                       child: Padding(
-                        padding: const EdgeInsets.all(12.0),
+                        padding: const EdgeInsets.all(8.0),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Container(
-                              width: 24,
-                              height: 24,
+                              width: 20,
+                              height: 20,
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
                                 color: keyBackgroundColor,
@@ -120,16 +120,16 @@ class _ChoiceOptionsWidgetState extends State<ChoiceOptionsWidget> {
                                 style: TextStyle(
                                   color: keyColor,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 14,
+                                  fontSize: 12,
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 8),
                             Expanded(
                               child: LaTeX(
                                 laTeXCode: ExtendedText(convertLatexDelimiters(value)),
                                 equationStyle: TextStyle(
-                                  fontSize: 13,
+                                  fontSize: 11,
                                   fontWeight: latexStyleConfig.fontWeight,
                                   fontFamily: latexStyleConfig.mathFontFamily,
                                   fontStyle: FontStyle.italic,
@@ -146,7 +146,7 @@ class _ChoiceOptionsWidgetState extends State<ChoiceOptionsWidget> {
             },
           );
         }),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         ValueListenableBuilder(
           valueListenable: answerChecked,
           builder: (context, checked, _) {

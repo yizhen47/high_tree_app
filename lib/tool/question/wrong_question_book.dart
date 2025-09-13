@@ -28,13 +28,13 @@ class WrongQuestionBook {
     
     // 检查并注册 TypeAdapter，避免重复注册
     if (!Hive.isAdapterRegistered(1)) {
-      Hive.registerAdapter(QuestionUserDataAdapter());
+    Hive.registerAdapter(QuestionUserDataAdapter());
     }
     if (!Hive.isAdapterRegistered(2)) {
-      Hive.registerAdapter(SectionUserDataAdapter());
+    Hive.registerAdapter(SectionUserDataAdapter());
     }
     if (!Hive.isAdapterRegistered(3)) {
-      Hive.registerAdapter(BankLearnDataAdapter());
+    Hive.registerAdapter(BankLearnDataAdapter());
     }
     
     // We'll need to run code generation to create this adapter

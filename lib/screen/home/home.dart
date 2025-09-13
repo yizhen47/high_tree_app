@@ -89,15 +89,20 @@ class TextScaler {
 
 // 全局样式配置
 class AppTheme {
-  static const primaryColor = Color(0xFF6A88E6);
+  // 获取动态主题色
+  static Color get primaryColor => StudyData.instance.themeColor;
   static const secondaryColor = Color(0xFF8E49E2);
   static const warningColor = Color(0xFFFFA726);
   static const successColor = Color(0xFF4CAF50);
   static const textPrimary = Color(0xFF2D2D3A);
   static const textSecondary = Color(0xFF6E6E8A);
 
-  static const backgroundGradient = LinearGradient(
-    colors: [Color(0xFFF8FAFF), Color(0xFFF2F6FF)],
+  // 获取动态背景渐变
+  static LinearGradient get backgroundGradient => LinearGradient(
+    colors: [
+      primaryColor.withOpacity(0.05),
+      primaryColor.withOpacity(0.02),
+    ],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
@@ -275,7 +280,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
-        value: const SystemUiOverlayStyle(
+        value: SystemUiOverlayStyle(
           statusBarColor: Colors.transparent, // 透明状态栏
           statusBarIconBrightness: Brightness.light,
           systemNavigationBarColor: AppTheme.primaryColor, // 系统导航栏背景色
@@ -604,7 +609,7 @@ class _ProfilePageState extends State<ProfilePage>
     return Container(
       width: double.infinity,
       height: double.infinity,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
           begin: Alignment.topLeft,
@@ -710,10 +715,10 @@ class _ProfilePageState extends State<ProfilePage>
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
               title: Row(
-                children: const [
+                children: [
                   Icon(Icons.cached_outlined, color: AppTheme.primaryColor),
-                  SizedBox(width: 10),
-                  Text('数据清理',
+                  const SizedBox(width: 10),
+                  const Text('数据清理',
                       style: TextStyle(fontWeight: FontWeight.bold)),
                 ],
               ),
@@ -739,7 +744,7 @@ class _ProfilePageState extends State<ProfilePage>
                   },
                 ),
                 TextButton(
-                  child: const Text('清理缓存',
+                  child: Text('清理缓存',
                       style: TextStyle(color: AppTheme.primaryColor)),
                   onPressed: () async {
                     Navigator.of(dialogContext).pop();

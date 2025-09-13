@@ -228,7 +228,7 @@ class _CommunityPageState extends State<CommunityPage> with SingleTickerProvider
                     ),
                   ),
                   if (_operationInProgress)
-                    const SizedBox(
+                    SizedBox(
                       width: 16,
                       height: 16,
                       child: CircularProgressIndicator(
@@ -248,7 +248,7 @@ class _CommunityPageState extends State<CommunityPage> with SingleTickerProvider
   Widget _buildHeader() {
     return FlexibleSpaceBar(
       background: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
             begin: Alignment.topLeft,
@@ -318,7 +318,7 @@ class _CommunityPageState extends State<CommunityPage> with SingleTickerProvider
                     color: AppTheme.primaryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.bluetooth,
                     color: AppTheme.primaryColor,
                     size: 24,
@@ -672,10 +672,10 @@ class _CommunityPageState extends State<CommunityPage> with SingleTickerProvider
                 : MainAxisAlignment.end,
             children: [
               if (isTeacherMessage) ...[
-                const CircleAvatar(
+                CircleAvatar(
                   radius: 16,
                   backgroundColor: AppTheme.primaryColor,
-                  child: Text('T', style: TextStyle(color: Colors.white, fontSize: 12)),
+                  child: const Text('T', style: TextStyle(color: Colors.white, fontSize: 12)),
                 ),
                 const SizedBox(width: 8),
               ],
@@ -760,7 +760,7 @@ class _CommunityPageState extends State<CommunityPage> with SingleTickerProvider
                     const Icon(
                       Icons.question_answer,
                       size: 16,
-                      color: AppTheme.primaryColor,
+                      color: AppTheme.textSecondary,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -1280,10 +1280,10 @@ class _CommunityPageState extends State<CommunityPage> with SingleTickerProvider
     
     // 显示发送成功提示
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('消息已发送'),
+      SnackBar(
+        content: const Text('消息已发送'),
         backgroundColor: AppTheme.primaryColor,
-        duration: Duration(seconds: 1),
+        duration: const Duration(seconds: 1),
       ),
     );
   }

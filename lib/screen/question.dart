@@ -69,7 +69,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
           children: [
             // 图标使用主色
             Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppTheme.primaryColor,
                 shape: BoxShape.circle,
               ),

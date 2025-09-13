@@ -16,6 +16,7 @@ class _BackgroundCustomizationPageState extends State<BackgroundCustomizationPag
   late double _offsetX;
   late double _offsetY;
   late int _fitIndex;
+  bool _showAdvancedSettings = false; // 新增：控制高级设置的显示
   
   final List<String> _fitOptions = [
     '覆盖 (Cover)',
@@ -117,7 +118,13 @@ class _BackgroundCustomizationPageState extends State<BackgroundCustomizationPag
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      onPopInvoked: (didPop) {
+        if (didPop) {
+          _saveSettings();
+        }
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('背景自定义'),
         actions: [
@@ -196,30 +203,6 @@ class _BackgroundCustomizationPageState extends State<BackgroundCustomizationPag
                     
                     const Divider(),
                     
-                    // 适配模式选择
-                    const Text(
-                      '适配模式',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    ...List.generate(_fitOptions.length, (index) {
-                      return RadioListTile<int>(
-                        title: Text(_fitOptions[index]),
-                        value: index,
-                        groupValue: _fitIndex,
-                        onChanged: (value) {
-                          setState(() {
-                            _fitIndex = value!;
-                          });
-                        },
-                      );
-                    }),
-                    
-                    const Divider(),
-                    
                     // 缩放比例
                     const Text(
                       '缩放比例',
@@ -291,6 +274,41 @@ class _BackgroundCustomizationPageState extends State<BackgroundCustomizationPag
                       },
                     ),
                     
+                    const Divider(),
+                    
+                    // 适配模式选择 - 可折叠
+                    ExpansionTile(
+                      title: const Text(
+                        '适配模式',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      subtitle: Text(
+                        '当前: ${_fitOptions[_fitIndex]}',
+                        style: TextStyle(color: Colors.grey.shade600),
+                      ),
+                      initiallyExpanded: _showAdvancedSettings,
+                      onExpansionChanged: (expanded) {
+                        setState(() {
+                          _showAdvancedSettings = expanded;
+                        });
+                      },
+                      children: List.generate(_fitOptions.length, (index) {
+                        return RadioListTile<int>(
+                          title: Text(_fitOptions[index]),
+                          value: index,
+                          groupValue: _fitIndex,
+                          onChanged: (value) {
+                            setState(() {
+                              _fitIndex = value!;
+                            });
+                          },
+                        );
+                      }),
+                    ),
+                    
                     const SizedBox(height: 16),
                     
                     // 重置按钮
@@ -315,6 +333,7 @@ class _BackgroundCustomizationPageState extends State<BackgroundCustomizationPag
           ],
         ),
       ),
+    ),
     );
   }
 } 

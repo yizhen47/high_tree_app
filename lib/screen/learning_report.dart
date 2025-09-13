@@ -48,7 +48,7 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
         onBack: () => Navigator.of(context).pop(),
       ),
       body: Container(
-        decoration: const BoxDecoration(gradient: AppTheme.backgroundGradient),
+        decoration: BoxDecoration(gradient: AppTheme.backgroundGradient),
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(12),
           child: Column(
@@ -367,7 +367,7 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.insights, color: AppTheme.primaryColor, size: 16),
+                      Icon(Icons.insights, color: AppTheme.primaryColor, size: 16),
                       const SizedBox(width: 8),
                       RichText(
                         text: TextSpan(
@@ -376,7 +376,7 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
                             const TextSpan(text: '日均学习时间 '),
                             TextSpan(
                               text: '${_getAverageDailyStudyTime()}分钟',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: AppTheme.primaryColor,
                               ),
@@ -421,7 +421,7 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
         const SizedBox(height: 4),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: AppTheme.primaryColor,
@@ -686,7 +686,7 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.info_outline,
                               size: 18,
                               color: AppTheme.primaryColor,
@@ -1069,7 +1069,7 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: Colors.grey.withOpacity(0.2)),
               ),
-              child: const Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
@@ -1079,8 +1079,8 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
                         size: 14,
                         color: AppTheme.primaryColor,
                       ),
-                      SizedBox(width: 6),
-                      Text(
+                      const SizedBox(width: 6),
+                      const Text(
                         '学习建议',
                         style: TextStyle(
                           fontSize: 13,
@@ -1090,8 +1090,8 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
                       ),
                     ],
                   ),
-                  SizedBox(height: 6),
-                  Text(
+                  const SizedBox(height: 6),
+                  const Text(
                     '• 尝试固定每天的学习时间，养成规律的学习习惯\n'
                     '• 在高效时段集中进行重难点学习\n'
                     '• 每次学习后进行错题分析和总结',
@@ -1180,7 +1180,7 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(
                 Icons.bar_chart,
@@ -1188,7 +1188,7 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
                 color: AppTheme.primaryColor,
               ),
               SizedBox(width: 6),
-              Text(
+              const Text(
                 '24小时学习分布',
                 style: TextStyle(
                   fontSize: 13,
@@ -1751,7 +1751,7 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
               
               // 折叠/展开图标
               if (hasChildren)
-                const Icon(
+                Icon(
                   Icons.arrow_drop_down,
                   size: 20,
                   color: AppTheme.primaryColor,

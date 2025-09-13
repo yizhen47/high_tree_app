@@ -90,7 +90,7 @@ class _MainHomePageState extends State<MainHomePage>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.military_tech_outlined,
                         size: 14,
                         color: HomeComponents.AppTheme.primaryColor,
@@ -98,7 +98,7 @@ class _MainHomePageState extends State<MainHomePage>
                       const SizedBox(width: 4),
                       Text(
                         'Lv.$studyLevel',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                           color: HomeComponents.AppTheme.primaryColor,
@@ -121,7 +121,7 @@ class _MainHomePageState extends State<MainHomePage>
                   child: LinearProgressIndicator(
                     value: 0.65,
                     backgroundColor: Colors.grey.withOpacity(0.2),
-                    valueColor: const AlwaysStoppedAnimation(HomeComponents.AppTheme.primaryColor),
+                                          valueColor: AlwaysStoppedAnimation(HomeComponents.AppTheme.primaryColor),
                     minHeight: 24,
                   ),
                 ),
@@ -487,71 +487,71 @@ class _MainHomePageState extends State<MainHomePage>
             _buildBackground(),
             // 内容层
             SafeArea(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.center,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // 用户信息
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // 用户信息
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            StudyData.instance.userName,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.military_tech_outlined,
-                                  color: Colors.white,
-                                  size: 12,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'Lv.$studyLevel',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                      Text(
+                        StudyData.instance.userName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                      
-                      // 右侧头像
-                      CircleAvatar(
-                        radius: 22,
-                        backgroundColor: Colors.white.withOpacity(0.2),
-                        child: CircleAvatar(
-                          radius: 20,
-                          backgroundImage: StudyData.instance.avatar == null || StudyData.instance.avatar!.isEmpty
-                              ? const AssetImage("assets/logo.png")
-                              : FileImage(File(StudyData.instance.avatar!)) as ImageProvider,
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.military_tech_outlined,
+                              color: Colors.white,
+                              size: 12,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Lv.$studyLevel',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                ),
+                  
+                  // 右侧头像
+                  CircleAvatar(
+                    radius: 22,
+                    backgroundColor: Colors.white.withOpacity(0.2),
+                    child: CircleAvatar(
+                      radius: 20,
+                      backgroundImage: StudyData.instance.avatar == null || StudyData.instance.avatar!.isEmpty
+                          ? const AssetImage("assets/logo.png")
+                          : FileImage(File(StudyData.instance.avatar!)) as ImageProvider,
+                    ),
+                  ),
+                ],
               ),
+            ),
+          ),
             ),
           ],
         ),
@@ -667,8 +667,8 @@ class _MainHomePageState extends State<MainHomePage>
                   .updateLearningPlan()
                   .whenComplete(() => setState(() {})));
             },
-            child: const Padding(
-              padding: EdgeInsets.symmetric(vertical: 20),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
               child: Center(
                 child: Column(
                   children: [
@@ -681,7 +681,7 @@ class _MainHomePageState extends State<MainHomePage>
                         height: 1.6,
                       ),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Text(
                       '点击这里添加题库',
                       textAlign: TextAlign.center,
@@ -741,7 +741,7 @@ class _MainHomePageState extends State<MainHomePage>
                             color: AppTheme.primaryColor.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: const Center(
+                          child: Center(
                             child: Icon(
                               Icons.school_outlined,
                               color: AppTheme.primaryColor,
@@ -920,7 +920,7 @@ class _MainHomePageState extends State<MainHomePage>
     return Container(
       width: double.infinity,
       height: double.infinity,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
           begin: Alignment.topLeft,
