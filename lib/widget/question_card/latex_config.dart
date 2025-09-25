@@ -105,6 +105,9 @@ String convertLatexDelimiters(String text) {
     return '•'; // 解析失败时默认符号
   });
   
+  // 将转义的下划线 \_ 替换为普通下划线 _
+  text = text.replaceAll(r'\_', '_');
+  
   return text;
 }
 

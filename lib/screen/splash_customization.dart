@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
+import 'package:tdesign_flutter/tdesign_flutter.dart';
 import '../tool/study_data.dart';
 
 class SplashCustomizationPage extends StatefulWidget {
@@ -142,67 +143,82 @@ class _SplashCustomizationPageState extends State<SplashCustomizationPage> {
         }
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('启动页面自定义'),
-          actions: [
-            TextButton(
-              onPressed: () {
+        backgroundColor: Colors.grey[50],
+        appBar: TDNavBar(
+          title: '启动页面自定义',
+          onBack: () {
+            _saveSettings();
+            Navigator.of(context).pop();
+          },
+          rightBarItems: [
+            TDNavBarItem(
+              icon: Icons.check,
+              action: () {
                 _saveSettings();
-                Navigator.pop(context);
+                TDToast.showSuccess('设置已保存', context: context);
+                Navigator.of(context).pop();
               },
-              child: const Text(
-                '保存',
-                style: TextStyle(color: Colors.white),
-              ),
             ),
           ],
         ),
         body: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: Column(
             children: [
               // 预览区域
               _buildPreview(),
               
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
                     // 使用提取颜色开关
-                    SwitchListTile(
+                Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: SwitchListTile(
+                    contentPadding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
                       title: const Text('使用图标提取颜色'),
-                      subtitle: const Text('自动从应用图标提取边缘颜色作为背景'),
+                    subtitle: Text('自动从应用图标提取边缘颜色作为背景',
+                        style: TextStyle(color: Colors.grey[600])),
                       value: _useExtractedColor,
                       onChanged: (value) {
                         setState(() {
                           _useExtractedColor = value;
                         });
                       },
+                  ),
                     ),
                     
                     if (_useExtractedColor) ...[
-                      const Divider(),
-                      
+                  // 颜色自定义卡片
+                  Card(
+                    margin: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 8),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                       // 提取的颜色显示
                       ListTile(
+                            contentPadding: EdgeInsets.zero,
                         leading: Container(
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
                             color: _extractedColor ?? Colors.grey,
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.grey.shade300),
+                                border:
+                                    Border.all(color: Colors.grey.shade300),
                           ),
                         ),
-                        title: Text('图标提取颜色'),
-                        subtitle: Text(_extractedColor != null ? 
-                          '已提取颜色: #${_extractedColor!.value.toRadixString(16).toUpperCase()}' : 
-                          '未提取到颜色'),
+                            title: const Text('图标提取颜色'),
+                            subtitle: Text(_extractedColor != null
+                                ? '已提取颜色: #${_extractedColor!.value.toRadixString(16).toUpperCase()}'
+                                : '未提取到颜色'),
                         trailing: _isExtracting 
                           ? const SizedBox(
                               width: 20,
                               height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
                             )
                           : IconButton(
                               icon: const Icon(Icons.refresh),
@@ -210,33 +226,23 @@ class _SplashCustomizationPageState extends State<SplashCustomizationPage> {
                               tooltip: '重新提取颜色',
                             ),
                       ),
-                      
+                          const SizedBox(height: 16),
+                          const Divider(),
                       const SizedBox(height: 16),
                       
                       // 自定义颜色选择
-                      const Text(
+                          Text(
                         '自定义颜色',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                            style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        '选择自定义颜色将覆盖图标提取的颜色',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
+                          Text(
+                            '选择一个颜色来自定义启动页面背景',
+                            style: Theme.of(context).textTheme.bodySmall,
                       ),
                       const SizedBox(height: 16),
                       
                       // 颜色选择器
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            children: [
                               ColorPicker(
                                 color: _customColor ?? _extractedColor ?? Colors.blue,
                                 onColorChanged: (Color color) {
@@ -250,18 +256,6 @@ class _SplashCustomizationPageState extends State<SplashCustomizationPage> {
                                 spacing: 8,
                                 runSpacing: 8,
                                 wheelDiameter: 165,
-                                heading: Text(
-                                  '选择颜色',
-                                  style: Theme.of(context).textTheme.titleMedium,
-                                ),
-                                subheading: Text(
-                                  '调整颜色以获得理想的启动页面效果',
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                                wheelSubheading: Text(
-                                  '颜色和明暗度选择',
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
                                 showColorCode: true,
                                 colorCodeHasColor: true,
                                 pickersEnabled: const <ColorPickerType, bool>{
@@ -277,12 +271,14 @@ class _SplashCustomizationPageState extends State<SplashCustomizationPage> {
                               Row(
                                 children: [
                                   Expanded(
-                                    child: ElevatedButton.icon(
-                                      onPressed: _customColor != null ? () {
+                                child: OutlinedButton.icon(
+                                  onPressed: _customColor != null
+                                      ? () {
                                         setState(() {
                                           _customColor = null;
                                         });
-                                      } : null,
+                                        }
+                                      : null,
                                       icon: const Icon(Icons.clear),
                                       label: const Text('清除自定义颜色'),
                                     ),
@@ -294,10 +290,10 @@ class _SplashCustomizationPageState extends State<SplashCustomizationPage> {
                         ),
                       ),
                     ] else ...[
-                      const Divider(),
-                      
                       // 主题色说明
                       Container(
+                    margin:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: Colors.blue.shade50,
@@ -306,7 +302,7 @@ class _SplashCustomizationPageState extends State<SplashCustomizationPage> {
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.info, color: Colors.blue.shade600),
+                        Icon(Icons.info_outline, color: Colors.blue.shade600),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Column(
@@ -335,11 +331,11 @@ class _SplashCustomizationPageState extends State<SplashCustomizationPage> {
                       ),
                     ],
                     
-                    const SizedBox(height: 24),
+                const SizedBox(height: 16),
                     
                     // 重置按钮
                     Center(
-                      child: ElevatedButton.icon(
+                  child: OutlinedButton.icon(
                         onPressed: () {
                           setState(() {
                             _useExtractedColor = true;
@@ -350,10 +346,9 @@ class _SplashCustomizationPageState extends State<SplashCustomizationPage> {
                         label: const Text('重置为默认设置'),
                       ),
                     ),
+                const SizedBox(height: 16),
                   ],
                 ),
-              ),
-            ],
           ),
         ),
       ),

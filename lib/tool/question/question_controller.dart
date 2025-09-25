@@ -35,9 +35,7 @@ class LearningPlanItem {
 
   /// Returns a shuffled list of questions for the current learning item.
   List<SingleQuestionData> get questionList {
-    final shuffledList = List<SingleQuestionData>.from(_questionList);
-    shuffledList.shuffle();
-    return shuffledList;
+    return _questionList;
   }
 
   /// Access to the persistent storage for section learning data
@@ -149,13 +147,8 @@ class LearningPlanItem {
       throw "No target section selected";
     }
 
-    var newQuestions = targetSection!.randomMultipleSectionQuestions(
-        bank.id!, bank.displayName!, _questionList.length,
-        onlyLayer: true);
-        
-    for (var i = 0; i < _questionList.length; i++) {
-      _questionList[i] = newQuestions[i];
-    }
+    _questionList.clear();
+    _questionList.addAll(_generateGradedQuestions());
     return this;
   }
 
@@ -188,6 +181,68 @@ class LearningPlanItem {
     }
 
     return this;
+  }
+
+  /// Adds one question of each difficulty (easy, medium, hard) if available.
+  LearningPlanItem addGradedQuestions() {
+    if (targetSection == null) {
+      throw "No target section selected";
+    }
+
+    _questionList.addAll(_generateGradedQuestions());
+    return this;
+  }
+
+  List<SingleQuestionData> _generateGradedQuestions() {
+    if (targetSection == null) {
+      throw "No target section selected";
+    }
+
+    final allSectionQuestions =
+        targetSection!.sectionQuestionOnly(bank.id!, bank.displayName!);
+    if (allSectionQuestions.isEmpty) {
+      print('HighTree-Debug: No questions in section ${targetSection!.title}');
+      return [];
+    }
+
+    final easyQuestions = allSectionQuestions
+        .where((q) => q.question['difficulty'] == '简单')
+        .toList();
+    final mediumQuestions = allSectionQuestions
+        .where((q) => q.question['difficulty'] == '中等')
+        .toList();
+    final hardQuestions = allSectionQuestions
+        .where((q) => q.question['difficulty'] == '困难')
+        .toList();
+
+    easyQuestions.shuffle();
+    mediumQuestions.shuffle();
+    hardQuestions.shuffle();
+
+    final newQuestions = <SingleQuestionData>[];
+    final addedQuestionIds = <String>{};
+
+    // Helper to add a unique question
+    void addUnique(SingleQuestionData q) {
+      final id = q.question['id'] as String?;
+      if (id != null && addedQuestionIds.add(id)) {
+        newQuestions.add(q);
+      }
+    }
+
+    if (easyQuestions.isNotEmpty) addUnique(easyQuestions.first);
+    if (mediumQuestions.isNotEmpty) addUnique(mediumQuestions.first);
+    if (hardQuestions.isNotEmpty) addUnique(hardQuestions.first);
+
+    // Fill up to 3
+    final allShuffled = List<SingleQuestionData>.from(allSectionQuestions)
+      ..shuffle();
+    for (var q in allShuffled) {
+      if (newQuestions.length >= 3) break;
+      addUnique(q);
+    }
+
+    return newQuestions;
   }
 
   /// Get learning data for a specific section
@@ -406,12 +461,17 @@ class LearningPlanManager {
     // Create and add learning plan item
     LearningPlanItem planItem = LearningPlanItem(bank);
     planItem.targetSection = section;
-    planItem.addRandomQuestions(StudyData.instance.needCompleteQuestionNum);
+    planItem.addGradedQuestions(); // 使用新的抽题逻辑
 
     // Only add if not already exists
     bool alreadyInPlan = learningPlanItems.any((item) => item.targetSection?.id == section.id);
     
     if (!alreadyInPlan) {
+      // 设置题目数量到学习数据中
+      var sectionData = planItem.getSectionLearningData(section);
+      sectionData.allNeedCompleteQuestion = planItem.questionList.length;
+      planItem.saveSectionLearningData(section, sectionData);
+      
       learningPlanItems.add(planItem);
 
       // Update bank learning data
@@ -458,10 +518,15 @@ class LearningPlanManager {
       tempPlanItem.getSectionsToLearn(remainingSections).forEach((section) {
         var planItem = LearningPlanItem(bank);
         planItem.targetSection = section;
-        planItem.addRandomQuestions(StudyData.instance.needCompleteQuestionNum);
+        planItem.addGradedQuestions(); // 使用新的抽题逻辑
         
         // 只添加有有效题目的计划项
         if (planItem.questionList.isNotEmpty) {
+          // 设置题目数量到学习数据中
+          var sectionData = planItem.getSectionLearningData(section);
+          sectionData.allNeedCompleteQuestion = planItem.questionList.length;
+          planItem.saveSectionLearningData(section, sectionData);
+          
           learningPlanItems.add(planItem);
         } else {
           print('HighTree-Debug: Skipping section ${section.title} due to no valid questions');
@@ -487,10 +552,15 @@ class LearningPlanManager {
         // Ensure section is not duplicate and needs learning
         if (!learningPlanItems.any((item) => item.targetSection?.id == section.id) &&
             planItem.needsToLearn(section)) {
-          planItem.addRandomQuestions(StudyData.instance.needCompleteQuestionNum);
+          planItem.addGradedQuestions(); // 使用新的抽题逻辑
           
           // 只添加有有效题目的计划项
           if (planItem.questionList.isNotEmpty) {
+            // 设置题目数量到学习数据中
+            var sectionData = planItem.getSectionLearningData(section);
+            sectionData.allNeedCompleteQuestion = planItem.questionList.length;
+            planItem.saveSectionLearningData(section, sectionData);
+            
             learningPlanItems.add(planItem);
           } else {
             print('HighTree-Debug: Skipping manually selected section ${section.title} due to no valid questions');

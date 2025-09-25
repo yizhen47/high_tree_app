@@ -1,18 +1,55 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
+import 'dart:math' as math;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_application_1/tool/question/question_bank.dart';
-import 'package:flutter_application_1/widget/latex.dart';
 import 'package:latext/latext.dart';
 
 enum NodeSide { left, right, none }
 
-/// 思维导图节点数据类
+// 粒子类 - 用于背景动画效果
+class Particle {
+  Offset position;
+  Offset velocity;
+  double opacity;
+  double maxOpacity;
+  double radius;
+  Color color;
+  
+  Particle({
+    required this.position,
+    required this.velocity,
+    required this.opacity,
+    required this.maxOpacity,
+    required this.radius,
+    required this.color,
+  });
+  
+  void update(Size canvasSize) {
+    position += velocity;
+    
+    // 边界检测和反弹
+    if (position.dx <= 0 || position.dx >= canvasSize.width) {
+      velocity = Offset(-velocity.dx, velocity.dy);
+    }
+    if (position.dy <= 0 || position.dy >= canvasSize.height) {
+      velocity = Offset(velocity.dx, -velocity.dy);
+    }
+    
+    // 保持在边界内
+    position = Offset(
+      position.dx.clamp(0, canvasSize.width),
+      position.dy.clamp(0, canvasSize.height),
+    );
+  }
+}
+
+/// 知识图谱节点数据类
 class MindMapNode<T> {
   final String id;
   String text;
@@ -31,6 +68,11 @@ class MindMapNode<T> {
   T? data;
   ui.Image? _cachedImage; // 缓存加载的图片
   Size? _originalImageSize; // 原始图片尺寸
+  
+  // 科技风动画属性
+  double pulseAnimation = 0.0;
+  double glowIntensity = 0.0;
+  double hoverProgress = 0.0;
 
   MindMapNode({
     required this.id,
@@ -61,13 +103,13 @@ class MindMapNode<T> {
     // 根据文本长度动态调整
     final textLength = text.length;
     if (textLength <= 6) {
-      return const Size(100, 40);
+      return const Size(120, 50); // 增大基础尺寸适配科技风
     } else if (textLength <= 12) {
-      return const Size(140, 50);
+      return const Size(160, 60);
     } else if (textLength <= 20) {
-      return const Size(180, 60);
+      return const Size(200, 70);
     } else {
-      return const Size(220, 70);
+      return const Size(240, 80);
     }
   }
 
@@ -239,6 +281,16 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
   late Animation<double> _highlightAnimation;
   late AnimationController _layoutController;
   late Animation<double> _layoutAnimation;
+  
+  // 科技风动画控制器
+  late AnimationController _techAnimationController;
+  late Animation<double> _techAnimation;
+  late AnimationController _particleController;
+  late Animation<double> _particleAnimation;
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
+
+  
   final Map<String, ui.Image> _latexCache = {};
   final Map<String, ui.Image> _imageCache = {}; // 添加图片缓存
   final GlobalKey _repaintBoundaryKey = GlobalKey();
@@ -246,11 +298,17 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
   // 存储节点的动画起始和结束位置
   final Map<String, Offset> _nodeStartPositions = {};
   final Map<String, Offset> _nodeEndPositions = {};
+  
+  // 粒子系统
+  List<Particle> _particles = [];
+  final math.Random _random = math.Random();
 
   @override
   void initState() {
     super.initState();
     widget.controller?._attach(this);
+    
+    // 原有动画控制器
     _highlightController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
@@ -259,6 +317,7 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
       parent: _highlightController,
       curve: Curves.easeInOut,
     );
+    
     _layoutController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -267,14 +326,75 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
       parent: _layoutController,
       curve: Curves.easeInOutCubic,
     );
+    
+    // 科技风动画控制器
+    _techAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3000),
+    )..repeat();
+    _techAnimation = CurvedAnimation(
+      parent: _techAnimationController,
+      curve: Curves.linear,
+    );
+    
+    _particleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    )..repeat();
+    _particleAnimation = CurvedAnimation(
+      parent: _particleController,
+      curve: Curves.linear,
+    );
+    
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    )..repeat();
+    _pulseAnimation = CurvedAnimation(
+      parent: _pulseController,
+      curve: Curves.easeInOut,
+    );
+    
+
+    
+    _initializeParticles();
     _precacheLatex(widget.rootNode);
     _precacheImages(widget.rootNode); // 添加图片预缓存
+  }
+  
+  // 初始化粒子系统
+  void _initializeParticles() {
+    _particles = List.generate(30, (index) {
+      return Particle(
+        position: Offset(
+          _random.nextDouble() * widget.width,
+          _random.nextDouble() * widget.height,
+        ),
+        velocity: Offset(
+          (_random.nextDouble() - 0.5) * 0.5,
+          (_random.nextDouble() - 0.5) * 0.5,
+        ),
+        opacity: _random.nextDouble() * 0.3 + 0.1,
+        maxOpacity: _random.nextDouble() * 0.5 + 0.2,
+        radius: _random.nextDouble() * 2 + 1,
+        color: [
+          const Color(0xFF00F5FF), // 青色
+          const Color(0xFF1E90FF), // 深天蓝
+          const Color(0xFF00FFFF), // 青绿色
+          const Color(0xFF4169E1), // 皇家蓝
+          const Color(0xFF6495ED), // 矢车菊蓝
+        ][_random.nextInt(5)],
+      );
+    });
   }
 
   @override
   void dispose() {
     _highlightController.dispose();
     _layoutController.dispose();
+    _techAnimationController.dispose();
+    _particleController.dispose();
+    _pulseController.dispose();
     widget.controller?._detach();
     super.dispose();
   }
@@ -288,7 +408,6 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
     }
   }
 
-
 // 修改后的_renderLatex方法
   Future<ui.Image?> _renderLatex(String latex) async {
     final completer = Completer<ui.Image?>();
@@ -298,11 +417,11 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
         left: -5000, // 移出可视区域
         child: RepaintBoundary(
           key: key,
-          child: LaTeX(
+          child: LaTexT(
             laTeXCode: Text(
               latex,
               style: TextStyle(
-                color: Colors.grey[800]!.withOpacity(0.9),
+                color: Colors.white,
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
                 decoration: null,
@@ -536,29 +655,79 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
         child: Container(
           clipBehavior: Clip.hardEdge,
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey[200]!),
-            borderRadius: BorderRadius.circular(8),
+            // 科技风深色背景渐变
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF0A0A0F), // 深蓝黑
+                Color(0xFF1A1A2E), // 深蓝紫
+                Color(0xFF16213E), // 深蓝
+                Color(0xFF0F0F23), // 深紫黑
+              ],
+              stops: [0.0, 0.3, 0.7, 1.0],
+            ),
+            border: Border.all(
+              color: const Color(0xFF00F5FF).withOpacity(0.3),
+              width: 2,
+            ),
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF00F5FF).withOpacity(0.2),
+                blurRadius: 20,
+                spreadRadius: 2,
+              ),
+            ],
           ),
-          // color: Colors.orange,
           width: widget.width,
           height: widget.height,
-          child: AnimatedBuilder(
-            animation: _highlightAnimation,
+          child: Stack(
+            children: [
+              // 背景动画层
+              AnimatedBuilder(
+                animation: _techAnimation,
             builder: (context, child) {
+                  // 更新粒子位置
+                  for (var particle in _particles) {
+                    particle.update(Size(widget.width, widget.height));
+                  }
+                  
+                  return CustomPaint(
+                    painter: _TechBackgroundPainter(
+                      animation: _techAnimation.value,
+                      particles: _particles,
+                    ),
+                    size: Size.infinite,
+                  );
+                },
+              ),
+              // 知识图谱层
+              AnimatedBuilder(
+                animation: Listenable.merge([
+                  _highlightAnimation,
+                  _pulseAnimation,
+                  _techAnimation,
+                ]),
+                builder: (context, child) {
+                  // 更新节点动画属性
+                  _updateNodeAnimations(widget.rootNode);
+                  
               return Transform.translate(
                 offset: _offset,
                 child: CustomPaint(
                   painter: _MindMapPainter(
                     latexCache: _latexCache,
-                    imageCache: _imageCache, // 添加图片缓存
-                    questionBankCacheDirs: widget.questionBankCacheDirs ?? {}, // 添加题库缓存目录
+                        imageCache: _imageCache,
+                        questionBankCacheDirs: widget.questionBankCacheDirs ?? {},
                     rootNode: widget.rootNode,
                     lineColor: widget.lineColor,
                     lineWidth: widget.lineWidth,
                     scale: _scale,
                     highlightProgress: _highlightAnimation.value,
+                        pulseProgress: _pulseAnimation.value,
+                        techProgress: _techAnimation.value,
                     onImageLoaded: () {
-                      // 图片加载完成后重绘
                       setState(() {});
                     },
                   ),
@@ -566,10 +735,32 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
                 ),
               );
             },
+              ),
+            ],
           ),
         ),
       ),
     );
+  }
+  
+  // 更新节点动画属性
+  void _updateNodeAnimations(MindMapNode<T> node) {
+    // 脉冲动画
+    node.pulseAnimation = math.sin(_pulseAnimation.value * 2 * math.pi) * 0.5 + 0.5;
+    
+    // 光晕强度
+    if (node.isHighlighted) {
+      node.glowIntensity = math.sin(_highlightAnimation.value * 2 * math.pi) * 0.5 + 0.5;
+    } else {
+      node.glowIntensity = 0.2;
+    }
+    
+    // 递归更新子节点
+    if (!node.isCollapsed) {
+      for (final child in node.children) {
+        _updateNodeAnimations(child);
+      }
+    }
   }
 
   void _handleTap(Offset localPosition) {
@@ -672,11 +863,11 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
     // 检查当前节点的折叠指示器
     if (node.canCollapse) {
       final indicatorCenter = Offset(
-        node.position.dx + node.size.width / 2 + 15,
+        node.position.dx + node.size.width / 2 + 20,
         node.position.dy,
       );
       final distance = (position - indicatorCenter).distance;
-      if (distance <= 8.0) { // 指示器半径
+      if (distance <= 12.0) { // 增大点击区域
         return node;
       }
     }
@@ -715,16 +906,102 @@ class _MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin {
   }
 }
 
+// 科技风背景绘制器
+class _TechBackgroundPainter extends CustomPainter {
+  final double animation;
+  final List<Particle> particles;
+
+  _TechBackgroundPainter({
+    required this.animation,
+    required this.particles,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // 绘制网格背景
+    _drawGrid(canvas, size);
+    
+    // 绘制粒子
+    _drawParticles(canvas, size);
+    
+    // 绘制边框发光效果
+    _drawGlowBorder(canvas, size);
+  }
+  
+  void _drawGrid(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFF00F5FF).withOpacity(0.1)
+      ..strokeWidth = 0.5;
+    
+    const spacing = 50.0;
+    
+    // 垂直线
+    for (double x = 0; x <= size.width; x += spacing) {
+      canvas.drawLine(
+        Offset(x, 0),
+        Offset(x, size.height),
+        paint,
+      );
+    }
+    
+    // 水平线
+    for (double y = 0; y <= size.height; y += spacing) {
+      canvas.drawLine(
+        Offset(0, y),
+        Offset(size.width, y),
+        paint,
+      );
+    }
+  }
+  
+  void _drawParticles(Canvas canvas, Size size) {
+    for (final particle in particles) {
+      final paint = Paint()
+        ..color = particle.color.withOpacity(particle.opacity)
+        ..style = PaintingStyle.fill;
+      
+      canvas.drawCircle(particle.position, particle.radius, paint);
+      
+      // 粒子光晕
+      final glowPaint = Paint()
+        ..color = particle.color.withOpacity(particle.opacity * 0.3)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+      
+      canvas.drawCircle(particle.position, particle.radius * 2, glowPaint);
+    }
+  }
+  
+
+  
+  void _drawGlowBorder(Canvas canvas, Size size) {
+    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
+    
+    final glowPaint = Paint()
+      ..color = const Color(0xFF00F5FF).withOpacity(0.3)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
+    
+    canvas.drawRect(rect, glowPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _TechBackgroundPainter old) =>
+      old.animation != animation;
+}
+
 class _MindMapPainter extends CustomPainter {
   final MindMapNode rootNode;
   final Color lineColor;
   final double lineWidth;
   final double scale;
   final double highlightProgress;
+  final double pulseProgress;
+  final double techProgress;
   final Map<String, ui.Image> latexCache;
-  final Map<String, ui.Image> imageCache; // 添加图片缓存
-  final Map<String, String> questionBankCacheDirs; // 题库缓存目录映射
-  final VoidCallback? onImageLoaded; // 图片加载完成回调
+  final Map<String, ui.Image> imageCache;
+  final Map<String, String> questionBankCacheDirs;
+  final VoidCallback? onImageLoaded;
 
   _MindMapPainter({
     required this.rootNode,
@@ -732,9 +1009,11 @@ class _MindMapPainter extends CustomPainter {
     required this.lineWidth,
     required this.scale,
     required this.highlightProgress,
+    required this.pulseProgress,
+    required this.techProgress,
     required this.latexCache,
-    required this.imageCache, // 添加图片缓存参数
-    required this.questionBankCacheDirs, // 添加题库缓存目录参数
+    required this.imageCache,
+    required this.questionBankCacheDirs,
     this.onImageLoaded,
   });
 
@@ -843,101 +1122,115 @@ class _MindMapPainter extends CustomPainter {
     }
   }
 
-  // 绘制折叠/展开指示器
+  // 科技风折叠指示器
   void _drawCollapseIndicator(Canvas canvas, MindMapNode node) {
-    // 指示器位置在节点右侧
     final indicatorCenter = Offset(
-      node.position.dx + node.size.width / 2 + 15,
+      node.position.dx + node.size.width / 2 + 25,
       node.position.dy,
     );
     
-    const indicatorRadius = 8.0;
+    const indicatorRadius = 12.0;
     
-    // 绘制圆形背景
+    // 外圈光晕
+    final glowPaint = Paint()
+      ..color = const Color(0xFF00F5FF).withOpacity(0.6 * node.glowIntensity)
+      ..style = PaintingStyle.fill
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+    canvas.drawCircle(indicatorCenter, indicatorRadius + 5, glowPaint);
+    
+    // 主体圆环
     final circlePaint = Paint()
-      ..color = node.isCollapsed ? Colors.grey[300]! : Colors.blue[300]!
+      ..shader = RadialGradient(
+        colors: [
+          const Color(0xFF00F5FF).withOpacity(0.8),
+          const Color(0xFF1E90FF).withOpacity(0.6),
+        ],
+      ).createShader(Rect.fromCircle(center: indicatorCenter, radius: indicatorRadius))
       ..style = PaintingStyle.fill;
     canvas.drawCircle(indicatorCenter, indicatorRadius, circlePaint);
     
-    // 绘制边框
+    // 边框
     final borderPaint = Paint()
-      ..color = node.isCollapsed ? Colors.grey[500]! : Colors.blue[500]!
+      ..color = const Color(0xFF00FFFF)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
+      ..strokeWidth = 2.0;
     canvas.drawCircle(indicatorCenter, indicatorRadius, borderPaint);
     
-    // 绘制 +/- 符号
+    // 绘制 +/- 符号（霓虹灯效果）
     final linePaint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0
-      ..strokeCap = StrokeCap.round;
+      ..strokeWidth = 3.0
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
     
     // 横线（总是显示）
     canvas.drawLine(
-      Offset(indicatorCenter.dx - 4, indicatorCenter.dy),
-      Offset(indicatorCenter.dx + 4, indicatorCenter.dy),
+      Offset(indicatorCenter.dx - 6, indicatorCenter.dy),
+      Offset(indicatorCenter.dx + 6, indicatorCenter.dy),
       linePaint,
     );
     
-    // 竖线（只在折叠时显示，形成 + 号）
+    // 竖线（只在折叠时显示）
     if (node.isCollapsed) {
       canvas.drawLine(
-        Offset(indicatorCenter.dx, indicatorCenter.dy - 4),
-        Offset(indicatorCenter.dx, indicatorCenter.dy + 4),
+        Offset(indicatorCenter.dx, indicatorCenter.dy - 6),
+        Offset(indicatorCenter.dx, indicatorCenter.dy + 6),
         linePaint,
       );
     }
   }
 
-  // 绘制图片节点 - XMind 风格
+  // 科技风图片节点
   void _drawImageNode(Canvas canvas, MindMapNode node) {
-    final image = node.cachedImage; // 使用缓存的图片
+    final image = node.cachedImage;
     if (image == null) {
-      // 如果图片还没有加载，尝试从缓存加载或异步加载
       _loadImageForNode(node);
       _drawTextNode(canvas, node);
       return;
     }
 
-    // 绘制节点背景 - 更像卡片的样式
+    // 绘制节点背景 - 科技风卡片
     final rect = RRect.fromRectAndRadius(
       Rect.fromCenter(
         center: node.position,
         width: node.size.width,
         height: node.size.height,
       ),
-      const Radius.circular(16),
+      const Radius.circular(20),
     );
 
-    // 阴影
-    final shadowPaint = Paint()
-      ..color = Colors.black.withOpacity(0.15)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
-    canvas.drawRRect(rect.shift(const Offset(0, 4)), shadowPaint);
+    // 外发光
+    final glowPaint = Paint()
+      ..color = node.color.withOpacity(0.4 * node.glowIntensity)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 15);
+    canvas.drawRRect(rect.inflate(10), glowPaint);
 
-    // 背景
+    // 渐变背景
     final backgroundPaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
+      ..shader = LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          const Color(0xFF1A1A2E).withOpacity(0.9),
+          const Color(0xFF16213E).withOpacity(0.9),
+        ],
+      ).createShader(rect.outerRect);
     canvas.drawRRect(rect, backgroundPaint);
 
-    // 高亮效果
+    // 高亮边框
     if (node.isHighlighted) {
       final highlightPaint = Paint()
-        ..color = Color.lerp(
-          Colors.amber.withOpacity(0.3),
-          Colors.amber.withOpacity(0.6),
-          highlightProgress,
-        )!
+        ..color = const Color(0xFF00F5FF).withOpacity(0.8 * highlightProgress)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 3.0;
+        ..strokeWidth = 3.0
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
       canvas.drawRRect(rect.inflate(2), highlightPaint);
     }
 
-    // 计算图片的显示尺寸 - 占用除文字区域外的所有空间
-    const double textAreaHeight = 40.0; // 为文本预留的高度
-    const double padding = 10.0; // 图片四周的内边距
+    // 计算图片的显示尺寸
+    const double textAreaHeight = 50.0;
+    const double padding = 15.0;
     
     final maxImageWidth = node.size.width - (padding * 2);
     final maxImageHeight = node.size.height - textAreaHeight - (padding * 2);
@@ -951,18 +1244,17 @@ class _MindMapPainter extends CustomPainter {
       imageWidth = imageHeight * imageAspectRatio;
     }
 
-    // 绘制图片 - 位置在节点上半部分居中
+    // 绘制图片
     final imageRect = Rect.fromCenter(
       center: Offset(
         node.position.dx, 
-        node.position.dy - (textAreaHeight / 2) // 向上偏移，为文字留出空间
+        node.position.dy - (textAreaHeight / 2)
       ),
       width: imageWidth,
       height: imageHeight,
     );
     
-    // 图片圆角裁剪
-    final imageRRect = RRect.fromRectAndRadius(imageRect, const Radius.circular(8));
+    final imageRRect = RRect.fromRectAndRadius(imageRect, const Radius.circular(12));
     canvas.clipRRect(imageRRect);
     canvas.drawImageRect(
       image, 
@@ -974,68 +1266,77 @@ class _MindMapPainter extends CustomPainter {
     canvas.save();
     canvas.scale(scale);
 
-    // 绘制文本标签（统一大小和样式）
+    // 绘制文本标签（科技风样式）
     if (node.text.isNotEmpty) {
       final textPainter = TextPainter(
         text: TextSpan(
           text: node.text,
           style: TextStyle(
-            color: Colors.grey[800],
-            fontSize: 14, // 统一文字大小
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.2,
+            color: const Color(0xFF00F5FF),
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.0,
+            shadows: [
+              Shadow(
+                offset: const Offset(0, 0),
+                blurRadius: 8.0,
+                color: const Color(0xFF00F5FF).withOpacity(0.8),
+              ),
+            ],
           ),
         ),
         textDirection: TextDirection.ltr,
         textAlign: TextAlign.center,
       )..layout(maxWidth: node.size.width - 20);
 
-      // 文本位置：固定在节点底部
       final textPos = Offset(
         node.position.dx - textPainter.width / 2,
-        node.position.dy + (node.size.height / 2) - 25, // 固定距底部25px
+        node.position.dy + (node.size.height / 2) - 35,
       );
       textPainter.paint(canvas, textPos);
     }
 
-    // 边框
-    final borderPaint = Paint()
-      ..color = node.color.withOpacity(0.3)
-      ..strokeWidth = 1.0
-      ..style = PaintingStyle.stroke;
-    canvas.drawRRect(rect, borderPaint);
+    // 霓虹边框
+    final neonBorderPaint = Paint()
+      ..color = const Color(0xFF00FFFF).withOpacity(0.8)
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.stroke
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+    canvas.drawRRect(rect, neonBorderPaint);
   }
 
-  // 绘制文本节点 - 更现代的样式
+  // 科技风文本节点
   void _drawTextNode(Canvas canvas, MindMapNode node) {
     final isRootNode = node.parent == null || (node.parent != null && node.parent!.size == const Size(0, 0));
     
-    // 计算圆角半径
-    final borderRadius = isRootNode ? 20.0 : 12.0;
+    final borderRadius = isRootNode ? 25.0 : 15.0;
+    final pulseScale = 1.0 + (node.pulseAnimation * 0.05); // 脉冲缩放
 
     final rect = RRect.fromRectAndRadius(
       Rect.fromCenter(
           center: node.position,
-          width: node.size.width,
-        height: node.size.height,
+        width: node.size.width * pulseScale,
+        height: node.size.height * pulseScale,
       ),
       Radius.circular(borderRadius),
     );
 
-    // 阴影效果
-    final shadowPaint = Paint()
-      ..color = Colors.black.withOpacity(0.1)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
-    canvas.drawRRect(rect.shift(const Offset(0, 2)), shadowPaint);
+    // 外发光效果
+    final glowPaint = Paint()
+      ..color = node.color.withOpacity(0.6 * node.glowIntensity)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20);
+    canvas.drawRRect(rect.inflate(15), glowPaint);
 
-    // 渐变背景
+    // 科技风渐变背景
     final gradient = LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
       colors: [
-        node.color.withOpacity(0.9),
-        node.color.withOpacity(0.7),
+        const Color(0xFF0A0A0F).withOpacity(0.95),
+        node.color.withOpacity(0.3),
+        const Color(0xFF1A1A2E).withOpacity(0.95),
       ],
+      stops: const [0.0, 0.5, 1.0],
     );
     
     final fillPaint = Paint()
@@ -1045,56 +1346,68 @@ class _MindMapPainter extends CustomPainter {
 
     // 高亮效果
     if (node.isHighlighted) {
+      // 主高亮
       final highlightPaint = Paint()
-        ..color = Color.lerp(
-          Colors.amber.withOpacity(0.4),
-          Colors.amber.withOpacity(0.8),
-          highlightProgress,
-        )!
+        ..color = const Color(0xFF00F5FF).withOpacity(0.8 * highlightProgress)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
       canvas.drawRRect(rect.inflate(8), highlightPaint);
 
       // 高亮边框
       final highlightBorderPaint = Paint()
-        ..color = Colors.amber.withOpacity(0.9)
-        ..strokeWidth = 2.5
-        ..style = PaintingStyle.stroke;
+        ..color = const Color(0xFF00F5FF).withOpacity(0.9)
+        ..strokeWidth = 3.0
+        ..style = PaintingStyle.stroke
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
       canvas.drawRRect(rect, highlightBorderPaint);
     }
 
-    // 绘制文本
+    // 绘制文本（霓虹灯效果）
     final textPainter = TextPainter(
       text: TextSpan(
         text: node.text,
         style: TextStyle(
-          color: Colors.white,
-          fontSize: isRootNode ? 16 : 13,
-          fontWeight: isRootNode ? FontWeight.bold : FontWeight.w600,
+          color: isRootNode ? const Color(0xFF00F5FF) : Colors.white,
+          fontSize: isRootNode ? 20 : 16,
+          fontWeight: isRootNode ? FontWeight.w800 : FontWeight.w700,
+          letterSpacing: isRootNode ? 1.5 : 1.0,
           shadows: [
             Shadow(
-              offset: const Offset(0.5, 0.5),
-              blurRadius: 1.0,
-              color: Colors.black.withOpacity(0.3),
+              offset: const Offset(0, 0),
+              blurRadius: isRootNode ? 12.0 : 8.0,
+              color: (isRootNode ? const Color(0xFF00F5FF) : node.color).withOpacity(0.8),
+            ),
+            Shadow(
+              offset: const Offset(0, 0),
+              blurRadius: isRootNode ? 24.0 : 16.0,
+              color: (isRootNode ? const Color(0xFF00F5FF) : node.color).withOpacity(0.4),
             ),
           ],
         ),
       ),
       textDirection: TextDirection.ltr,
       textAlign: TextAlign.center,
-    )..layout(maxWidth: node.size.width - 20);
+    )..layout(maxWidth: node.size.width - 30);
 
     final textPos = node.position - Offset(textPainter.width / 2, textPainter.height / 2);
     textPainter.paint(canvas, textPos);
 
-    // 细边框装饰
-    final borderPaint = Paint()
-      ..color = Colors.white.withOpacity(0.2)
+    // 霓虹边框
+    final neonBorderPaint = Paint()
+      ..color = const Color(0xFF00FFFF).withOpacity(0.8)
+      ..strokeWidth = isRootNode ? 3.0 : 2.0
+      ..style = PaintingStyle.stroke
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
+    canvas.drawRRect(rect, neonBorderPaint);
+    
+    // 内部装饰线
+    final decorPaint = Paint()
+      ..color = Colors.white.withOpacity(0.3)
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
-    canvas.drawRRect(rect, borderPaint);
+    canvas.drawRRect(rect.deflate(3), decorPaint);
   }
 
-  // 绘制 LaTeX 节点
+  // 科技风 LaTeX 节点
   void _drawLatexNode(Canvas canvas, MindMapNode node) {
     final image = latexCache[node.latexContent];
     if (image == null) {
@@ -1102,45 +1415,47 @@ class _MindMapPainter extends CustomPainter {
       return;
     }
 
-    // 计算白色背景框
     final rect = RRect.fromRectAndRadius(
       Rect.fromCenter(
         center: node.position,
         width: node.size.width,
         height: node.size.height,
       ),
-      const Radius.circular(12),
+      const Radius.circular(15),
     );
 
-    // 阴影
-    final shadowPaint = Paint()
-      ..color = Colors.black.withOpacity(0.1)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-    canvas.drawRRect(rect.shift(const Offset(0, 2)), shadowPaint);
+    // 外发光
+    final glowPaint = Paint()
+      ..color = const Color(0xFF00F5FF).withOpacity(0.4 * node.glowIntensity)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 15);
+    canvas.drawRRect(rect.inflate(10), glowPaint);
 
-    // 白色背景
+    // 科技风背景
     final backgroundPaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
+      ..shader = LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          const Color(0xFF0A0A0F).withOpacity(0.95),
+          const Color(0xFF1A1A2E).withOpacity(0.95),
+        ],
+      ).createShader(rect.outerRect);
     canvas.drawRRect(rect, backgroundPaint);
 
     // 高亮效果
     if (node.isHighlighted) {
       final highlightPaint = Paint()
-        ..color = Color.lerp(
-          Colors.amber.withOpacity(0.3),
-          Colors.amber.withOpacity(0.6),
-          highlightProgress,
-        )!
+        ..color = const Color(0xFF00F5FF).withOpacity(0.6 * highlightProgress)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.0;
+        ..strokeWidth = 3.0
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
       canvas.drawRRect(rect, highlightPaint);
     }
 
     // 绘制 LaTeX 图像
     final aspectRatio = image.width / image.height;
-    final maxWidth = node.size.width - 20;
-    final maxHeight = node.size.height - 20;
+    final maxWidth = node.size.width - 30;
+    final maxHeight = node.size.height - 30;
 
     double width = maxWidth;
     double height = width / aspectRatio;
@@ -1156,12 +1471,13 @@ class _MindMapPainter extends CustomPainter {
     canvas.drawImage(image, Offset.zero, Paint());
     canvas.restore();
 
-    // 边框
-    final borderPaint = Paint()
-      ..color = node.color.withOpacity(0.4)
-      ..strokeWidth = 1.0
-      ..style = PaintingStyle.stroke;
-    canvas.drawRRect(rect, borderPaint);
+    // 霓虹边框
+    final neonBorderPaint = Paint()
+      ..color = const Color(0xFF00FFFF).withOpacity(0.8)
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.stroke
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+    canvas.drawRRect(rect, neonBorderPaint);
   }
 
   void _drawConnection(Canvas canvas, MindMapNode parent, MindMapNode child) {
@@ -1185,7 +1501,7 @@ class _MindMapPainter extends CustomPainter {
       child.position.dy,
     );
 
-    // 创建更优雅的贝塞尔曲线
+    // 创建科技风贝塞尔曲线
     final controlPoint1 = Offset(
       start.dx + (end.dx - start.dx) * 0.5,
       start.dy,
@@ -1203,62 +1519,76 @@ class _MindMapPainter extends CustomPainter {
         end.dx, end.dy,
       );
 
-    // 绘制连接线阴影
-    final shadowPath = Path()
-      ..moveTo(start.dx + 1, start.dy + 1)
+    // 外发光连接线
+    final glowPath = Path()
+      ..moveTo(start.dx, start.dy)
       ..cubicTo(
-        controlPoint1.dx + 1, controlPoint1.dy + 1,
-        controlPoint2.dx + 1, controlPoint2.dy + 1,
-        end.dx + 1, end.dy + 1,
+        controlPoint1.dx, controlPoint1.dy,
+        controlPoint2.dx, controlPoint2.dy,
+        end.dx, end.dy,
       );
 
     canvas.drawPath(
-      shadowPath,
+      glowPath,
       Paint()
-        ..color = Colors.black.withOpacity(0.1)
-        ..strokeWidth = 3.0
+        ..color = const Color(0xFF00F5FF).withOpacity(0.6)
+        ..strokeWidth = 8.0
         ..strokeCap = StrokeCap.round
-        ..style = PaintingStyle.stroke,
+        ..style = PaintingStyle.stroke
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
     );
 
-    // 绘制主连接线
+    // 主连接线（霓虹效果）
     canvas.drawPath(
       path,
       Paint()
         ..shader = LinearGradient(
           colors: [
-            parent.color.withOpacity(0.9),
-            child.color.withOpacity(0.9),
+            const Color(0xFF00F5FF).withOpacity(0.9),
+            const Color(0xFF1E90FF).withOpacity(0.9),
+            const Color(0xFF00FFFF).withOpacity(0.9),
           ],
         ).createShader(Rect.fromPoints(start, end))
-        ..strokeWidth = 2.5
+        ..strokeWidth = 3.0
         ..strokeCap = StrokeCap.round
         ..style = PaintingStyle.stroke,
     );
 
-    // 绘制连接点
-    canvas.drawCircle(
-      end, 
-      4.0, 
-      Paint()
-        ..color = child.color.withOpacity(0.9)
-        ..style = PaintingStyle.fill,
-    );
+    // 连接点（科技风圆点）
+    final connectionPaint = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          const Color(0xFF00F5FF),
+          const Color(0xFF1E90FF).withOpacity(0.8),
+        ],
+      ).createShader(Rect.fromCircle(center: end, radius: 6))
+      ..style = PaintingStyle.fill;
     
-    // 连接点的高光效果
-    canvas.drawCircle(
-      end, 
-      4.0, 
-      Paint()
-        ..color = Colors.white.withOpacity(0.3)
-        ..style = PaintingStyle.fill,
-    );
+    canvas.drawCircle(end, 6.0, connectionPaint);
+    
+    // 连接点光晕
+    final connectionGlowPaint = Paint()
+      ..color = const Color(0xFF00F5FF).withOpacity(0.6)
+      ..style = PaintingStyle.fill
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+    
+    canvas.drawCircle(end, 8.0, connectionGlowPaint);
+    
+    // 连接点边框
+    final connectionBorderPaint = Paint()
+      ..color = const Color(0xFF00FFFF)
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.stroke;
+    
+    canvas.drawCircle(end, 6.0, connectionBorderPaint);
   }
 
   @override
   bool shouldRepaint(covariant _MindMapPainter old) =>
       old.rootNode != rootNode ||
       old.highlightProgress != highlightProgress ||
+      old.pulseProgress != pulseProgress ||
+      old.techProgress != techProgress ||
       old.scale != scale;
 }
 
@@ -1332,6 +1662,12 @@ class MindMapHelper {
       nodeSize = const Size(200, 150); // 图片节点的默认大小
     }
     
+    // 计算节点层级深度
+    final nodeDepth = _calculateNodeDepth(parent) + 1;
+    
+    // 根据层级设置默认折叠状态：二级目录（depth=2）默认折叠，其他展开
+    final defaultCollapsed = (nodeDepth == 2);
+    
     var node = MindMapNode<T>(
         id: id ?? DateTime.now().microsecondsSinceEpoch.toString(),
         text: text,
@@ -1342,15 +1678,25 @@ class MindMapHelper {
         data: data,
         size: nodeSize); // 使用计算出的大小
     
-    // 如果父节点是根节点，设置子节点的side
+    // 设置默认折叠状态
+    node.isCollapsed = defaultCollapsed;
+    
+    parent.children.add(node);
+
     final isRootNode = parent.parent == null || (parent.parent != null && parent.parent!.size == const Size(0, 0));
     if (isRootNode) {
-      node.side = parent.children.length % 2 == 1 ? NodeSide.left : NodeSide.right;
+      // 对于根节点的子节点，每次添加后都重新平衡所有兄弟节点。
+      // 这样可以确保始终根据最新的总数进行连续、平衡的分配。
+      final totalNodes = parent.children.length;
+      final expectedLeftCount = (totalNodes + 1) ~/ 2; // 左侧应有的节点数
+      for (int i = 0; i < totalNodes; i++) {
+        parent.children[i].side = i < expectedLeftCount ? NodeSide.left : NodeSide.right;
+      }
     } else {
-      node.side = parent.side; // 继承父节点的side
+      // 非根节点的子节点继承父节点的side
+      node.side = parent.side;
     }
 
-    parent.children.add(node);
     return node;
   }
 
@@ -1361,7 +1707,14 @@ class MindMapHelper {
     // 对于根节点，我们只决定左右方向，具体位置由organizeTree调整
     // 这里使用默认间距，具体位置会在organizeTree中用动态间距重新计算
     if (isRootNode) {
-        final isLeftSide = parent.children.length % 2 == 1;
+        // 连续分配策略：前面的节点连续放左边，后面的连续放右边
+        final currentIndex = parent.children.length; // 当前节点是第几个（从0开始）
+        
+        // 动态计算分割点，确保左右尽量平衡
+        final totalNodes = parent.children.length + 1; // 包括即将添加的这个节点
+        final expectedLeftCount = (totalNodes + 1) ~/ 2; // 向上取整
+        
+        final isLeftSide = currentIndex < expectedLeftCount;
         final dx = isLeftSide ? -_defaultHorizontalSpacing : _defaultHorizontalSpacing;
         return Offset(parent.position.dx + dx, parent.position.dy);
     }
@@ -1489,5 +1842,29 @@ class MindMapHelper {
     
     // 返回基础间距和最小间距中的较大值
     return minSpacing > baseSpacing ? minSpacing : baseSpacing;
+  }
+
+  // 计算节点的层级深度
+  static int _calculateNodeDepth<T>(MindMapNode<T> node) {
+    int depth = 0;
+    MindMapNode? current = node;
+    
+    while (current != null) {
+      // 如果是隐藏的根节点（尺寸为0），不计入深度
+      if (current.size.width == 0 && current.size.height == 0) {
+        current = current.parent;
+        continue;
+      }
+      
+      // 如果到达真正的根节点（没有父节点），停止计算
+      if (current.parent == null) {
+        break;
+      }
+      
+      depth++;
+      current = current.parent;
+    }
+    
+    return depth;
   }
 }

@@ -145,7 +145,7 @@ class _MainHomePageState extends State<MainHomePage>
                 _buildSimpleButton(
                   context: context,
                   icon: Icons.account_tree,
-                  label: '思维导图',
+                  label: '知识图谱',
                   onPressed: () {
                     Navigator.push(
                       context,

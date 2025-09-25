@@ -43,6 +43,8 @@ Card buildKnowledgeCard(BuildContext context, final String index,
           children: [
             _buildHeader(context, index, title),
             const SizedBox(height: 16),
+            if (videos != null && videos.isNotEmpty)
+              _VideoSection(videos: videos, questionBank: questionBank),
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
@@ -50,8 +52,8 @@ Card buildKnowledgeCard(BuildContext context, final String index,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _buildMarkdownContent(knowledge),
-                    if (images != null) _buildImageSection(images, questionBank),
-                    if (videos != null && videos.isNotEmpty) _buildVideoSection(videos, questionBank),
+                    if (images != null)
+                      _buildImageSection(images, questionBank),
                   ],
                 ),
               ),
@@ -399,33 +401,87 @@ Future<String?> _findAssetInQuestionBank(String assetPath, QuestionBank? questio
   return null;
 }
 
+class _VideoSection extends StatefulWidget {
+  final List<String> videos;
+  final QuestionBank? questionBank;
 
-Widget _buildVideoSection(List<String> videos, QuestionBank? questionBank) {
-  return Padding(
-    padding: const EdgeInsets.only(top: 24),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(Icons.video_library, color: Colors.blue[600], size: 20),
-            const SizedBox(width: 8),
-          ],
-        ),
-        const SizedBox(height: 12),
-        ...videos.asMap().entries.map((entry) {
-          final index = entry.key;
-          final video = entry.value;
-          return _VideoListItem(
-            video: video,
-            index: index,
-            videos: videos,
-            questionBank: questionBank,
-          );
-        }),
-      ],
-    ),
-  );
+  const _VideoSection({required this.videos, this.questionBank});
+
+  @override
+  _VideoSectionState createState() => _VideoSectionState();
+}
+
+class _VideoSectionState extends State<_VideoSection> {
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController.addListener(() {
+      final newPage = _pageController.page?.round();
+      if (newPage != null && newPage != _currentPage) {
+        setState(() {
+          _currentPage = newPage;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    // Make video section height responsive, but not too large on big screens.
+    final videoSectionHeight = (screenHeight * 0.45).clamp(300.0, 500.0);
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.video_library, color: Colors.blue[600], size: 20),
+              const SizedBox(width: 8),
+              Text('相关视频 (${_currentPage + 1}/${widget.videos.length})',
+                  style: TextStyle(
+                      color: Colors.grey[800],
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: videoSectionHeight,
+            child: PageView.builder(
+              controller: _pageController,
+              scrollDirection: Axis.vertical,
+              itemCount: widget.videos.length,
+              itemBuilder: (context, index) {
+                final video = widget.videos[index];
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  child: _VideoListItem(
+                    video: video,
+                    index: index,
+                    videos: widget.videos,
+                    questionBank: widget.questionBank,
+                    isActive: index == _currentPage,
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _VideoListItem extends StatefulWidget {
@@ -433,12 +489,14 @@ class _VideoListItem extends StatefulWidget {
   final int index;
   final List<String> videos;
   final QuestionBank? questionBank;
+  final bool isActive;
 
   const _VideoListItem({
     required this.video,
     required this.index,
     required this.videos,
     this.questionBank,
+    required this.isActive,
   });
 
   @override
@@ -463,12 +521,24 @@ class _VideoListItemState extends State<_VideoListItem> with TickerProviderState
     super.initState();
     _resolveVideoPathAndGenerateThumbnail().then((_) {
       if (mounted && _resolvedVideoPath != null) {
-        _initPreview(); // 只初始化，不自动播放
+        _initPreview().then((value) {
+          if (mounted && widget.isActive) {
+            _startPreview();
+          }
+        });
       }
     });
   }
-  
 
+  @override
+  void didUpdateWidget(covariant _VideoListItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive && !oldWidget.isActive) {
+      _startPreview();
+    } else if (!widget.isActive && oldWidget.isActive) {
+      _stopPreview();
+    }
+  }
 
   Future<void> _resolveVideoPathAndGenerateThumbnail() async {
     try {
@@ -656,20 +726,10 @@ class _VideoListItemState extends State<_VideoListItem> with TickerProviderState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 视频区域 - 占据卡片全宽
-              _buildFullWidthVideo(),
-              const SizedBox(height: 12),
-              const SizedBox(height: 4),
-              // 视频简介
-              Text(
-                _getVideoDisplayName(),
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey[600],
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+              Expanded(
+                child: _buildFullWidthVideo(),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               // 播放状态和时长信息
               Row(
                 children: [
@@ -720,7 +780,6 @@ class _VideoListItemState extends State<_VideoListItem> with TickerProviderState
       onTap: _openVideoPlayer,
       child: Container(
         width: double.infinity, // 占据卡片全宽
-        height: 200, // 设置固定高度
         decoration: BoxDecoration(
           color: Colors.black12,
           borderRadius: BorderRadius.circular(8),
@@ -1041,8 +1100,8 @@ void showKnowledgeCard(BuildContext context, Section section, {QuestionBank? que
           child: ClipRRect(
             borderRadius: BorderRadius.circular(16),
             child: SizedBox(
-              width: screenWidth - 80,
-              height: screenHeight - 150,
+              width: screenWidth - 30,
+              height: screenHeight - 90,
               child: buildKnowledgeCard(
                 popupContext,
                 section.index,

@@ -6,7 +6,6 @@ import 'package:flutter_application_1/tool/question/wrong_question_book.dart';
 import 'package:flutter_application_1/widget/latex.dart';
 import 'package:flutter_application_1/widget/question_card/question_card_widget.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 class WrongQuestionScreen extends StatefulWidget {
   const WrongQuestionScreen({super.key});
@@ -30,8 +29,6 @@ class WrongQuestionWidget extends StatefulWidget {
 }
 
 class _WrongQuestionWidthInnerState extends State<WrongQuestionWidget> {
-  // 视图模式：0-分类视图，1-网格视图
-  int _viewMode = 0;
   // 分类方式：0-按知识点分类，1-按掌握程度分类
   int _categoryMode = 0;
   
@@ -357,123 +354,38 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidget> {
 
     list = reFreshData();
 
-    // Group questions based on category mode
-    final Map<String, List<Map<String, dynamic>>> groupedQuestions = {};
-    for (var question in list) {
-      String category;
-      if (_categoryMode == 0) {
-        // 按知识点分类
-        category = question['note'] as String;
-      } else {
-        // 按掌握程度分类
-        final mastery = _calculateQuestionMastery(question['id']);
-        if (mastery < 0.4) {
-          category = '需加强 (< 40%)';
-        } else if (mastery < 0.7) {
-          category = '基本掌握 (40% - 70%)';
-        } else {
-          category = '熟练掌握 (> 70%)';
-        }
-      }
-      
-      if (groupedQuestions[category] == null) {
-        groupedQuestions[category] = [];
-      }
-      groupedQuestions[category]!.add(question);
-    }
-
-    final categories = groupedQuestions.keys.toList();
-
     return Column(
       children: [
         // 顶部控制栏
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            children: [
-              Expanded(
-                child: TDSearchBar(
-          placeHolder: "输入关键词",
-          style: TDSearchStyle.square,
-          onTextChanged: (String text) {
-            // Search functionality might need reimplementation for categorized view
-                  },
-                ),
-              ),
-              const SizedBox(width: 8),
-              // 视图切换按钮
-              Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Row(
-                  children: [
-                    _buildViewModeButton(
-                      icon: Icons.list,
-                      isSelected: _viewMode == 0,
-                      onTap: () => setState(() => _viewMode = 0),
-                    ),
-                    _buildViewModeButton(
-                      icon: Icons.grid_view,
-                      isSelected: _viewMode == 1,
-                      onTap: () => setState(() => _viewMode = 1),
-                    ),
-                  ],
-        ),
-              ),
-            ],
+          child: TDSearchBar(
+            placeHolder: "输入关键词",
+            style: TDSearchStyle.square,
+            onTextChanged: (String text) {
+              // Search functionality might need reimplementation for categorized view
+            },
           ),
         ),
         
-        // 掌握程度说明卡片（仅在网格视图显示）
-        if (_viewMode == 1) ...[
-          const SizedBox(height: 16),
-          _buildMasteryLegend(),
-        ],
+        // 掌握程度说明卡片
+        _buildMasteryLegend(),
         
-        const SizedBox(height: 16),
-        // 分类方式选择（在两种视图都显示）
+        // 分类方式选择
         _buildCategoryModeSelector(),
         
-        const SizedBox(height: 16),
         // 内容区域
         Expanded(
-          child: _viewMode == 0 
-              ? _buildCategorizedView(categories, groupedQuestions, list, screenWidth, screenHeight)
-              : _buildGridView(list, screenWidth, screenHeight),
+          child: _buildGridView(list, screenWidth, screenHeight),
         ),
       ],
-    );
-  }
-  
-  // 构建视图模式按钮
-  Widget _buildViewModeButton({
-    required IconData icon,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: isSelected ? Theme.of(context).primaryColor : null,
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: Icon(
-          icon,
-          size: 18,
-          color: isSelected ? Colors.white : Colors.grey.shade600,
-        ),
-      ),
     );
   }
   
   // 构建分类方式选择器
   Widget _buildCategoryModeSelector() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Row(
         children: [
           const Text(
@@ -546,8 +458,8 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidget> {
   // 构建掌握程度说明
   Widget _buildMasteryLegend() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
         borderRadius: BorderRadius.circular(8),
@@ -564,7 +476,7 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidget> {
               color: Colors.grey.shade700,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -628,153 +540,6 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidget> {
           ],
         ),
       ],
-    );
-  }
-  
-  // 构建分类视图（瀑布流形式）
-  Widget _buildCategorizedView(
-    List<String> categories,
-    Map<String, List<Map<String, dynamic>>> groupedQuestions,
-    List<Map<String, dynamic>> list,
-    double screenWidth,
-    double screenHeight,
-  ) {
-    // 收集所有题目，保持知识点分组的顺序
-    List<Map<String, dynamic>> allQuestions = [];
-    for (String category in categories) {
-      final questions = groupedQuestions[category]!;
-      if (questions.isNotEmpty) {
-        allQuestions.addAll(questions);
-      }
-    }
-    
-    return MasonryGridView.builder(
-      padding: const EdgeInsets.all(20),
-      gridDelegate: const SliverSimpleGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2, // 两列
-      ),
-      mainAxisSpacing: 20,
-      crossAxisSpacing: 20,
-      itemCount: allQuestions.length,
-            itemBuilder: (context, index) {
-        final question = allQuestions[index];
-        final questionData = question["data"] as SingleQuestionData;
-        
-        return Container(
-          child: Stack(
-            children: [
-              // 复用学习页面的题目卡片组件
-              buildQuestionCard(
-                context,
-                questionData.getKonwledgePoint(),
-                questionData.question['q']!,
-                questionData.question['w'],
-                WrongQuestionBook.instance.getQuestion(questionData.question['id']!).note,
-                questionData,
-                _findQuestionBankByFromId(questionData.fromId), // 根据fromId查找对应题库
-                false, // 隐藏底部按钮
-                false, // 不使用固定高度
-              ),
-              
-              // 右上角操作按钮
-              Positioned(
-                top: 4,
-                right: 4,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // 笔记按钮
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.9),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: IconButton(
-                        padding: EdgeInsets.zero,
-                        icon: const Icon(Icons.edit_note, 
-                          color: Colors.white, size: 16),
-                        onPressed: () {
-                          final originalIndex = list.indexWhere((item) => item['id'] == question['id']);
-                          writeNote(
-                            filteredList: list,
-                            index: originalIndex,
-                            screenWidth: screenWidth,
-                            screenHeight: screenHeight,
-                            context: context
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 2),
-                    // 删除按钮
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.9),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: IconButton(
-                        padding: EdgeInsets.zero,
-                        icon: const Icon(Icons.delete, 
-                          color: Colors.white, size: 16),
-                        onPressed: () {
-                          _showDeleteConfirmDialog(question['id']);
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              
-              // 点击区域（避开右上角按钮区域）
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 75, // 留出按钮空间
-                bottom: 0,
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () {
-                      Navigator.of(context).push(
-                        TDSlidePopupRoute(
-                          slideTransitionFrom: SlideTransitionFrom.center,
-                          builder: (_) {
-                            return TDPopupCenterPanel(
-                              radius: 15,
-                              backgroundColor: Colors.transparent,
-                              closeClick: () {
-                                Navigator.maybePop(context);
-                              },
-                              child: SizedBox(
-                                width: screenWidth - 80,
-                                height: screenHeight - 150,
-                                child: buildQuestionCard(
-                                  context,
-                                  questionData.getKonwledgePoint(),
-                                  questionData.question['q']!,
-                                  questionData.question['w'],
-                                  WrongQuestionBook.instance.getQuestion(questionData.question['id']!).note,
-                                  questionData,
-                                  _findQuestionBankByFromId(questionData.fromId),
-                                  true, // 弹窗中保留底部按钮
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
   
@@ -844,7 +609,7 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidget> {
     }
     
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       children: groups.entries.map((entry) {
         final categoryName = entry.key;
         final questions = entry.value;

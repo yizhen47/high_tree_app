@@ -69,7 +69,7 @@ example.zip (ZIP压缩包)
 - `index`: 章节索引标识
 - `title`: 章节标题
 - `note`: 章节备注（可选）
-- `image`: 章节概览图片（可选，用于思维导图）
+- `image`: 章节概览图片（可选，用于知识图谱）
 - `videos`: 章节视频列表（可选）
 - `children`: 子章节列表（可选）
 - `questions`: 题目列表（可选）
@@ -113,13 +113,13 @@ example.zip (ZIP压缩包)
 ### 图片引用
 
 #### 章节概览图片
-章节的图片字段用于存储概览图片路径，主要用于思维导图展示：
+章节的图片字段用于存储概览图片路径，主要用于知识图谱展示：
 
 ```xml
 <image>algebra_mindmap.png</image>
 ```
 
-该图片通常是章节知识点的思维导图或概览图，帮助用户快速理解章节结构。
+该图片通常是章节知识点的知识图谱或概览图，帮助用户快速理解章节结构。
 
 ### 视频引用
 
@@ -154,7 +154,7 @@ class Section {
   String index;                           // 章节索引
   String title;                           // 章节标题
   String? note;                           // 章节备注
-  String? image;                          // 章节概览图片（思维导图用）
+  String? image;                          // 章节概览图片（知识图谱用）
   List<Section>? children;                // 子章节
   List<Map<String, dynamic>>? questions;  // 题目列表
   List<String>? videos;                   // 视频列表

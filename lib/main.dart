@@ -177,21 +177,21 @@ class _MainEnterScreenState extends State<_MainEnterScreen>
 
       Color? dominantColor;
       
-      // 优先选择有活力的颜色
-      if (paletteGenerator.vibrantColor != null) {
-        dominantColor = paletteGenerator.vibrantColor!.color;
+      // 优先选择主导色
+      if (paletteGenerator.dominantColor != null) {
+        dominantColor = paletteGenerator.dominantColor!.color;
       } 
-      // 其次选择明亮的有活力颜色
+      // 其次选择有活力的颜色
+      else if (paletteGenerator.vibrantColor != null) {
+        dominantColor = paletteGenerator.vibrantColor!.color;
+      }
+      // 然后选择明亮的有活力颜色
       else if (paletteGenerator.lightVibrantColor != null) {
         dominantColor = paletteGenerator.lightVibrantColor!.color;
       }
-      // 然后选择深色有活力颜色
+      // 最后选择深色有活力颜色
       else if (paletteGenerator.darkVibrantColor != null) {
         dominantColor = paletteGenerator.darkVibrantColor!.color;
-      }
-      // 最后选择主导色
-      else if (paletteGenerator.dominantColor != null) {
-        dominantColor = paletteGenerator.dominantColor!.color;
       }
       
       if (dominantColor != null && mounted) {
@@ -234,22 +234,13 @@ class _MainEnterScreenState extends State<_MainEnterScreen>
   @override
   Widget build(BuildContext context) {
     // 获取背景颜色
-    Color backgroundColor;
-    if (StudyData.instance.useExtractedSplashColor) {
-      // 使用提取的颜色或自定义颜色
-      backgroundColor = StudyData.instance.customSplashColor ?? 
-                      _extractedColor ?? 
-                      StudyData.instance.themeColor;
-    } else {
-      // 使用主题色
-      backgroundColor = StudyData.instance.themeColor;
-    }
+    const backgroundColor = Colors.white;
 
     return Scaffold(
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           // 全屏纯色背景
           color: backgroundColor,
         ),
@@ -264,8 +255,8 @@ class _MainEnterScreenState extends State<_MainEnterScreen>
                   children: [
                     // Logo容器 - 简化设计，去掉背景装饰
                     SizedBox(
-                      width: 120,
-                      height: 120,
+                      width: 100,
+                      height: 100,
                       child: Image.asset(
                         'assets/logo.png',
                         filterQuality: FilterQuality.high,
@@ -276,10 +267,10 @@ class _MainEnterScreenState extends State<_MainEnterScreen>
 
                     // 加载状态提示
                     _initCompleted
-                        ? Text(
+                        ? const Text(
                             "加载完成", 
                             style: TextStyle(
-                              color: Colors.white,
+                              color: Colors.black87,
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
                             )
@@ -289,7 +280,7 @@ class _MainEnterScreenState extends State<_MainEnterScreen>
                             height: 24,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.black87),
                             ),
                           ),
 
@@ -304,7 +295,7 @@ class _MainEnterScreenState extends State<_MainEnterScreen>
                         child: Text(
                           "轻触跳过",
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.8),
+                            color: Colors.black.withOpacity(0.5),
                             fontSize: 14,
                           )
                         ),

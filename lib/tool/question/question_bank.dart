@@ -62,7 +62,7 @@ class Section {
   String index;
   String title;
   String? note;
-  String? image;  // 添加图片解释支持，用于思维导图
+  String? image;  // 添加图片解释支持，用于知识图谱
   List<Section>? children;
   List<Map<String, dynamic>>? questions;
   List<String>? videos;  // 添加视频列表支持
@@ -104,6 +104,7 @@ class Section {
                     if (q['options'] != null) 'options': q['options'],
                     if (q['answer'] != null) 'answer': q['answer'],
                     if (q['video'] != null) 'video': q['video']?.toString().trim(),
+                    if (q['difficulty'] != null) 'difficulty': q['difficulty'],
                   })
               .toList()
           : null,
@@ -379,7 +380,7 @@ class Section {
               final questionElements = <XmlNode>[];
 
               // 序列化普通字段
-              ['q', 'w', 'note', 'video'].forEach((key) {
+              ['q', 'w', 'note', 'video', 'difficulty'].forEach((key) {
                 if (q[key] != null) {
                   questionElements.add(XmlElement(XmlName(key), [], [XmlText(q[key].toString())]));
                 }

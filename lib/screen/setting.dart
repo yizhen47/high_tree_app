@@ -111,7 +111,11 @@ class _InnerState extends State<SettingScreen> {
   Widget build(BuildContext context) {
     dialogPickerColor = Theme.of(context).primaryColor;
     return Scaffold(
-      appBar: TDNavBar(title: '设置', onBack: () {}),
+      backgroundColor: Colors.grey[50],
+      appBar: TDNavBar(
+        title: '设置',
+        onBack: () => Navigator.of(context).pop(),
+      ),
       body: SingleChildScrollView(
         scrollDirection: Axis.vertical, // 水平滚动
         child: Column(

@@ -38,6 +38,7 @@ Card buildQuestionCard(
   final ValueNotifier<bool> hasQuestionedNotifier = ValueNotifier<bool>(false);
   
   final options = currentQuestionData?.question['options'] as List<dynamic>?;
+  final difficulty = currentQuestionData?.question['difficulty']?.toString();
   
   return Card(
     color: Theme.of(context).cardColor,
@@ -65,7 +66,15 @@ Card buildQuestionCard(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // 知识点标签
-                        _buildKnowledgePointTag(context, knowledgepoint),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            _buildKnowledgePointTag(context, knowledgepoint),
+                            _buildDifficultyIndicator(context, difficulty),
+                          ],
+                        ),
                         const SizedBox(height: 12),
                         
                         // 题目内容
@@ -137,7 +146,15 @@ Card buildQuestionCard(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // 知识点标签
-                  _buildKnowledgePointTag(context, knowledgepoint),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      _buildKnowledgePointTag(context, knowledgepoint),
+                      _buildDifficultyIndicator(context, difficulty),
+                    ],
+                  ),
                   const SizedBox(height: 12),
                   
                   // 题目内容
@@ -197,6 +214,50 @@ Card buildQuestionCard(
           ],
         );
       },
+    ),
+  );
+}
+
+Widget _buildDifficultyIndicator(BuildContext context, String? difficultyString) {
+  if (difficultyString == null || difficultyString.isEmpty) {
+    return const SizedBox.shrink();
+  }
+
+  Color difficultyColor;
+  String difficultyText;
+
+  switch (difficultyString) {
+    case '简单':
+      difficultyColor = Colors.green;
+      difficultyText = '基础';
+      break;
+    case '中等':
+      difficultyColor = Colors.orange;
+      difficultyText = '提高';
+      break;
+    case '困难':
+      difficultyColor = Colors.red;
+      difficultyText = '探究';
+      break;
+    default:
+      difficultyColor = Colors.grey;
+      difficultyText = difficultyString;
+      break;
+  }
+
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    decoration: BoxDecoration(
+      color: difficultyColor.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(4),
+    ),
+    child: Text(
+      difficultyText,
+      style: TextStyle(
+        fontSize: 12,
+        color: difficultyColor,
+        fontWeight: FontWeight.w500,
+      ),
     ),
   );
 }
@@ -421,7 +482,7 @@ Widget _buildBottomFeatureButtons(BuildContext context, ValueNotifier<String> ac
         ),
       ],
     ),
-    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
     child: Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
@@ -444,7 +505,7 @@ Widget _buildBottomFeatureButtons(BuildContext context, ValueNotifier<String> ac
           questionBank: questionBank,
         ),
         _buildBottomFeatureButton(
-          icon: Icons.book_outlined,
+          icon: Icons.apps,
           label: '同源题',
           feature: 'similar',
           activeFeature: activeFeature,
@@ -518,7 +579,7 @@ Widget _buildBottomFeatureButton({
           },
           borderRadius: BorderRadius.circular(4),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -1618,9 +1679,7 @@ void _showRandomSimilarQuestion(BuildContext context, SingleQuestionData? curren
               confirmDismiss: (direction) async {
                 return true;
               },
-              child: Stack(
-                children: [
-                  buildQuestionCard(
+              child: buildQuestionCard(
                     dialogContext,
                     randomQuestion.getKonwledgePoint(),
                     randomQuestion.question['q']!,
@@ -1628,24 +1687,6 @@ void _showRandomSimilarQuestion(BuildContext context, SingleQuestionData? curren
                     null,
                     randomQuestion,
                     questionBank,
-                  ),
-                  // 添加"查看更多同源题"按钮 - 上移到中间位置
-                  Positioned(
-                    top: MediaQuery.of(dialogContext).size.height * 0.35,
-                    right: 16,
-                    child: FloatingActionButton.extended(
-                      onPressed: () {
-                        Navigator.of(dialogContext).pop();
-                        // 显示同源题列表
-                        _showSimilarQuestionsList(context, currentQuestionData, questionBank);
-                      },
-                      backgroundColor: Theme.of(context).primaryColor,
-                      foregroundColor: Colors.white,
-                      icon: const Icon(Icons.list, size: 18),
-                      label: const Text('查看更多同源题', style: TextStyle(fontSize: 12)),
-                    ),
-                  ),
-                ],
               ),
             ),
           ),
@@ -1658,235 +1699,5 @@ void _showRandomSimilarQuestion(BuildContext context, SingleQuestionData? curren
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('获取同源题失败')),
     );
-  }
-}
-
-// 显示同源题列表（原来的逻辑）
-void _showSimilarQuestionsList(BuildContext context, SingleQuestionData? currentQuestionData, QuestionBank? questionBank) {
-  if (currentQuestionData == null) return;
-  
-  try {
-    final targetQuestionBank = questionBank ?? LearningPlanManager.instance.questionBanks.firstOrNull;
-    
-    if (targetQuestionBank == null) return;
-
-    final section = targetQuestionBank.findSectionByQuestion(currentQuestionData);
-    final questions = section.sectionQuestionOnly(
-      targetQuestionBank.id ?? '',
-      targetQuestionBank.displayName ?? ''
-    );
-    
-    final similarQuestions = questions.where((q) => q.question['id'] != currentQuestionData.question['id']).toList();
-    
-    if (similarQuestions.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('本章节没有其他同源题')),
-      );
-      return;
-    }
-    
-    // 显示同源题列表对话框
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Container(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.8,
-              maxWidth: MediaQuery.of(context).size.width * 0.9,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // 标题栏
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withOpacity(0.1),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(16),
-                      topRight: Radius.circular(16),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.quiz, color: Theme.of(context).primaryColor, size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          '所有同源题 (${similarQuestions.length}题)',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).primaryColor,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.of(dialogContext).pop(),
-                        icon: const Icon(Icons.close, size: 20),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                    ],
-                  ),
-                ),
-                // 题目列表 - 简洁的网格布局
-                Expanded(
-                  child: GridView.builder(
-                    padding: const EdgeInsets.all(16),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 5, // 每行5个
-                      childAspectRatio: 1, // 正方形
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                    ),
-                    itemCount: similarQuestions.length,
-                    itemBuilder: (context, index) {
-                      final question = similarQuestions[index];
-                      final questionId = question.question['id'] ?? '';
-                      
-                      // 判断题目状态
-                      Color backgroundColor;
-                      Color textColor = Colors.white;
-                      
-                      if (WrongQuestionBook.instance.hasWrongQuestion(questionId)) {
-                        // 错题：红色
-                        backgroundColor = Colors.red;
-                      } else if (WrongQuestionBook.instance.hasQuestion(questionId)) {
-                        // 做过且正确：绿色
-                        backgroundColor = Colors.green;
-                      } else {
-                        // 未做过：蓝色
-                        backgroundColor = Colors.blue;
-                      }
-                      
-                      return InkWell(
-                        onTap: () {
-                          Navigator.of(dialogContext).pop();
-                          // 显示选中的题目
-                          showDialog(
-                            context: context,
-                            builder: (questionDialogContext) {
-                              return Dialog(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                backgroundColor: Colors.transparent,
-                                child: SizedBox(
-                                  height: MediaQuery.of(context).size.height * 0.8,
-                                  width: MediaQuery.of(context).size.width * 0.9,
-                                  child: Dismissible(
-                                    key: Key(question.question['id'] ?? 'unknown'),
-                                    direction: DismissDirection.horizontal,
-                                    background: Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.green.shade400,
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      alignment: Alignment.centerLeft,
-                                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                                      child: const Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Icon(Icons.check, color: Colors.white, size: 24),
-                                          SizedBox(height: 8),
-                                          Text('答对了',
-                                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                        ],
-                                      ),
-                                    ),
-                                    secondaryBackground: Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.red.shade400,
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      alignment: Alignment.centerRight,
-                                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                                      child: const Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Icon(Icons.close, color: Colors.white, size: 24),
-                                          SizedBox(height: 8),
-                                          Text('答错了',
-                                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                        ],
-                                      ),
-                                    ),
-                                    onDismissed: (direction) {
-                                      if (direction == DismissDirection.startToEnd) {
-                                        // 左滑：答对了
-                                        showVerticalToast(
-                                          context: context,
-                                          title: '答题结果',
-                                          message: '答对了！',
-                                          color: Colors.green.shade400,
-                                          icon: Icons.check,
-                                        );
-                                      } else {
-                                        // 右滑：答错了，加入错题本
-                                        showVerticalToast(
-                                          context: context,
-                                          title: '错题本',
-                                          message: '答错了，已添加到错题本',
-                                          color: Colors.red.shade400,
-                                          icon: Icons.bookmark_added,
-                                        );
-                                      }
-                                      Navigator.of(questionDialogContext).pop();
-                                    },
-                                    confirmDismiss: (direction) async {
-                                      return true;
-                                    },
-                                    child: buildQuestionCard(
-                                      questionDialogContext,
-                                      question.getKonwledgePoint(),
-                                      question.question['q']!,
-                                      question.question['w'],
-                                      null,
-                                      question,
-                                      questionBank,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        },
-                        borderRadius: BorderRadius.circular(8),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: backgroundColor,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Center(
-                            child: Text(
-                              '${index + 1}',
-                              style: TextStyle(
-                                color: textColor,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-    
-  } catch (e) {
-    print('Error showing similar questions list: $e');
   }
 } 

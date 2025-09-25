@@ -1,8 +1,10 @@
 
 // 社区页面
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_application_1/tool/bluetooth_chat_manager.dart';
+import 'package:flutter_application_1/tool/study_data.dart';
 
 import 'home.dart';
 
@@ -248,14 +250,12 @@ class _CommunityPageState extends State<CommunityPage> with SingleTickerProvider
   Widget _buildHeader() {
     return FlexibleSpaceBar(
       background: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: SafeArea(
+        child: Stack(
+          children: [
+            // 背景层
+            _buildBackground(),
+            // 内容层
+            SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Align(
@@ -297,6 +297,55 @@ class _CommunityPageState extends State<CommunityPage> with SingleTickerProvider
               ),
             ),
           ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBackground() {
+    final studyData = StudyData.instance;
+    
+    // 如果启用了自定义背景且有背景图片
+    if (studyData.useCustomBackground && 
+        studyData.customBackgroundPath != null && 
+        File(studyData.customBackgroundPath!).existsSync()) {
+      
+      return Transform.scale(
+        scale: studyData.backgroundScale,
+        child: Transform.translate(
+          offset: Offset(
+            studyData.backgroundOffsetX * MediaQuery.of(context).size.width * 0.1,
+            studyData.backgroundOffsetY * MediaQuery.of(context).size.height * 0.1,
+          ),
+          child: Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: FileImage(File(studyData.customBackgroundPath!)),
+                fit: studyData.backgroundFit,
+                colorFilter: ColorFilter.mode(
+                  Colors.black.withOpacity(0.3),
+                  BlendMode.darken,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    
+    // 默认渐变背景
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
       ),
     );

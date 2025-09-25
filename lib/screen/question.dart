@@ -8,6 +8,7 @@ import 'package:flutter_application_1/tool/question/question_bank.dart';
 import 'package:flutter_application_1/tool/question/question_controller.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/tool/question/wrong_question_book.dart';
+import 'package:flutter_application_1/widget/left_toast.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:uuid/uuid.dart';
@@ -410,7 +411,13 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                           Future.delayed(const Duration(milliseconds: 800))
                               .whenComplete(() {
                             if (mounted) {
-                              showKnowledgeCard(context, c.targetSection!, questionBank: c.bank);
+                              showVerticalToast(
+                                context: context,
+                                title: "答题错误",
+                                message: "请重做本组题目",
+                                color: Colors.orange.shade400,
+                                icon: Icons.replay,
+                              );
                               controller
                                   .moveTo(indexRecord.reduce((v, e) => min(v, e)));
                             }
