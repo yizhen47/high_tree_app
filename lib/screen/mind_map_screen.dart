@@ -9,6 +9,7 @@ import 'package:flutter_application_1/tool/question/question_controller.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/widget/mind_map.dart';
 import 'package:flutter_application_1/widget/question_card/knowledge_card_widget.dart';
+import 'package:flutter_application_1/widget/tech_ui_components.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 
 class MindMapScreen extends StatefulWidget {
@@ -67,7 +68,7 @@ class _ChapterMindMapState extends State<ChapterMindMapScreen> with TickerProvid
       extendBodyBehindAppBar: true,
       appBar: _buildTechAppBar(),
       body: Container(
-        decoration: _buildTechBackground(),
+        decoration: buildTechBackground(),
         child: Column(
           children: [
             Flexible(fit: FlexFit.tight, child: _buildChapterMindMap(context)),
@@ -80,73 +81,8 @@ class _ChapterMindMapState extends State<ChapterMindMapScreen> with TickerProvid
   
   // 科技风应用栏
   PreferredSizeWidget _buildTechAppBar() {
-    return PreferredSize(
-      preferredSize: const Size.fromHeight(80),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              const Color(0xFF0A0A0F).withOpacity(0.95),
-              const Color(0xFF1A1A2E).withOpacity(0.95),
-              const Color(0xFF16213E).withOpacity(0.95),
-            ],
-          ),
-          border: Border(
-            bottom: BorderSide(
-              color: const Color(0xFF00F5FF).withOpacity(0.3),
-              width: 2,
-            ),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF00F5FF).withOpacity(0.2),
-              blurRadius: 20,
-              spreadRadius: 2,
-            ),
-          ],
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                // 返回按钮
-                Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [
-                        const Color(0xFF00F5FF).withOpacity(0.3),
-                        const Color(0xFF1E90FF).withOpacity(0.3),
-                      ],
-                    ),
-                    border: Border.all(
-                      color: const Color(0xFF00FFFF).withOpacity(0.6),
-                      width: 1.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF00F5FF).withOpacity(0.4),
-                        blurRadius: 8,
-                        spreadRadius: 1,
-                      ),
-                    ],
-                  ),
-                  child: IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      color: Color(0xFF00F5FF),
-                      size: 20,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 20),
-                // 标题
-                Expanded(
-                  child: Column(
+    return TechAppBar(
+      title: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -177,9 +113,7 @@ class _ChapterMindMapState extends State<ChapterMindMapScreen> with TickerProvid
                        ),
                     ],
                   ),
-                ),
-                // 装饰元素
-                Container(
+      trailing: Container(
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
@@ -200,31 +134,8 @@ class _ChapterMindMapState extends State<ChapterMindMapScreen> with TickerProvid
                       Icons.account_tree,
                       color: const Color(0xFF00F5FF).withOpacity(0.8),
                       size: 20,
-                    ),
-                  ),
-                ),
-              ],
-            ),
           ),
         ),
-      ),
-    );
-  }
-  
-  // 科技风背景
-  BoxDecoration _buildTechBackground() {
-    return BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [
-          const Color(0xFF0A0A0F), // 深蓝黑
-          const Color(0xFF1A1A2E), // 深蓝紫
-          const Color(0xFF16213E), // 深蓝
-          const Color(0xFF0F0F23), // 深紫黑
-          const Color(0xFF0A0A0F), // 深蓝黑
-        ],
-        stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
       ),
     );
   }
@@ -294,634 +205,33 @@ class _ChapterMindMapState extends State<ChapterMindMapScreen> with TickerProvid
   
   // 科技风底部导航栏
   Widget _buildTechNavBar() {
-    return Container(
-      height: 80,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            const Color(0xFF0A0A0F).withOpacity(0.95),
-            const Color(0xFF1A1A2E).withOpacity(0.98),
-          ],
-        ),
-        border: Border(
-          top: BorderSide(
-            color: const Color(0xFF00F5FF).withOpacity(0.3),
-            width: 2,
-          ),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF00F5FF).withOpacity(0.2),
-            blurRadius: 20,
-            spreadRadius: 2,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(25),
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      const Color(0xFF00F5FF).withOpacity(0.2),
-                      const Color(0xFF1E90FF).withOpacity(0.2),
-                      const Color(0xFF00FFFF).withOpacity(0.2),
-                    ],
-                  ),
-                  border: Border.all(
-                    color: const Color(0xFF00F5FF).withOpacity(0.6),
-                    width: 2,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF00F5FF).withOpacity(0.4),
-                      blurRadius: 15,
-                      spreadRadius: 2,
-                    ),
-                  ],
-                ),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(25),
-                  onTap: () {
-                    Navigator.of(context).pop(); // 返回主知识图谱
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: RadialGradient(
-                              colors: [
-                                const Color(0xFF00F5FF).withOpacity(0.8),
-                                const Color(0xFF00F5FF).withOpacity(0.3),
-                              ],
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF00F5FF).withOpacity(0.6),
-                                blurRadius: 10,
-                                spreadRadius: 2,
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.map_outlined,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                                                 Text(
-                           '返回图谱',
-                           style: TextStyle(
-                             color: const Color(0xFF00F5FF),
-                             fontSize: 18,
-                             fontWeight: FontWeight.w700,
-                             letterSpacing: 1.0,
-                             shadows: [
-                               Shadow(
-                                 offset: const Offset(0, 0),
-                                 blurRadius: 8.0,
-                                 color: const Color(0xFF00F5FF).withOpacity(0.8),
-                               ),
-                             ],
-                           ),
-                         ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-  
-  // 科技风提示信息
-  void _showTechToast(String message) {
-    final overlay = Overlay.of(context);
-    late OverlayEntry overlayEntry;
-    
-    overlayEntry = OverlayEntry(
-      builder: (context) => Positioned(
-        top: 100,
-        left: 20,
-        right: 20,
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  const Color(0xFF00F5FF).withOpacity(0.9),
-                  const Color(0xFF1E90FF).withOpacity(0.9),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: const Color(0xFF00FFFF),
-                width: 2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF00F5FF).withOpacity(0.6),
-                  blurRadius: 20,
-                  spreadRadius: 2,
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.2),
-                  ),
-                  child: const Icon(
-                    Icons.check_circle_outline,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    message,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-    
-    overlay.insert(overlayEntry);
-    
-    // 3秒后移除
-    Future.delayed(const Duration(seconds: 3), () {
-      overlayEntry.remove();
-    });
+    return const ChapterMindMapNavBar();
   }
   
   void _showNodeActionDialog(BuildContext context, MindMapNode<Section> node) {
-    bool isAlreadyInPlan = LearningPlanManager.instance.learningPlanItems
-        .any((item) => item.targetSection?.id == node.data!.id);
-    
-    // 检查节点是否有学习价值（可以添加到学习计划）
-    bool canAddToPlan = node.data!.hasLearnableContent();
-    
-    // 检查是否为叶子节点
-    bool isLeafNode = node.data!.children == null || node.data!.children!.isEmpty;
-    
-    // 检查是否有知识点内容（备注或视频）
-    bool hasKnowledgeContent = (node.data!.note?.isNotEmpty ?? false) || 
-                              (node.data!.videos?.isNotEmpty ?? false);
-
     showDialog(
       context: context,
       barrierColor: Colors.black.withOpacity(0.8),
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        child: Container(
-          padding: const EdgeInsets.all(28),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                const Color(0xFF0A0A0F).withOpacity(0.98),
-                const Color(0xFF1A1A2E).withOpacity(0.98),
-                const Color(0xFF16213E).withOpacity(0.98),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: const Color(0xFF00F5FF).withOpacity(0.6),
-              width: 2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF00F5FF).withOpacity(0.3),
-                blurRadius: 30,
-                spreadRadius: 5,
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 标题栏，包含标题和关闭按钮
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      node.text,
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.0,
-                        color: const Color(0xFF00F5FF),
-                        shadows: [
-                          Shadow(
-                            offset: const Offset(0, 0),
-                            blurRadius: 8.0,
-                            color: const Color(0xFF00F5FF).withOpacity(0.8),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        colors: [
-                          const Color(0xFF00F5FF).withOpacity(0.3),
-                          const Color(0xFF1E90FF).withOpacity(0.3),
-                        ],
-                      ),
-                      border: Border.all(
-                        color: const Color(0xFF00FFFF).withOpacity(0.6),
-                        width: 1,
-                      ),
-                    ),
-                    child: IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(
-                        Icons.close_rounded,
-                        color: Color(0xFF00F5FF),
-                        size: 20,
-                      ),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      splashRadius: 16,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Container(
-                height: 2,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.transparent,
-                      const Color(0xFF00F5FF).withOpacity(0.8),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              _buildInfoRow(
-                icon: Icons.fingerprint,
-                label: '知识点 ID',
-                value: node.data!.id,
-              ),
-              const SizedBox(height: 12),
-              Builder(
-                builder: (context) {
-                  try {
-                    final lastLearnTime = LearningPlanItem(widget.questionBank)
-                        .getSectionLearningData(node.data!)
-                        .lastLearnTime;
-                    
-                    return _buildInfoRow(
-                      icon: Icons.schedule,
-                      label: '上次完成时间',
-                      value: lastLearnTime > 0 
-                          ? DateTime.fromMillisecondsSinceEpoch(lastLearnTime).toString().split('.')[0]
-                          : '从未学习',
-                    );
-                  } catch (e) {
-                    return _buildInfoRow(
-                      icon: Icons.schedule,
-                      label: '上次完成时间',
-                      value: '从未学习',
-                    );
-                  }
-                },
-              ),
-              
-              // 显示视频信息
-              if (node.data!.videos?.isNotEmpty ?? false) ...[
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        const Color(0xFF00F5FF).withOpacity(0.1),
-                        const Color(0xFF1E90FF).withOpacity(0.1),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: const Color(0xFF00F5FF).withOpacity(0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: RadialGradient(
-                            colors: [
-                              const Color(0xFF00F5FF).withOpacity(0.8),
-                              const Color(0xFF00F5FF).withOpacity(0.3),
-                            ],
-                          ),
-                        ),
-                        child: const Icon(
-                          Icons.video_library,
-                          color: Colors.white,
-                          size: 16,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        '包含 ${node.data!.videos!.length} 个视频课程',
-                        style: TextStyle(
-                          color: const Color(0xFF00F5FF),
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-              
-              const SizedBox(height: 16),
-              if (isAlreadyInPlan)
-                _buildStatusContainer(
-                  icon: Icons.check_circle,
-                  text: '已加入学习计划',
-                  color: const Color(0xFF00F5FF),
-                ),
-              if (!canAddToPlan && !isAlreadyInPlan)
-                _buildStatusContainer(
-                  icon: Icons.info_outline,
-                  text: isLeafNode ? '此节点无学习内容' : '请选择有学习内容的知识点',
-                  color: Colors.orange,
-                ),
-              const SizedBox(height: 28),
-              // 底部按钮区域
-              Wrap(
-                alignment: WrapAlignment.center,
-                spacing: 16,
-                runSpacing: 16,
-                children: [
-                  if (hasKnowledgeContent)
-                    _buildTechButton(
-                      onPressed: () {
-                        if (Navigator.canPop(context)) {
-                          Navigator.pop(context);
-                          Future.delayed(const Duration(milliseconds: 100), () {
-                            if (context.mounted) {
-                              _showKnowledgeDetail(context, node.data!);
-                            }
-                          });
-                        }
-                      },
-                      text: '查看知识点',
-                      color: const Color(0xFF00F5FF),
-                      icon: Icons.visibility,
-                    ),
-                  if (!isAlreadyInPlan && canAddToPlan)
-                    _buildTechButton(
-                      onPressed: () {
-                        if (Navigator.canPop(context)) {
-                          _addToLearningPlan(node.data!);
-                          Navigator.pop(context);
-                        }
-                      },
-                      text: '加入今日计划',
-                      color: const Color(0xFF1E90FF),
-                      icon: Icons.add_circle_outline,
-                    ),
-                ],
-              ),
-            ],
-          ),
-        ),
+      builder: (context) => _NodeActionDialog(
+        node: node,
+        questionBank: widget.questionBank,
+        onAddToPlan: (section, bank) {
+          if (bank == null) {
+            showTechToast(context, '无法添加');
+            return;
+          }
+          final added = LearningPlanManager.instance.addSectionToManualLearningPlan(section, bank);
+          if (added) {
+            showTechToast(context, '已添加到计划');
+          } else {
+            showTechToast(context, '无法添加');
+          }
+        },
+        onShowKnowledge: (section, bank) {
+          _showKnowledgeDetail(context, section);
+        },
       ),
     );
-  }
-  
-  // 信息行组件
-  Widget _buildInfoRow({
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: RadialGradient(
-              colors: [
-                const Color(0xFF00F5FF).withOpacity(0.6),
-                const Color(0xFF00F5FF).withOpacity(0.2),
-              ],
-            ),
-          ),
-          child: Icon(
-            icon,
-            color: Colors.white,
-            size: 16,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[400],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.3,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-  
-  // 状态容器组件
-  Widget _buildStatusContainer({
-    required IconData icon,
-    required String text,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            color.withOpacity(0.2),
-            color.withOpacity(0.1),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withOpacity(0.5),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: color.withOpacity(0.3),
-            ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 16,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(
-                color: color,
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  // 科技风按钮组件
-  Widget _buildTechButton({
-    required VoidCallback onPressed,
-    required String text,
-    required Color color,
-    required IconData icon,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            color.withOpacity(0.8),
-            color.withOpacity(0.6),
-          ],
-        ),
-        border: Border.all(
-          color: color.withOpacity(0.8),
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.4),
-            blurRadius: 15,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          foregroundColor: Colors.white,
-          shadowColor: Colors.transparent,
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-          minimumSize: const Size(0, 54),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
-        onPressed: onPressed,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 20),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                text,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-  
-  // 将节点添加到今日学习计划
-  void _addToLearningPlan(Section section) {
-    bool added = LearningPlanManager.instance
-        .addSectionToManualLearningPlan(section, widget.questionBank);
-
-    // 显示相应提示
-    if (added) {
-      _showTechToast('已添加到计划');
-    } else {
-      _showTechToast('无法添加');
-    }
   }
 
   void _showKnowledgeDetail(BuildContext context, Section section) {
@@ -966,11 +276,11 @@ class _InnerState extends State<MindMapScreen> with TickerProviderStateMixin {
       extendBodyBehindAppBar: true,
       appBar: _buildTechAppBar(),
       body: Container(
-        decoration: _buildTechBackground(),
+        decoration: buildTechBackground(),
         child: Column(
         children: [
           Flexible(fit: FlexFit.tight, child: buildMindMap(context)),
-            buildTechNagBar()
+            buildTechNavBar()
         ],
         ),
       ),
@@ -979,73 +289,8 @@ class _InnerState extends State<MindMapScreen> with TickerProviderStateMixin {
   
   // 科技风应用栏
   PreferredSizeWidget _buildTechAppBar() {
-    return PreferredSize(
-      preferredSize: const Size.fromHeight(80),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              const Color(0xFF0A0A0F).withOpacity(0.95),
-              const Color(0xFF1A1A2E).withOpacity(0.95),
-              const Color(0xFF16213E).withOpacity(0.95),
-            ],
-          ),
-          border: Border(
-            bottom: BorderSide(
-              color: const Color(0xFF00F5FF).withOpacity(0.3),
-              width: 2,
-            ),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF00F5FF).withOpacity(0.2),
-              blurRadius: 20,
-              spreadRadius: 2,
-            ),
-          ],
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                // 返回按钮
-                Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [
-                        const Color(0xFF00F5FF).withOpacity(0.3),
-                        const Color(0xFF1E90FF).withOpacity(0.3),
-                      ],
-                    ),
-                    border: Border.all(
-                      color: const Color(0xFF00FFFF).withOpacity(0.6),
-                      width: 1.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF00F5FF).withOpacity(0.4),
-                        blurRadius: 8,
-                        spreadRadius: 1,
-                      ),
-                    ],
-                  ),
-                  child: IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      color: Color(0xFF00F5FF),
-                      size: 20,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 20),
-                // 标题
-                Expanded(
-                  child: Text(
+    return TechAppBar(
+      title: Text(
                     '知识图谱',
                     style: TextStyle(
                       color: const Color(0xFF00F5FF),
@@ -1066,9 +311,7 @@ class _InnerState extends State<MindMapScreen> with TickerProviderStateMixin {
                       ],
                     ),
                   ),
-                ),
-                // 装饰元素
-                Container(
+      trailing: Container(
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
@@ -1089,11 +332,6 @@ class _InnerState extends State<MindMapScreen> with TickerProviderStateMixin {
                       Icons.blur_on,
                       color: const Color(0xFF00F5FF).withOpacity(0.8),
                       size: 20,
-                    ),
-                  ),
-                ),
-              ],
-            ),
           ),
         ),
       ),
@@ -1195,209 +433,117 @@ class _InnerState extends State<MindMapScreen> with TickerProviderStateMixin {
   }
 
   // 科技风底部导航栏
-  Widget buildTechNagBar() {
-    return Container(
-      height: 80,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            const Color(0xFF0A0A0F).withOpacity(0.95),
-            const Color(0xFF1A1A2E).withOpacity(0.98),
-          ],
-        ),
-        border: Border(
-          top: BorderSide(
-            color: const Color(0xFF00F5FF).withOpacity(0.3),
-            width: 2,
-          ),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF00F5FF).withOpacity(0.2),
-            blurRadius: 20,
-            spreadRadius: 2,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: SafeArea(
-      child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Expanded(
-              child: AnimatedBuilder(
-                animation: _backgroundAnimation,
-                builder: (context, child) {
-                  return Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(25),
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          const Color(0xFF00F5FF).withOpacity(0.2),
-                          const Color(0xFF1E90FF).withOpacity(0.2),
-                          const Color(0xFF00FFFF).withOpacity(0.2),
-                        ],
-                      ),
-                      border: Border.all(
-                        color: const Color(0xFF00F5FF).withOpacity(0.6),
-                        width: 2,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF00F5FF).withOpacity(0.4),
-                          blurRadius: 15,
-                          spreadRadius: 2,
-                        ),
-                      ],
-                    ),
-            child: InkWell(
-                      borderRadius: BorderRadius.circular(25),
-              onTap: () {
+  Widget buildTechNavBar() {
+    return MainMindMapNavBar(
+      backgroundAnimation: _backgroundAnimation,
+      onRefresh: () {
                 LearningPlanManager.instance.resetDailyProgress();
-                        _showTechToast("计划刷新成功");
+        showTechToast(context, "计划刷新成功");
                 setState(() {});
               },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: RadialGradient(
-                                  colors: [
-                                    const Color(0xFF00F5FF).withOpacity(0.8),
-                                    const Color(0xFF00F5FF).withOpacity(0.3),
-                                  ],
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFF00F5FF).withOpacity(0.6),
-                                    blurRadius: 10,
-                                    spreadRadius: 2,
-                                  ),
-                                ],
-                              ),
-                              child: const Icon(
-                                Icons.refresh_rounded,
-                                color: Colors.white,
-                                size: 24,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Text(
-                              '刷新图谱计划',
-                              style: TextStyle(
-                                color: const Color(0xFF00F5FF),
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 1.0,
-                                shadows: [
-                                  Shadow(
-                                    offset: const Offset(0, 0),
-                                    blurRadius: 8.0,
-                                    color: const Color(0xFF00F5FF).withOpacity(0.8),
-                ),
-                                ],
-              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-            ),
-          ),
-        ],
-        ),
+    );
+  }
+
+  void _showNodeActionDialog(BuildContext context, MindMapNode<Section> node) {
+    final bank = findBank(node.data!);
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.8),
+      builder: (context) => _NodeActionDialog(
+        node: node,
+        questionBank: bank,
+        onAddToPlan: (section, bank) {
+          if (bank == null) {
+            showTechToast(context, '无法添加');
+            return;
+          }
+          final added = LearningPlanManager.instance.addSectionToManualLearningPlan(section, bank);
+          if (added) {
+            showTechToast(context, '已添加到计划');
+          } else {
+            showTechToast(context, '无法添加');
+          }
+        },
+        onShowKnowledge: (section, bank) {
+          _showKnowledgeDetail(context, section);
+        },
       ),
     );
   }
   
-  // 科技风提示信息
-  void _showTechToast(String message) {
-    final overlay = Overlay.of(context);
-    late OverlayEntry overlayEntry;
-    
-    overlayEntry = OverlayEntry(
-      builder: (context) => Positioned(
-        top: 100,
-        left: 20,
-        right: 20,
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  const Color(0xFF00F5FF).withOpacity(0.9),
-                  const Color(0xFF1E90FF).withOpacity(0.9),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: const Color(0xFF00FFFF),
-                width: 2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF00F5FF).withOpacity(0.6),
-                  blurRadius: 20,
-                  spreadRadius: 2,
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.2),
-                  ),
-                  child: const Icon(
-                    Icons.check_circle_outline,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    message,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-    
-    overlay.insert(overlayEntry);
-    
-    // 3秒后移除
-    Future.delayed(const Duration(seconds: 3), () {
-      overlayEntry.remove();
-    });
+  void _showKnowledgeDetail(BuildContext context, Section section) {
+    final bank = findBank(section);
+    showKnowledgeCard(context, section, questionBank: bank);
   }
 
-  void _showNodeActionDialog(BuildContext context, MindMapNode<Section> node) {
+  QuestionBank? findBank(Section section) {
+    for (var bank in LearningPlanManager.instance.questionBanks) {
+      try {
+        // Try different path formats
+        List<List<String>> pathsToTry = [];
+        
+        // 1. 原始方法：使用完整ID split
+        var originalPath = section.id.split('/').where((s) => s.isNotEmpty).toList();
+        if (originalPath.isNotEmpty) {
+          pathsToTry.add(originalPath);
+        }
+        
+        // 2. 使用 section.index 分割成子路径 (例如: "4.5.1" -> ["4", "5", "1"])
+        if (section.index.contains('.')) {
+          pathsToTry.add(section.index.split('.'));
+        } else {
+          pathsToTry.add([section.index]);
+        }
+        
+        // 3. 使用 fromKonwledgeIndex + index
+        if (section.fromKonwledgeIndex.isNotEmpty) {
+          pathsToTry.add([...section.fromKonwledgeIndex, section.index]);
+        }
+        
+        // 4. 构建层次化路径 (例如: "4.5.1.1" -> ["4.5", "4.5.1", "4.5.1.1"])
+        if (section.index.contains('.')) {
+          List<String> hierarchicalPath = [];
+          var parts = section.index.split('.');
+          // 从第二级开始构建路径 (跳过单独的章节号)
+          for (int i = 1; i < parts.length; i++) {
+            var pathPart = parts.sublist(0, i + 1).join('.');
+            hierarchicalPath.add(pathPart);
+          }
+          pathsToTry.add(hierarchicalPath);
+        }
+        
+        for (var path in pathsToTry) {
+          try {
+            Section bankSection = bank.findSection(path);
+            return bank;
+          } catch (e) {
+            continue;
+          }
+        }
+        
+      } catch (e) {
+        // Continue to next bank
+      }
+    }
+    return null;
+  }
+}
+
+class _NodeActionDialog extends StatelessWidget {
+  final MindMapNode<Section> node;
+  final QuestionBank? questionBank;
+  final Function(Section, QuestionBank?) onAddToPlan;
+  final Function(Section, QuestionBank?) onShowKnowledge;
+
+  const _NodeActionDialog({
+    required this.node,
+    required this.questionBank,
+    required this.onAddToPlan,
+    required this.onShowKnowledge,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     bool isAlreadyInPlan = LearningPlanManager.instance.learningPlanItems
         .any((item) => item.targetSection?.id == node.data!.id);
     
@@ -1411,12 +557,7 @@ class _InnerState extends State<MindMapScreen> with TickerProviderStateMixin {
     bool hasKnowledgeContent = (node.data!.note?.isNotEmpty ?? false) || 
                               (node.data!.videos?.isNotEmpty ?? false);
     
-
-
-    showDialog(
-      context: context,
-      barrierColor: Colors.black.withOpacity(0.8),
-      builder: (context) => Dialog(
+    return Dialog(
         backgroundColor: Colors.transparent,
         elevation: 0,
         child: Container(
@@ -1519,8 +660,7 @@ class _InnerState extends State<MindMapScreen> with TickerProviderStateMixin {
               const SizedBox(height: 12),
               Builder(
                 builder: (context) {
-                  final bank = findBank(node.data!);
-                  if (bank == null) {
+                if (questionBank == null) {
                     return _buildInfoRow(
                       icon: Icons.schedule,
                       label: '上次完成时间',
@@ -1529,7 +669,7 @@ class _InnerState extends State<MindMapScreen> with TickerProviderStateMixin {
                   }
                   
                   try {
-                    final lastLearnTime = LearningPlanItem(bank)
+                  final lastLearnTime = LearningPlanItem(questionBank!)
                         .getSectionLearningData(node.data!)
                         .lastLearnTime;
                     
@@ -1628,9 +768,7 @@ class _InnerState extends State<MindMapScreen> with TickerProviderStateMixin {
                         if (Navigator.canPop(context)) {
                           Navigator.pop(context);
                           Future.delayed(const Duration(milliseconds: 100), () {
-                            if (context.mounted) {
-                              _showKnowledgeDetail(context, node.data!);
-                            }
+                          onShowKnowledge(node.data!, questionBank);
                           });
                         }
                       },
@@ -1642,7 +780,7 @@ class _InnerState extends State<MindMapScreen> with TickerProviderStateMixin {
                     _buildTechButton(
                       onPressed: () {
                         if (Navigator.canPop(context)) {
-                          _addToLearningPlan(node.data!);
+                        onAddToPlan(node.data!, questionBank);
                           Navigator.pop(context);
                         }
                       },
@@ -1653,7 +791,6 @@ class _InnerState extends State<MindMapScreen> with TickerProviderStateMixin {
                 ],
               ),
             ],
-          ),
         ),
       ),
     );
@@ -1829,81 +966,5 @@ class _InnerState extends State<MindMapScreen> with TickerProviderStateMixin {
         ),
       ),
     );
-  }
-
-  // 将节点添加到今日学习计划
-  void _addToLearningPlan(Section section) {
-    bool added = false;
-    var bank = findBank(section);
-    
-    if (bank != null) {
-      // 使用新方法将节点添加到手动学习计划中
-      added = LearningPlanManager.instance
-          .addSectionToManualLearningPlan(section, bank);
-    }
-
-    // 显示相应提示
-    if (added) {
-      _showTechToast('已添加到计划');
-    } else {
-      _showTechToast('无法添加');
-    }
-  }
-
-  void _showKnowledgeDetail(BuildContext context, Section section) {
-    final bank = findBank(section);
-    showKnowledgeCard(context, section, questionBank: bank);
-  }
-
-  QuestionBank? findBank(Section section) {
-    for (var bank in LearningPlanManager.instance.questionBanks) {
-      try {
-        // Try different path formats
-        List<List<String>> pathsToTry = [];
-        
-        // 1. 原始方法：使用完整ID split
-        var originalPath = section.id.split('/').where((s) => s.isNotEmpty).toList();
-        if (originalPath.isNotEmpty) {
-          pathsToTry.add(originalPath);
-        }
-        
-        // 2. 使用 section.index 分割成子路径 (例如: "4.5.1" -> ["4", "5", "1"])
-        if (section.index.contains('.')) {
-          pathsToTry.add(section.index.split('.'));
-        } else {
-          pathsToTry.add([section.index]);
-        }
-        
-        // 3. 使用 fromKonwledgeIndex + index
-        if (section.fromKonwledgeIndex.isNotEmpty) {
-          pathsToTry.add([...section.fromKonwledgeIndex, section.index]);
-        }
-        
-        // 4. 构建层次化路径 (例如: "4.5.1.1" -> ["4.5", "4.5.1", "4.5.1.1"])
-        if (section.index.contains('.')) {
-          List<String> hierarchicalPath = [];
-          var parts = section.index.split('.');
-          // 从第二级开始构建路径 (跳过单独的章节号)
-          for (int i = 1; i < parts.length; i++) {
-            var pathPart = parts.sublist(0, i + 1).join('.');
-            hierarchicalPath.add(pathPart);
-          }
-          pathsToTry.add(hierarchicalPath);
-        }
-        
-        for (var path in pathsToTry) {
-          try {
-            Section bankSection = bank.findSection(path);
-            return bank;
-          } catch (e) {
-            continue;
-          }
-        }
-        
-      } catch (e) {
-        // Continue to next bank
-      }
-    }
-    return null;
   }
 }

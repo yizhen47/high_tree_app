@@ -249,7 +249,7 @@ Widget _buildImageWidget(String imagePath, QuestionBank? questionBank) {
     // 网络图片
     return Image.network(
       imagePath,
-      fit: BoxFit.cover,
+      fit: BoxFit.contain,
       loadingBuilder: (context, child, loadingProgress) {
         if (loadingProgress == null) return child;
         return Container(
@@ -282,7 +282,7 @@ Widget _buildImageWidget(String imagePath, QuestionBank? questionBank) {
     // Asset图片
     return Image.asset(
       imagePath,
-      fit: BoxFit.cover,
+      fit: BoxFit.contain,
       errorBuilder: (context, error, stackTrace) {
         return Container(
           height: 200,
@@ -315,7 +315,7 @@ Widget _buildImageWidget(String imagePath, QuestionBank? questionBank) {
         if (foundPath != null) {
           return Image.file(
             File(foundPath),
-            fit: BoxFit.cover,
+            fit: BoxFit.contain,
             errorBuilder: (context, error, stackTrace) {
               return Container(
                 height: 200,
