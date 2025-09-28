@@ -179,35 +179,14 @@ class Section {
     return null;
   }
 
-  // 优先选择有视频的题目
+  // 完全随机选择题目，不再优先选择视频题目
   Map<String, dynamic> _selectQuestionWithVideoPriority() {
     if (questions == null || questions!.isEmpty) {
       throw StateError('No questions available');
     }
     
-    // 分离有视频和无视频的题目
-    List<Map<String, dynamic>> questionsWithVideo = [];
-    List<Map<String, dynamic>> questionsWithoutVideo = [];
-    
-    for (var question in questions!) {
-      String? videoPath = question['video']?.toString();
-      if (videoPath != null && videoPath.isNotEmpty) {
-        questionsWithVideo.add(question);
-      } else {
-        questionsWithoutVideo.add(question);
-      }
-    }
-    
-    // 70% 概率选择有视频的题目，30% 概率选择无视频的题目
-    if (questionsWithVideo.isNotEmpty && 
-        (questionsWithoutVideo.isEmpty || _random!.nextDouble() < 0.7)) {
-      return questionsWithVideo[_random!.nextInt(questionsWithVideo.length)];
-    } else if (questionsWithoutVideo.isNotEmpty) {
-      return questionsWithoutVideo[_random!.nextInt(questionsWithoutVideo.length)];
-    } else {
-      // 如果没有任何题目，返回第一个题目
-      return questions![0];
-    }
+    // 完全随机选择，确保每个题目被选中的概率相等
+    return questions![_random!.nextInt(questions!.length)];
   }
 
   // 检查此节点是否有可学习的内容（有题目）
@@ -254,47 +233,36 @@ class Section {
     int totalRetryTimes = 100,
     bool onlyLayer = false,
   }) {
-    final Set<String> usedIds = {};
-    final List<SingleQuestionData> result = [];
-
-    for (int i = 0; i < count; i++) {
-      SingleQuestionData? question;
-      int retryCount = 0;
-
-      // 尝试获取新问题的循环
-      while (retryCount < totalRetryTimes) {
-        final candidate = randomSectionQuestion(
-          fromId,
-          fromName,
-          retryingTimes: 20,
-          onlyLayer: onlyLayer,
-        );
-
-        // 检查是否重复且不是空问题
-        if (!usedIds.contains(candidate.question['id']) &&
-            candidate.question['q'] != '本章没有题目') {
-          question = candidate;
-          usedIds.add(candidate.question['id']!);
-          break;
+    // 首先获取所有可用的题目
+    List<SingleQuestionData> allAvailableQuestions = [];
+    
+    if (onlyLayer) {
+      // 只从当前层级获取题目
+      if (hasLearnableContent() && questions != null) {
+        for (var q in questions!) {
+          if (q['q'] != '本章没有题目') {
+            allAvailableQuestions.add(SingleQuestionData(q, fromId, fromName)
+              ..fromKonwledgeIndex = (List.from(fromKonwledgeIndex)..add(index))
+              ..fromKonwledgePoint = (List.from(fromKonwledgePoint)..add(title)));
+          }
         }
-
-        retryCount++;
       }
-
-      // 最终仍未找到新问题时的处理
-      result.add(question ??
-          SingleQuestionData(
-            {'q': '本章没有题目', 'w': '本章暂时没有题目，请联系老师添加题目或选择其他章节学习', 'id': const Uuid().v4()},
-            fromId,
-            fromName,
-          ));
+    } else {
+      // 从整个section树获取题目
+      allAvailableQuestions = sectionQuestion(fromId, fromName)
+          .where((q) => q.question['q'] != '本章没有题目')
+          .toList();
     }
-
-    // 最终校验是否所有问题都有效
-    final validCount = result
-        .where((q) => q.question != '问题不足' && q.question != '本章没有题目')
-        .length;
-    return validCount >= count ? result : [];
+    
+    // 如果可用题目数量不足，返回所有可用题目
+    if (allAvailableQuestions.length <= count) {
+      allAvailableQuestions.shuffle(_random);
+      return allAvailableQuestions;
+    }
+    
+    // 打乱题目顺序，然后取前count个
+    allAvailableQuestions.shuffle(_random);
+    return allAvailableQuestions.take(count).toList();
   }
 
   List<SingleQuestionData> sectionQuestion(String fromId, String fromName,

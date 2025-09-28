@@ -283,25 +283,17 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
               if (currentPlanId >= 0 && currentPlanId < LearningPlanManager.instance.learningPlanItems.length) {
                 // Study only the selected plan
                 final selectedPlan = LearningPlanManager.instance.learningPlanItems[currentPlanId];
-                // 随机化问题顺序
-                final questions = List<SingleQuestionData>.from(selectedPlan.questionList)..shuffle();
-                for (var q in questions) {
+                for (var q in selectedPlan.questionList) {
                   addQuestionCard(q, selectedPlan.bank);
                 }
               } else {
                 // Fallback to studying all plans (original behavior)
-                // 收集所有问题并随机化
-                final allPlanQuestions = <Map<String, dynamic>>[];
                 for (var c in LearningPlanManager.instance.learningPlanItems) {
                   for (var q in c.questionList) {
-                    allPlanQuestions.add({'question': q, 'bank': c.bank});
-                  }
-                }
-                allPlanQuestions.shuffle();
-                for (var item in allPlanQuestions) {
-                  addQuestionCard(item['question'], item['bank']);
+                    addQuestionCard(q, c.bank);
                 }
               }
+            }
             // 卡片滑动组件
             // 如果没有卡片，直接显示完成界面
             if (cards.isEmpty) {
@@ -476,7 +468,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                     return _buildCompleteCard(context);
                   }
 
-                  return cards[index];
+                  return cards[oIndex];
                 }
               },
               // 在 CardSwiper 的 onUndo 回调中直接实现撤销逻辑（原简写方案中缺失的部分）
