@@ -283,17 +283,25 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
               if (currentPlanId >= 0 && currentPlanId < LearningPlanManager.instance.learningPlanItems.length) {
                 // Study only the selected plan
                 final selectedPlan = LearningPlanManager.instance.learningPlanItems[currentPlanId];
-                for (var q in selectedPlan.questionList) {
+                // 随机化问题顺序
+                final questions = List<SingleQuestionData>.from(selectedPlan.questionList)..shuffle();
+                for (var q in questions) {
                   addQuestionCard(q, selectedPlan.bank);
                 }
               } else {
                 // Fallback to studying all plans (original behavior)
+                // 收集所有问题并随机化
+                final allPlanQuestions = <Map<String, dynamic>>[];
                 for (var c in LearningPlanManager.instance.learningPlanItems) {
                   for (var q in c.questionList) {
-                    addQuestionCard(q, c.bank);
+                    allPlanQuestions.add({'question': q, 'bank': c.bank});
+                  }
+                }
+                allPlanQuestions.shuffle();
+                for (var item in allPlanQuestions) {
+                  addQuestionCard(item['question'], item['bank']);
                 }
               }
-            }
             // 卡片滑动组件
             // 如果没有卡片，直接显示完成界面
             if (cards.isEmpty) {
@@ -428,13 +436,13 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
 
                         break;
                       } else if (pass) {
-                        if (c.needsToLearn(c.targetSection!)) {
-                          retryCount = 0;
-                          c.completeSection();
+                        // With the new architecture, if an item is in the plan, it's meant to be completed.
+                        // The `needsToLearn` check is legacy and prevents re-learning from being completed.
+                        retryCount = 0;
+                        c.completeSection();
 
-                          unlockedQuestionNum +=
-                              StudyData.instance.needCompleteQuestionNum;
-                        }
+                        unlockedQuestionNum +=
+                            StudyData.instance.needCompleteQuestionNum;
                       }
 
                       var sectionData = c.getSectionLearningData(c.targetSection!);
@@ -468,7 +476,7 @@ class _InnerState extends State<QuestionScreen> with TickerProviderStateMixin {
                     return _buildCompleteCard(context);
                   }
 
-                  return cards[oIndex];
+                  return cards[index];
                 }
               },
               // 在 CardSwiper 的 onUndo 回调中直接实现撤销逻辑（原简写方案中缺失的部分）

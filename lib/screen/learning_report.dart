@@ -1,13 +1,59 @@
 // ignore_for_file: unused_element
 
-import 'package:fl_chart/fl_chart.dart';
+import 'package:fl_chart/fl_chart.dart' as fl;
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/tool/statistics_manager.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/tool/question/wrong_question_book.dart';
+import 'package:flutter_application_1/tool/question/question_controller.dart';
+import 'package:flutter_application_1/tool/question/question_bank.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'dart:math';
 import 'package:flutter_application_1/screen/home/home.dart';
+import 'package:syncfusion_flutter_charts/charts.dart';
+
+// 演示数据结构
+class LearningReportData {
+  final double studyTimeInMinutes;
+  final int studyDaysCount;
+  final int completedQuestionsCount;
+  final int correctQuestionsCount;
+  final int wrongQuestionsCount;
+  final double accuracyRate;
+  final List<double> dailyStudyData; // 7天的学习数据
+     final Map<String, dynamic> studyStreakInfo;
+  final Map<String, dynamic> questionHabitStats;
+  final String bestStudyTime;
+  final String bestStudyDayOfWeek;
+  final double studyRegularity;
+  final String averageTimePerQuestion;
+  final Map<int, double> hourlyStudyDistribution;
+  final double maxDailyStudyMinutes;
+  final double weeklyTotalStudyMinutes;
+  final Map<String, dynamic>? masteryStats;
+  final List<String> frequentWrongTopics; // 高频错误知识点
+
+  LearningReportData({
+    required this.studyTimeInMinutes,
+    required this.studyDaysCount,
+    required this.completedQuestionsCount,
+    required this.correctQuestionsCount,
+    required this.wrongQuestionsCount,
+    required this.accuracyRate,
+    required this.dailyStudyData,
+    required this.studyStreakInfo,
+    required this.questionHabitStats,
+    required this.bestStudyTime,
+    required this.bestStudyDayOfWeek,
+    required this.studyRegularity,
+    required this.averageTimePerQuestion,
+    required this.hourlyStudyDistribution,
+    required this.maxDailyStudyMinutes,
+    required this.weeklyTotalStudyMinutes,
+    this.masteryStats,
+    this.frequentWrongTopics = const [],
+  });
+}
 
 class LearningReportScreen extends StatefulWidget {
   const LearningReportScreen({super.key, required this.title});
@@ -24,6 +70,12 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
   String _selectedPeriod = '过去7天';
   // Initialize directly instead of using late
   StatisticsManager _statsManager = StatisticsManager(StatisticsManager.PERIOD_WEEK);
+  int _touchedIndex = -1;
+  
+  // 演示模式相关
+  bool _isDemoMode = false;
+  String _demoType = '';
+  LearningReportData? _demoData;
 
   @override
   void initState() {
@@ -37,6 +89,154 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
       _statsManager = StatisticsManager(
         StatisticsManager.periodStringToDays(_selectedPeriod)
       );
+    });
+  }
+
+  // 生成演示数据
+  LearningReportData _generateDemoData(String demoType) {
+    switch (demoType) {
+      case '一天后':
+        return LearningReportData(
+          studyTimeInMinutes: 45.0,
+          studyDaysCount: 1,
+          completedQuestionsCount: 12,
+          correctQuestionsCount: 7,
+          wrongQuestionsCount: 5,
+          accuracyRate: 58.3,
+          dailyStudyData: [0, 0, 0, 0, 0, 0, 45],
+          studyStreakInfo: {'currentStreak': 1, 'maxStreak': 1},
+          questionHabitStats: {
+            'askAiCount': 8,
+            'viewKnowledgeVideoCount': 1,
+            'viewKnowledgeCount': 2,
+            'bothAiAndVideoCount': 1,
+            'aiAndVideoCount': 1,
+            'aiAndKnowledgeCount': 0,
+            'videoAndKnowledgeCount': 0,
+            'allThreeCount': 0,
+          },
+          bestStudyTime: '19:00-21:00',
+          bestStudyDayOfWeek: '今天',
+          studyRegularity: 1.0,
+          averageTimePerQuestion: '225',
+          hourlyStudyDistribution: {
+            19: 25.0, 20: 20.0,
+            for (int i = 0; i < 24; i++) if (i != 19 && i != 20) i: 0.0
+          },
+          maxDailyStudyMinutes: 45.0,
+          weeklyTotalStudyMinutes: 45.0,
+          masteryStats: {
+            'averageMastery': 0.45,
+            'strongTopics': 2,
+            'weakTopics': 4,
+            'totalTopics': 8,
+          },
+          frequentWrongTopics: ['函数的极限', '导数的计算'],
+        );
+      
+      case '一星期后':
+        return LearningReportData(
+          studyTimeInMinutes: 249.0,
+          studyDaysCount: 6,
+          completedQuestionsCount: 89,
+          correctQuestionsCount: 55,
+          wrongQuestionsCount: 34,
+          accuracyRate: 61.8,
+          dailyStudyData: [25, 58, 0, 32, 65, 18, 51],
+          studyStreakInfo: {'currentStreak': 5, 'maxStreak': 5},
+          questionHabitStats: {
+            'askAiCount': 52,
+            'viewKnowledgeVideoCount': 8,
+            'viewKnowledgeCount': 15,
+            'bothAiAndVideoCount': 8,
+            'aiAndVideoCount': 8,
+            'aiAndKnowledgeCount': 6,
+            'videoAndKnowledgeCount': 2,
+            'allThreeCount': 3,
+          },
+          bestStudyTime: '20:00-22:00',
+          bestStudyDayOfWeek: '周日',
+          studyRegularity: 0.86,
+          averageTimePerQuestion: '216',
+          hourlyStudyDistribution: {
+            8: 15.0, 9: 20.0, 14: 18.0, 15: 12.0,
+            19: 45.0, 20: 52.0, 21: 38.0, 22: 25.0,
+            for (int i = 0; i < 24; i++) 
+              if (![8, 9, 14, 15, 19, 20, 21, 22].contains(i)) i: 0.0
+          },
+          maxDailyStudyMinutes: 63.0,
+          weeklyTotalStudyMinutes: 320.0,
+          masteryStats: {
+            'averageMastery': 0.68,
+            'strongTopics': 8,
+            'weakTopics': 2,
+            'totalTopics': 15,
+          },
+          frequentWrongTopics: ['函数的极限', '微分的几何意义', '复合函数求导'],
+        );
+      
+      case '一个月后':
+        return LearningReportData(
+          studyTimeInMinutes: 920.0,
+          studyDaysCount: 23,
+          completedQuestionsCount: 456,
+          correctQuestionsCount: 342,
+          wrongQuestionsCount: 114,
+          accuracyRate: 75.0,
+          dailyStudyData: [22, 58, 31, 75, 15, 62, 28],
+          studyStreakInfo: {'currentStreak': 12, 'maxStreak': 15},
+          questionHabitStats: {
+            'askAiCount': 280,
+            'viewKnowledgeVideoCount': 45,
+            'viewKnowledgeCount': 85,
+            'bothAiAndVideoCount': 45,
+            'aiAndVideoCount': 45,
+            'aiAndKnowledgeCount': 38,
+            'videoAndKnowledgeCount': 15,
+            'allThreeCount': 28,
+          },
+          bestStudyTime: '19:00-21:00',
+          bestStudyDayOfWeek: '周六',
+          studyRegularity: 0.92,
+          averageTimePerQuestion: '208',
+          hourlyStudyDistribution: {
+            7: 12.0, 8: 45.0, 9: 38.0, 10: 22.0,
+            14: 28.0, 15: 35.0, 16: 18.0,
+            19: 78.0, 20: 85.0, 21: 72.0, 22: 48.0, 23: 15.0,
+            for (int i = 0; i < 24; i++) 
+              if (![7, 8, 9, 10, 14, 15, 16, 19, 20, 21, 22, 23].contains(i)) i: 0.0
+          },
+          maxDailyStudyMinutes: 125.0,
+          weeklyTotalStudyMinutes: 537.0,
+          masteryStats: {
+            'averageMastery': 0.83,
+            'strongTopics': 18,
+            'weakTopics': 1,
+            'totalTopics': 25,
+          },
+          frequentWrongTopics: ['隐函数求导', '参数方程求导'],
+        );
+      
+      default:
+        return _generateDemoData('一天后');
+    }
+  }
+
+  // 切换演示模式
+  void _switchToDemo(String demoType) {
+    setState(() {
+      _isDemoMode = true;
+      _demoType = demoType;
+      _demoData = _generateDemoData(demoType);
+    });
+  }
+
+  // 退出演示模式
+  void _exitDemoMode() {
+    setState(() {
+      _isDemoMode = false;
+      _demoType = '';
+      _demoData = null;
     });
   }
 
@@ -54,21 +254,113 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildTimePeriodSelector(),
+              // 演示模式菜单按钮
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(child: _buildTimePeriodSelector()),
+                  PopupMenuButton<String>(
+                    icon: Icon(
+                      Icons.more_vert, 
+                      color: _isDemoMode ? AppTheme.primaryColor : AppTheme.textSecondary,
+                    ),
+                    onSelected: (String value) {
+                      if (value == 'exit_demo') {
+                        _exitDemoMode();
+                      } else {
+                        _switchToDemo(value);
+                      }
+                    },
+                    itemBuilder: (BuildContext context) => [
+                      if (_isDemoMode)
+                        const PopupMenuItem<String>(
+                          value: 'exit_demo',
+                          child: Row(
+                            children: [
+                              Icon(Icons.exit_to_app, size: 20),
+                              SizedBox(width: 8),
+                              Text('退出演示'),
+                            ],
+                          ),
+                        ),
+                      const PopupMenuItem<String>(
+                        value: '一天后',
+                        child: Row(
+                          children: [
+                            Icon(Icons.today, size: 20),
+                            SizedBox(width: 8),
+                            Text('使用一天后'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: '一星期后',
+                        child: Row(
+                          children: [
+                            Icon(Icons.date_range, size: 20),
+                            SizedBox(width: 8),
+                            Text('使用一星期后'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: '一个月后',
+                        child: Row(
+                          children: [
+                            Icon(Icons.calendar_month, size: 20),
+                            SizedBox(width: 8),
+                            Text('使用一个月后'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
               const SizedBox(height: 12),
               _buildSummaryCard(),
               const SizedBox(height: 12),
-              _buildStudyProgressChart(),
-              const SizedBox(height: 12),
-              _buildCategoryPerformance(),
+              _buildQuestionHabits(),
               const SizedBox(height: 12),
               _buildStudyHabits(),
               const SizedBox(height: 12),
+              _buildCategoryPerformance(),
+              const SizedBox(height: 12),
               _buildAchievements(),
+              const SizedBox(height: 12),
+              _buildStudyProgressChart(),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  // 获取当前数据（演示或真实）
+  LearningReportData _getCurrentData() {
+    if (_isDemoMode && _demoData != null) {
+      return _demoData!;
+    }
+    
+    // 返回真实数据
+    return LearningReportData(
+      studyTimeInMinutes: _statsManager.getStudyTimeInMinutes(),
+      studyDaysCount: _statsManager.getStudyDaysCount(),
+      completedQuestionsCount: _statsManager.getCompletedQuestionsCount(),
+      correctQuestionsCount: _statsManager.getCorrectQuestionsCount(),
+      wrongQuestionsCount: _statsManager.getWrongQuestionsCount(),
+      accuracyRate: _statsManager.calculateAccuracyRate(),
+      dailyStudyData: _statsManager.getDailyStudyData(),
+      studyStreakInfo: _statsManager.getStudyStreakInfo(),
+      questionHabitStats: StudyData.instance.getQuestionHabitStats(),
+      bestStudyTime: _statsManager.getBestStudyTime(),
+      bestStudyDayOfWeek: _statsManager.getBestStudyDayOfWeek(),
+      studyRegularity: _statsManager.getStudyRegularity(),
+      averageTimePerQuestion: _statsManager.getAverageTimePerQuestion(),
+             hourlyStudyDistribution: _statsManager.getHourlyStudyDistribution(),
+       maxDailyStudyMinutes: _statsManager.getDailyStudyData().fold(0.0, (max, minutes) => minutes > max ? minutes : max),
+       weeklyTotalStudyMinutes: _statsManager.getDailyStudyData().fold(0.0, (sum, minutes) => sum + minutes),
+       frequentWrongTopics: [], // TODO: 实现从统计管理器获取高频错误知识点
     );
   }
 
@@ -128,53 +420,101 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
   // Summary card with key metrics in compact left-right layout
   Widget _buildSummaryCard() {
     // Calculate study data
-    final studyMinutes = _statsManager.getStudyTimeInMinutes();
-    final studyDays = _statsManager.getStudyDaysCount();
-    final questionsCompleted = _statsManager.getCompletedQuestionsCount();
-    final correctQuestions = _statsManager.getCorrectQuestionsCount();
-    final wrongQuestions = _statsManager.getWrongQuestionsCount();
-    final accuracyRate = _statsManager.calculateAccuracyRate();
+    final data = _getCurrentData();
+    final studyMinutes = data.studyTimeInMinutes;
+    final studyDays = data.studyDaysCount;
+    final questionsCompleted = data.completedQuestionsCount;
+    final correctQuestions = data.correctQuestionsCount;
+    final wrongQuestions = data.wrongQuestionsCount;
+    final accuracyRate = data.accuracyRate;
     
     return CommonComponents.buildCommonCard(
       Padding(
-        padding: const EdgeInsets.fromLTRB(0, 10, 0, 10),
-        child: Row(
+        padding: const EdgeInsets.all(16),
+        child: Column(
           children: [
-            // Left side - Progress chart
-            Expanded(
-              flex: 1,
-              child: _buildProgressIndicator(correctQuestions, wrongQuestions),
-            ),
-            Container(
-              height: 80,
-              margin: const EdgeInsets.only(right: 20),
-              decoration: BoxDecoration(
-                  border: Border(
-                      right: BorderSide(
-                          color: Colors.grey.withOpacity(0.3), width: 1))),
-            ),
-            // Right side - Stats
-            Expanded(
-              flex: 1,
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildCompactStatRow(Icons.timer, "学习时长", "${studyMinutes.toInt()}分钟", "${_getAverageDailyStudyTime()}分钟/天"),
-                    const SizedBox(height: 12),
-                    _buildCompactStatRow(
-                        Icons.assignment_turned_in, "累计完成", "$questionsCompleted题", "正确率${accuracyRate.toStringAsFixed(1)}%"),
-                    const SizedBox(height: 12),
-                    _buildCompactStatRow(Icons.insights, "连续学习", "${_getStudyStreakInfo()['currentStreak']}天", "$studyDays天总计"),
-                  ],
+            Row(
+              children: [
+                // Left side - Progress chart
+                Expanded(
+                  flex: 1,
+                  child: _buildProgressIndicator(correctQuestions, wrongQuestions),
                 ),
-              ),
+                Container(
+                  height: 80,
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                      border: Border(
+                          right: BorderSide(
+                              color: Colors.grey.withOpacity(0.3), width: 1))),
+                ),
+                // Right side - Stats
+                Expanded(
+                  flex: 1,
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildCompactStatRow(Icons.timer, "学习时长", "${studyMinutes.toInt()}分钟", "${_getAverageDailyStudyTime(data)}分钟/天"),
+                        const SizedBox(height: 12),
+                        _buildCompactStatRow(
+                            Icons.assignment_turned_in, "累计完成", "$questionsCompleted题", "正确率${accuracyRate.toStringAsFixed(1)}%"),
+                        const SizedBox(height: 12),
+                        _buildCompactStatRow(Icons.insights, "连续学习", "${data.studyStreakInfo['currentStreak']}天", "$studyDays天总计"),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
+            // 高频错误知识点建议
+            if (data.frequentWrongTopics.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Divider(height: 1, color: Colors.grey.withOpacity(0.15)),
+              const SizedBox(height: 10),
+              _buildFrequentWrongTopicsRecommendation(data.frequentWrongTopics),
+            ],
           ],
         ),
       ),
+    );
+  }
+  
+  // 构建高频错误知识点建议
+  Widget _buildFrequentWrongTopicsRecommendation(List<String> wrongTopics) {
+    return Row(
+      children: [
+        Icon(
+          Icons.lightbulb_outline,
+          size: 16,
+          color: Colors.grey.shade600,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: RichText(
+            text: TextSpan(
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey.shade700,
+              ),
+              children: [
+                const TextSpan(text: '建议重点练习：'),
+                TextSpan(
+                  text: wrongTopics.take(2).join('、'),
+                  style: TextStyle(
+                    color: Colors.orange.shade600,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (wrongTopics.length > 2)
+                  TextSpan(text: ' 等${wrongTopics.length}个知识点'),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
   
@@ -282,7 +622,8 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
   // Study progress chart showing daily study time
   Widget _buildStudyProgressChart() {
     // Get the daily study data
-    final dailyData = _statsManager.getDailyStudyData();
+    final data = _getCurrentData();
+    final dailyData = data.dailyStudyData;
     final days = ['一', '二', '三', '四', '五', '六', '日'];
     
     // Check if data exists and find max value for warnings
@@ -298,7 +639,7 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
             SizedBox(
               height: 200,
               child: hasRealData 
-                ? BarChart(_createBarChartData())
+                ? fl.BarChart(_createBarChartData(data))
                 : Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -375,7 +716,7 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
                           children: [
                             const TextSpan(text: '日均学习时间 '),
                             TextSpan(
-                              text: '${_getAverageDailyStudyTime()}分钟',
+                              text: '${_getAverageDailyStudyTime(data)}分钟',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: AppTheme.primaryColor,
@@ -393,8 +734,8 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        _buildDailyStat('最长学习', '${_getMaxDailyStudyMinutes().toInt()}分钟'),
-                        _buildDailyStat('本周学习', '${_getWeeklyTotalStudyMinutes().toInt()}分钟'),
+                        _buildDailyStat('最长学习', '${data.maxDailyStudyMinutes.toInt()}分钟'),
+                        _buildDailyStat('本周学习', '${data.weeklyTotalStudyMinutes.toInt()}分钟'),
                       ],
                     ),
                   ],
@@ -432,35 +773,25 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
   }
 
   // Get average daily study time
-  String _getAverageDailyStudyTime() {
-    final studyDays = _statsManager.getStudyDaysCount();
-    final totalMinutes = _statsManager.getStudyTimeInMinutes();
+  String _getAverageDailyStudyTime(LearningReportData data) {
+    final studyDays = data.studyDaysCount;
+    final totalMinutes = data.studyTimeInMinutes;
     
     if (studyDays == 0) return "0";
     
     return (totalMinutes / studyDays).round().toString();
   }
 
-  // Get max daily study minutes
-  double _getMaxDailyStudyMinutes() {
-    final dailyData = _statsManager.getDailyStudyData();
-    return dailyData.fold(0.0, (max, minutes) => minutes > max ? minutes : max);
-  }
 
-  // Get total study minutes for the week
-  double _getWeeklyTotalStudyMinutes() {
-    final dailyData = _statsManager.getDailyStudyData();
-    return dailyData.fold(0.0, (sum, minutes) => sum + minutes);
-  }
 
   // Create data for bar chart showing study time by day
-  BarChartData _createBarChartData() {
-    final List<BarChartGroupData> barGroups = [];
+  fl.BarChartData _createBarChartData(LearningReportData data) {
+    final List<fl.BarChartGroupData> barGroups = [];
     final days = ['一', '二', '三', '四', '五', '六', '日'];
     
     // Get daily activity data - this is already in chronological order
     // where index 0 = 6 days ago, index 6 = today
-    final dailyData = _statsManager.getDailyStudyData();
+    final dailyData = data.dailyStudyData;
     
     // Find the maximum value for proper scaling
     final maxValue = dailyData.fold(0.0, (max, value) => value > max ? value : max);
@@ -476,10 +807,10 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
         final displayValue = value > 480 ? 480.0 : value;
       
       barGroups.add(
-        BarChartGroupData(
+        fl.BarChartGroupData(
           x: i,
           barRods: [
-            BarChartRodData(
+            fl.BarChartRodData(
               toY: displayValue.toDouble(),
               color: AppTheme.primaryColor,
               width: 15,
@@ -495,22 +826,22 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
       );
     }
 
-    return BarChartData(
+    return fl.BarChartData(
       barGroups: barGroups,
-      gridData: FlGridData(
+      gridData: fl.FlGridData(
         show: true,
         drawVerticalLine: false,
         horizontalInterval: cappedMaxValue > 60 ? 30 : 10,  // Adjust grid based on data scale
-        getDrawingHorizontalLine: (value) => FlLine(
+        getDrawingHorizontalLine: (value) => fl.FlLine(
           color: Colors.grey.withOpacity(0.2),
           strokeWidth: 1,
         ),
       ),
       maxY: cappedMaxValue > 0 ? max(cappedMaxValue * 1.2, 60) : 60, // Add room above highest bar, with minimum of 60 minutes
-      titlesData: FlTitlesData(
+      titlesData: fl.FlTitlesData(
         show: true,
-        leftTitles: AxisTitles(
-          sideTitles: SideTitles(
+        leftTitles: fl.AxisTitles(
+          sideTitles: fl.SideTitles(
             showTitles: true,
             getTitlesWidget: (value, meta) {
               if (value % (cappedMaxValue > 60 ? 30 : 10) != 0) return const SizedBox();
@@ -528,14 +859,14 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
             reservedSize: 28,
           ),
         ),
-        topTitles: const AxisTitles(
-          sideTitles: SideTitles(showTitles: false),
+        topTitles: const fl.AxisTitles(
+          sideTitles: fl.SideTitles(showTitles: false),
         ),
-        rightTitles: const AxisTitles(
-          sideTitles: SideTitles(showTitles: false),
+        rightTitles: const fl.AxisTitles(
+          sideTitles: fl.SideTitles(showTitles: false),
         ),
-        bottomTitles: AxisTitles(
-          sideTitles: SideTitles(
+        bottomTitles: fl.AxisTitles(
+          sideTitles: fl.SideTitles(
             showTitles: true,
             getTitlesWidget: (value, meta) {
               final index = value.toInt();
@@ -569,231 +900,246 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
           ),
         ),
       ),
-      barTouchData: BarTouchData(
+      barTouchData: fl.BarTouchData(
         enabled: false, // Disable all touch interactions with the chart
       ),
-      borderData: FlBorderData(show: false),
+      borderData: fl.FlBorderData(show: false),
     );
   }
 
   // Category performance analysis
   Widget _buildCategoryPerformance() {
-    final topics = _getTopics();
-    final topicTree = _getTopicTree();
-    // Add debug mode state
-    bool debugMode = false;
+    final currentData = _getCurrentData();
     
     return _buildSectionCard(
       title: '知识点掌握情况',
-      content: StatefulBuilder(
-        builder: (context, setState) {
-          return Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                // Show loading indicator if we're fetching topics
-                if (topics.isEmpty)
-                  const Center(
-                    child: Column(
-                      children: [
-                        SizedBox(height: 20),
-                        Text(
-                          '暂无知识点数据',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: AppTheme.textSecondary,
-                          ),
-                        ),
-                        SizedBox(height: 10),
-                        Text(
-                          '完成更多学习后将显示知识点掌握情况',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppTheme.textSecondary,
-                          ),
-                        ),
-                        SizedBox(height: 20),
-                      ],
-                    ),
-                  )
-                else
-                  Column(
-                    children: [
-                      // Summary of knowledge mastery
-                      _buildMasteryOverview(),
-                      const SizedBox(height: 16),
-                      const Divider(),
-                      const SizedBox(height: 16),
+      content: Padding(
+        padding: const EdgeInsets.all(16),
+        child: _isDemoMode && currentData.masteryStats != null
+          ? _buildMasteryOverviewFromData(currentData.masteryStats!)
+          : _buildRealModePerformance(),
+      ),
+    );
+  }
 
-                      // 树状结构的知识点标题栏
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            '知识树结构',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.textPrimary,
-                            ),
-                          ),
-                          // Debug mode toggle
-                          InkWell(
-                            onTap: () {
-                              setState(() {
-                                debugMode = !debugMode;
-                              });
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: debugMode 
-                                  ? AppTheme.primaryColor.withOpacity(0.1) 
-                                  : Colors.grey.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.bug_report,
-                                    size: 14,
-                                    color: debugMode ? AppTheme.primaryColor : Colors.grey,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '调试',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: debugMode ? AppTheme.primaryColor : Colors.grey,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      
-                      // 艾宾浩斯遗忘曲线说明
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppTheme.primaryColor.withOpacity(0.2)),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(
-                              Icons.info_outline,
-                              size: 18,
-                              color: AppTheme.primaryColor,
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    '艾宾浩斯遗忘曲线',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppTheme.textPrimary,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '掌握度会随时间自然衰减，每个知识点右侧标签显示当前处于记忆的第几天。重复学习可以增强记忆稳定性，降低遗忘速度。',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: AppTheme.textSecondary.withOpacity(0.8),
-                                      height: 1.4,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      
-                      // 树状视图
-                      ...topicTree.map((parentTopic) => 
-                        _buildTopicTreeItem(parentTopic, debug: debugMode)
-                      ),
-                    ],
+  // 基于演示数据构建掌握度概览
+  Widget _buildMasteryOverviewFromData(Map<String, dynamic> masteryStats) {
+    final averageMastery = masteryStats['averageMastery'] as double;
+    final strongTopics = masteryStats['strongTopics'] as int;
+    final weakTopics = masteryStats['weakTopics'] as int;
+    final totalTopics = masteryStats['totalTopics'] as int;
+    
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildMasteryMetric(
+              label: '平均掌握度',
+              value: '${(averageMastery * 100).round()}%',
+              color: _getMasteryColor(averageMastery),
+            ),
+            _buildMasteryMetric(
+              label: '已掌握',
+              value: '${strongTopics}个',
+              color: AppTheme.successColor,
+            ),
+            _buildMasteryMetric(
+              label: '需加强',
+              value: '${weakTopics}个',
+              color: weakTopics > 0 ? Colors.redAccent : AppTheme.successColor,
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        // Visualize topic distribution
+        ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: SizedBox(
+            height: 8,
+            child: Row(
+              children: [
+                Expanded(
+                  flex: max(1, weakTopics),
+                  child: Container(
+                    color: Colors.redAccent,
                   ),
-                  
-                const SizedBox(height: 16),
-                // Recommendation
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppTheme.successColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
+                ),
+                Expanded(
+                  flex: max(1, totalTopics - weakTopics - strongTopics),
+                  child: Container(
+                    color: AppTheme.warningColor,
                   ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(Icons.lightbulb, color: AppTheme.successColor, size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: topics.isEmpty
-                          ? const Text(
-                              '建议开始学习更多知识点',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: AppTheme.successColor,
-                              ),
-                            )
-                          : Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  '建议加强学习:',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppTheme.successColor,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Builder(
-                                  builder: (context) {
-                                    // Find the weakest node once to avoid multiple calculations
-                                    final weakestNode = _findWeakestLeafNode(topicTree);
-                                    final String recommendationText;
-                                    
-                                    if (weakestNode != null && weakestNode.containsKey('fullPath')) {
-                                      recommendationText = _formatTopicPath(weakestNode['fullPath']);
-                                    } else {
-                                      recommendationText = _getWeakestTopic();
-                                    }
-                                    
-                                    return Text(
-                                      recommendationText,
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        color: AppTheme.successColor,
-                                      ),
-                                    );
-                                  }
-                                ),
-                              ],
-                            ),
-                      ),
-                    ],
+                ),
+                Expanded(
+                  flex: max(1, strongTopics),
+                  child: Container(
+                    color: AppTheme.successColor,
                   ),
                 ),
               ],
             ),
-          );
-        }
-      ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildLegendItem('需加强', Colors.redAccent),
+            _buildLegendItem('进步中', AppTheme.warningColor),
+            _buildLegendItem('已掌握', AppTheme.successColor),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // 真实模式的知识点性能分析
+  Widget _buildRealModePerformance() {
+    final topics = _getTopics();
+    final topicTree = _getTopicTree();
+    
+    if (topics.isEmpty) {
+      return const Center(
+        child: Column(
+          children: [
+            SizedBox(height: 20),
+            Text(
+              '暂无知识点数据',
+              style: TextStyle(
+                fontSize: 16,
+                color: AppTheme.textSecondary,
+              ),
+            ),
+            SizedBox(height: 10),
+            Text(
+              '完成更多学习后将显示知识点掌握情况',
+              style: TextStyle(
+                fontSize: 14,
+                color: AppTheme.textSecondary,
+              ),
+            ),
+            SizedBox(height: 20),
+          ],
+        ),
+      );
+    }
+
+    return StatefulBuilder(
+      builder: (context, setState) {
+        bool debugMode = false;
+        
+        return Column(
+          children: [
+            // Summary of knowledge mastery
+            _buildMasteryOverview(),
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 16),
+
+            // 树状结构的知识点标题栏
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  '知识树结构',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                // Debug mode toggle
+                InkWell(
+                  onTap: () {
+                    setState(() {
+                      debugMode = !debugMode;
+                    });
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: debugMode 
+                        ? AppTheme.primaryColor.withOpacity(0.1) 
+                        : Colors.grey.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.bug_report,
+                          size: 14,
+                          color: debugMode ? AppTheme.primaryColor : Colors.grey,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '调试',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: debugMode ? AppTheme.primaryColor : Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            
+            // 艾宾浩斯遗忘曲线说明
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppTheme.primaryColor.withOpacity(0.2)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 18,
+                    color: AppTheme.primaryColor,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '艾宾浩斯遗忘曲线',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '掌握度会随时间自然衰减，每个知识点右侧标签显示当前处于记忆的第几天。重复学习可以增强记忆稳定性，降低遗忘速度。',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppTheme.textSecondary.withOpacity(0.8),
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            
+            // 树状视图
+            ...topicTree.map((parentTopic) => 
+              _buildTopicTreeItem(parentTopic, debug: debugMode)
+            ),
+          ],
+        );
+      }
     );
   }
 
@@ -1019,8 +1365,241 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
     }
   }
 
+  // Question habits analysis
+  Widget _buildQuestionHabits() {
+    final data = _getCurrentData();
+    final stats = data.questionHabitStats;
+    final askAiCount = stats['askAiCount'] ?? 0;
+    final viewVideoCount = stats['viewKnowledgeVideoCount'] ?? 0;
+    final viewKnowledgeCount = stats['viewKnowledgeCount'] ?? 0;
+    final bothCount = stats['bothAiAndVideoCount'] ?? 0;
+    final totalQuestions = data.completedQuestionsCount;
+    
+    // 计算使用率
+    final askAiRate = totalQuestions > 0 ? (askAiCount / totalQuestions * 100) : 0.0;
+    final viewVideoRate = totalQuestions > 0 ? (viewVideoCount / totalQuestions * 100) : 0.0;
+    final viewKnowledgeRate = totalQuestions > 0 ? (viewKnowledgeCount / totalQuestions * 100) : 0.0;
+    final bothRate = totalQuestions > 0 ? (bothCount / totalQuestions * 100) : 0.0;
+    
+    return _buildSectionCard(
+      title: '提问习惯分析',
+      content: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            // 概览统计
+            _buildQuestionHabitsOverview(askAiCount, viewVideoCount, viewKnowledgeCount, totalQuestions),
+            const SizedBox(height: 16),
+            
+            // 饼图显示
+            if (totalQuestions > 0 && (askAiCount + viewVideoCount + viewKnowledgeCount > 0))
+              SizedBox(
+                height: 200,
+                child: _build3dPieChart(data),
+              )
+            else
+              Container(
+                height: 200,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.pie_chart_outline,
+                        size: 48,
+                        color: Colors.grey.withOpacity(0.5),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        '暂无提问数据',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey.withOpacity(0.8),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '开始使用AI问答、视频解析和知识点查看功能后将显示统计',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.withOpacity(0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  // 提问习惯概览
+  Widget _buildQuestionHabitsOverview(int askAi, int viewVideo, int viewKnowledge, int total) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryColor.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.insights, color: AppTheme.primaryColor, size: 24),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '提问习惯评价',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _getQuestionHabitsEvaluation(askAi, viewVideo, viewKnowledge, total),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.textSecondary,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  // 创建提问习惯饼图数据
+  List<fl.PieChartSectionData> _getQuestionHabitsPieChartSections(LearningReportData data) {
+    final stats = data.questionHabitStats;
+    final askAiCount = (stats['askAiCount'] ?? 0).toDouble();
+    final viewVideoCount = (stats['viewKnowledgeVideoCount'] ?? 0).toDouble();
+    final bothCount = (stats['bothAiAndVideoCount'] ?? 0).toDouble();
+    
+    final total = askAiCount + viewVideoCount + bothCount;
+    if (total == 0) {
+      return [];
+    }
+
+    final List<Map<String, dynamic>> habitsData = [];
+    if (askAiCount > 0) {
+      habitsData.add({'value': askAiCount, 'color': const Color(0xff0293ee)});
+    }
+    if (viewVideoCount > 0) {
+      habitsData.add({'value': viewVideoCount, 'color': const Color(0xff13d38e)});
+    }
+    if (bothCount > 0) {
+      habitsData.add({'value': bothCount, 'color': const Color(0xff845bef)});
+    }
+
+    return List.generate(habitsData.length, (i) {
+      final isTouched = i == _touchedIndex;
+      final radius = isTouched ? 60.0 : 50.0;
+      final data = habitsData[i];
+      final color = data['color'] as Color;
+
+      return fl.PieChartSectionData(
+        color: color,
+        value: data['value'] as double,
+        title: '${((data['value'] as double) / total * 100).round()}%',
+        radius: radius,
+        titleStyle: TextStyle(
+          fontSize: isTouched ? 16 : 12,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+          shadows: const [Shadow(color: Colors.black, blurRadius: 3)],
+        ),
+        borderSide: isTouched 
+          ? const BorderSide(color: Colors.white, width: 4)
+          : const BorderSide(color: Colors.white54, width: 1),
+      );
+    });
+  }
+  
+  // 构建饼图图例项
+  Widget _buildPieChartLegend({
+    required Color color,
+    required String label,
+    required String value,
+    required String percentage,
+  }) {
+    return Row(
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+              Text(
+                '$value ($percentage)',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+  
+  // 获取提问习惯评价
+  String _getQuestionHabitsEvaluation(int askAi, int viewVideo, int viewKnowledge, int total) {
+    if (total == 0) {
+      return '暂无数据，开始做题后将显示您的提问习惯分析';
+    }
+    
+    final totalUsage = askAi + viewVideo + viewKnowledge;
+    final usageRate = totalUsage / total;
+    
+    // 检查是否有组合使用
+    final stats = StudyData.instance.getQuestionHabitStats();
+    final aiAndVideoCount = stats['aiAndVideoCount'] ?? 0;
+    final aiAndKnowledgeCount = stats['aiAndKnowledgeCount'] ?? 0;
+    final videoAndKnowledgeCount = stats['videoAndKnowledgeCount'] ?? 0;
+    final allThreeCount = stats['allThreeCount'] ?? 0;
+    
+    if (allThreeCount > 0) {
+      return '您善于综合运用AI问答、视频解析和知识点学习，这是极佳的深度学习习惯！';
+    } else if (aiAndVideoCount > 0 || aiAndKnowledgeCount > 0 || videoAndKnowledgeCount > 0) {
+      return '您能够结合多种学习工具进行学习，建议继续保持这种好习惯！';
+    } else if (usageRate > 0.6) {
+      return '您积极使用学习工具，建议多结合AI问答、视频解析和知识点查看';
+    } else if (usageRate > 0.3) {
+      return '您有一定的提问意识，可以更多地利用AI和视频、知识点资源';
+    } else {
+      return '建议多使用AI问答、视频解析和知识点查看功能，提高学习效率';
+    }
+  }
+
   // Study habits analysis
   Widget _buildStudyHabits() {
+    final data = _getCurrentData();
     return _buildSectionCard(
       title: '学习习惯分析',
       content: Padding(
@@ -1039,27 +1618,27 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
                 _buildCompactStudyHabitItem(
                   icon: Icons.access_time,
                   title: '最佳学习时段',
-                  value: _getBestStudyTime(),
+                  value: data.bestStudyTime,
                 ),
                 _buildCompactStudyHabitItem(
                   icon: Icons.calendar_today,
                   title: '最佳学习日',
-                  value: _getBestStudyDayOfWeek(),
+                  value: data.bestStudyDayOfWeek,
                 ),
                 _buildCompactStudyHabitItem(
                   icon: Icons.repeat,
                   title: '学习规律性',
-                  value: '${(_getStudyRegularity() * 100).toStringAsFixed(0)}%',
+                  value: '${(data.studyRegularity * 100).toStringAsFixed(0)}%',
                 ),
                 _buildCompactStudyHabitItem(
                   icon: Icons.speed,
                   title: '平均做题速度',
-                  value: '${_getAverageTimePerQuestion()}秒',
+                  value: '${data.averageTimePerQuestion}秒',
                 ),
               ],
             ),
             const SizedBox(height: 12),
-            _buildHourlyDistributionChart(),
+            _buildHourlyDistributionChart(data),
             const SizedBox(height: 12),
             // Study habit advice
             Container(
@@ -1166,8 +1745,8 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
   }
 
   // Hourly distribution chart
-  Widget _buildHourlyDistributionChart() {
-    final hourlyData = _statsManager.getHourlyStudyDistribution();
+  Widget _buildHourlyDistributionChart(LearningReportData data) {
+    final hourlyData = data.hourlyStudyDistribution;
     final maxValue = hourlyData.values.fold(0.0, (max, value) => value > max ? value : max);
     
     return Container(
@@ -1490,7 +2069,7 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
   }
 
   // Create data for pie chart showing correct vs wrong questions
-  PieChartData _createPieChartData() {
+  fl.PieChartData _createPieChartData() {
     return _statsManager.getPieChartData();
   }
 
@@ -1923,4 +2502,134 @@ class _LearningReportScreenState extends State<LearningReportScreen> {
     // Format as "Parent > Child > Grandchild"
     return path.join(" > ");
   }
+
+  Widget _build3dPieChart(LearningReportData data) {
+    final stats = data.questionHabitStats;
+    
+    // 获取基础统计数据
+    final totalAiCount = (stats['askAiCount'] ?? 0);
+    final totalVideoCount = (stats['viewKnowledgeVideoCount'] ?? 0);
+    final totalKnowledgeCount = (stats['viewKnowledgeCount'] ?? 0);
+    
+    // 获取各种组合的统计数据（新系统）
+    final newAiAndVideoCount = (stats['aiAndVideoCount'] ?? 0);
+    final newAiAndKnowledgeCount = (stats['aiAndKnowledgeCount'] ?? 0);
+    final newVideoAndKnowledgeCount = (stats['videoAndKnowledgeCount'] ?? 0);
+    final newAllThreeCount = (stats['allThreeCount'] ?? 0);
+    
+    // 获取旧系统的组合数据（可能存在双重计数问题）
+    final oldBothAiAndVideoCount = (stats['bothAiAndVideoCount'] ?? 0);
+    
+    // 暂时只使用新系统的数据，如果新系统为0且旧系统有数据，则使用旧系统
+    // 这避免了复杂的双重计数修正逻辑
+    final totalAiAndVideoCount = newAiAndVideoCount > 0 ? newAiAndVideoCount : oldBothAiAndVideoCount;
+    final totalAiAndKnowledgeCount = newAiAndKnowledgeCount;
+    final totalVideoAndKnowledgeCount = newVideoAndKnowledgeCount;
+    final totalAllThreeCount = newAllThreeCount;
+    
+    // 调试输出
+    print('=== 饼图统计数据调试 ===');
+    print('基础数据:');
+    print('  totalAiCount: $totalAiCount');
+    print('  totalVideoCount: $totalVideoCount');
+    print('  totalKnowledgeCount: $totalKnowledgeCount');
+    print('组合数据:');
+    print('  新系统 - aiAndVideoCount: $newAiAndVideoCount');
+    print('  旧系统 - bothAiAndVideoCount: $oldBothAiAndVideoCount (可能双重计数)');
+    print('  使用的 - totalAiAndVideoCount: $totalAiAndVideoCount');
+    print('  totalAiAndKnowledgeCount: $totalAiAndKnowledgeCount');
+    print('  totalVideoAndKnowledgeCount: $totalVideoAndKnowledgeCount');
+    print('  totalAllThreeCount: $totalAllThreeCount');
+    
+    // 简化逻辑：直接显示各种使用方式，不计算"纯"使用
+    // 因为组合数据目前都是0，所以直接使用总数作为显示数据
+    final pureAiCount = totalAiCount;
+    final pureVideoCount = totalVideoCount; 
+    final pureKnowledgeCount = totalKnowledgeCount;
+    
+    print('计算结果:');
+    print('  pureAiCount: $pureAiCount');
+    print('  pureVideoCount: $pureVideoCount');
+    print('  pureKnowledgeCount: $pureKnowledgeCount');
+    print('=====================');
+    
+    final total = pureAiCount + pureVideoCount + pureKnowledgeCount + 
+                  totalAiAndVideoCount + totalAiAndKnowledgeCount + totalVideoAndKnowledgeCount + totalAllThreeCount;
+
+    final List<_PieData> pieData = [
+      // 基础使用方式
+      if (pureAiCount > 0) _PieData('问AI', pureAiCount.toDouble(), '$pureAiCount次', const Color(0xff0293ee)),
+      if (pureVideoCount > 0) _PieData('视频解析', pureVideoCount.toDouble(), '$pureVideoCount次', const Color(0xff13d38e)),
+      if (pureKnowledgeCount > 0) _PieData('看知识点', pureKnowledgeCount.toDouble(), '$pureKnowledgeCount次', const Color(0xff845bef)),
+      
+      // 组合使用方式（当有数据时显示）
+      if (totalAiAndVideoCount > 0) _PieData('AI+视频', totalAiAndVideoCount.toDouble(), '$totalAiAndVideoCount次', const Color(0xffff6b6b)),
+      if (totalAiAndKnowledgeCount > 0) _PieData('AI+知识点', totalAiAndKnowledgeCount.toDouble(), '$totalAiAndKnowledgeCount次', const Color(0xff4ecdc4)),
+      if (totalVideoAndKnowledgeCount > 0) _PieData('视频+知识点', totalVideoAndKnowledgeCount.toDouble(), '$totalVideoAndKnowledgeCount次', const Color(0xffffe66d)),
+      if (totalAllThreeCount > 0) _PieData('全部学习', totalAllThreeCount.toDouble(), '$totalAllThreeCount次', const Color(0xff95e1d3)),
+    ];
+    
+    return SfCircularChart(
+      // margin: const EdgeInsets.all(15),
+      series: <CircularSeries<_PieData, String>>[
+        PieSeries<_PieData, String>(
+          dataSource: pieData,
+          radius: '70%',
+          xValueMapper: (_PieData data, _) => data.xData,
+          yValueMapper: (_PieData data, _) => data.yData,
+          dataLabelMapper: (_PieData data, _) {
+            if (total == 0) return '';
+            final percentage = (data.yData / total * 100).toStringAsFixed(0);
+            return '${data.xData}\n${data.text} ($percentage%)';
+          },
+          pointColorMapper: (_PieData data, _) => data.color,
+          dataLabelSettings: const DataLabelSettings(
+            isVisible: true,
+            labelPosition: ChartDataLabelPosition.outside,
+            labelIntersectAction: LabelIntersectAction.shift,
+            connectorLineSettings: ConnectorLineSettings(
+              type: ConnectorType.curve,
+              length: '10%',
+            ),
+            textStyle: TextStyle(fontSize: 11),
+          ),
+          //explode: true, // This makes the chart always exploded
+          //explodeIndex: 0,
+        )
+      ],
+    );
+  }
+
+  // 构建图例项
+  Widget _buildLegendItem(String label, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            color: AppTheme.textSecondary,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PieData {
+  _PieData(this.xData, this.yData, this.text, this.color);
+  final String xData;
+  final double yData;
+  final String text;
+  final Color color;
 }

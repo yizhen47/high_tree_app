@@ -11,6 +11,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_markdown_latex/flutter_markdown_latex.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:flutter_application_1/services/ai_service.dart';
+import 'package:flutter_application_1/tool/study_data.dart';
 
 // 导入子组件
 import 'latex_config.dart';
@@ -36,6 +37,15 @@ Card buildQuestionCard(
   final ValueNotifier<String> aiResponseNotifier = ValueNotifier<String>('');
   final ValueNotifier<bool> isLoadingNotifier = ValueNotifier<bool>(false);
   final ValueNotifier<bool> hasQuestionedNotifier = ValueNotifier<bool>(false);
+  
+  // 提问习惯跟踪 - 记录用户在当前题目的行为
+  final ValueNotifier<bool> hasAskedAI = ValueNotifier<bool>(false);
+  final ValueNotifier<bool> hasViewedVideo = ValueNotifier<bool>(false);
+  final ValueNotifier<bool> hasViewedKnowledge = ValueNotifier<bool>(false);
+
+  void checkAndRecordCombinationsCallback() {
+    _checkAndRecordCombinations(hasAskedAI.value, hasViewedVideo.value, hasViewedKnowledge.value);
+  }
   
   final options = currentQuestionData?.question['options'] as List<dynamic>?;
   final difficulty = currentQuestionData?.question['difficulty']?.toString();
@@ -97,7 +107,7 @@ Card buildQuestionCard(
                           child: AnimatedSize(
                             duration: const Duration(milliseconds: 300),
                             child: expanded
-                                ? _buildAnswerSection(answer, note, context, currentQuestionData, questionBank)
+                                ? _buildAnswerSection(answer, note, context, checkAndRecordCombinationsCallback, currentQuestionData, questionBank, hasAskedAI, hasViewedVideo, hasViewedKnowledge)
                                 : const SizedBox.shrink(),
                           ),
                         ),
@@ -126,13 +136,16 @@ Card buildQuestionCard(
                     aiResponseNotifier,
                     isLoadingNotifier,
                     hasQuestionedNotifier,
+                    hasAskedAI,
+                    hasViewedVideo,
+                    hasViewedKnowledge,
                   );
                 },
               ),
               
               // 底部功能按钮
               if (showBottomButtons)
-              _buildBottomFeatureButtons(context, activeFeature, currentQuestionData, questionBank),
+              _buildBottomFeatureButtons(context, activeFeature, currentQuestionData, questionBank, hasAskedAI, hasViewedVideo, hasViewedKnowledge),
             ],
           )
         ) : Column(
@@ -177,7 +190,7 @@ Card buildQuestionCard(
                     child: AnimatedSize(
                       duration: const Duration(milliseconds: 300),
                       child: expanded
-                          ? _buildAnswerSection(answer, note, context, currentQuestionData, questionBank)
+                          ? _buildAnswerSection(answer, note, context, checkAndRecordCombinationsCallback, currentQuestionData, questionBank, hasAskedAI, hasViewedVideo, hasViewedKnowledge)
                           : const SizedBox.shrink(),
                     ),
                   ),
@@ -204,13 +217,16 @@ Card buildQuestionCard(
                   aiResponseNotifier,
                   isLoadingNotifier,
                   hasQuestionedNotifier,
+                  hasAskedAI,
+                  hasViewedVideo,
+                  hasViewedKnowledge,
                 );
               },
             ),
             
             // 底部功能按钮
             if (showBottomButtons)
-              _buildBottomFeatureButtons(context, activeFeature, currentQuestionData, questionBank),
+              _buildBottomFeatureButtons(context, activeFeature, currentQuestionData, questionBank, hasAskedAI, hasViewedVideo, hasViewedKnowledge),
           ],
         );
       },
@@ -390,6 +406,9 @@ Widget _buildFeaturePanel(
   ValueNotifier<String> aiResponseNotifier,
   ValueNotifier<bool> isLoadingNotifier,
   ValueNotifier<bool> hasQuestionedNotifier,
+  ValueNotifier<bool> hasAskedAI,
+  ValueNotifier<bool> hasViewedVideo,
+  ValueNotifier<bool> hasViewedKnowledge,
 ) {
   return Container(
     decoration: const BoxDecoration(
@@ -452,6 +471,9 @@ Widget _buildFeaturePanel(
                   aiResponseNotifier,
                   isLoadingNotifier,
                   hasQuestionedNotifier,
+                  hasAskedAI,
+                  hasViewedVideo,
+                  hasViewedKnowledge,
                   currentQuestionData, 
                   questionBank
                 ),
@@ -464,7 +486,15 @@ Widget _buildFeaturePanel(
   );
 }
 
-Widget _buildBottomFeatureButtons(BuildContext context, ValueNotifier<String> activeFeature, SingleQuestionData? currentQuestionData, [QuestionBank? questionBank]) {
+Widget _buildBottomFeatureButtons(
+  BuildContext context, 
+  ValueNotifier<String> activeFeature, 
+  SingleQuestionData? currentQuestionData, 
+  QuestionBank? questionBank,
+  ValueNotifier<bool> hasAskedAI,
+  ValueNotifier<bool> hasViewedVideo,
+  ValueNotifier<bool> hasViewedKnowledge
+) {
   return Container(
     width: double.infinity,
     decoration: BoxDecoration(
@@ -494,6 +524,9 @@ Widget _buildBottomFeatureButtons(BuildContext context, ValueNotifier<String> ac
           context: context,
           currentQuestionData: currentQuestionData,
           questionBank: questionBank,
+          hasAskedAI: hasAskedAI,
+          hasViewedVideo: hasViewedVideo,
+          hasViewedKnowledge: hasViewedKnowledge,
         ),
         _buildBottomFeatureButton(
           icon: Icons.chat_outlined,
@@ -503,6 +536,9 @@ Widget _buildBottomFeatureButtons(BuildContext context, ValueNotifier<String> ac
           context: context,
           currentQuestionData: currentQuestionData,
           questionBank: questionBank,
+          hasAskedAI: hasAskedAI,
+          hasViewedVideo: hasViewedVideo,
+          hasViewedKnowledge: hasViewedKnowledge,
         ),
         _buildBottomFeatureButton(
           icon: Icons.apps,
@@ -512,6 +548,9 @@ Widget _buildBottomFeatureButtons(BuildContext context, ValueNotifier<String> ac
           context: context,
           currentQuestionData: currentQuestionData,
           questionBank: questionBank,
+          hasAskedAI: hasAskedAI,
+          hasViewedVideo: hasViewedVideo,
+          hasViewedKnowledge: hasViewedKnowledge,
         ),
       ],
     ),
@@ -526,6 +565,9 @@ Widget _buildBottomFeatureButton({
   required BuildContext context,
   SingleQuestionData? currentQuestionData,
   QuestionBank? questionBank,
+  required ValueNotifier<bool> hasAskedAI,
+  required ValueNotifier<bool> hasViewedVideo,
+  required ValueNotifier<bool> hasViewedKnowledge,
 }) {
   final Color primaryColor = Theme.of(context).primaryColor;
   
@@ -551,6 +593,14 @@ Widget _buildBottomFeatureButton({
                     print('HighTree-Debug: currentQuestionData.fromKonwledgePoint = ${currentQuestionData.fromKonwledgePoint}');
                     final knowledgeSection = targetQuestionBank.findSectionByQuestion(currentQuestionData);
                     print('HighTree-Debug: knowledgeSection = $knowledgeSection');
+                    
+                    // 记录查看知识点行为
+                    StudyData.instance.recordViewKnowledge();
+                    if (!hasViewedKnowledge.value) {
+                      hasViewedKnowledge.value = true;
+                      _checkAndRecordCombinations(hasAskedAI.value, hasViewedVideo.value, hasViewedKnowledge.value);
+                    }
+                    
                     showKnowledgeCard(context, knowledgeSection, questionBank: targetQuestionBank);
                   } else {
                     print('HighTree-Debug: questionBank is null');
@@ -615,6 +665,9 @@ Widget _buildFeatureContent(
   ValueNotifier<String> aiResponseNotifier,
   ValueNotifier<bool> isLoadingNotifier,
   ValueNotifier<bool> hasQuestionedNotifier,
+  ValueNotifier<bool> hasAskedAI,
+  ValueNotifier<bool> hasViewedVideo,
+  ValueNotifier<bool> hasViewedKnowledge,
   [SingleQuestionData? currentQuestionData, 
    QuestionBank? questionBank]
 ) {
@@ -630,6 +683,9 @@ Widget _buildFeatureContent(
         aiResponseNotifier,
         isLoadingNotifier,
         hasQuestionedNotifier,
+        hasAskedAI,
+        hasViewedVideo,
+        hasViewedKnowledge,
       );
     case 'similar':
       return _buildSimpleSimilarQuestionsContent(context, primaryColor, currentQuestionData, questionBank);
@@ -647,6 +703,9 @@ Widget _buildSimpleAIContent(
   ValueNotifier<String> aiResponseNotifier,
   ValueNotifier<bool> isLoadingNotifier,
   ValueNotifier<bool> hasQuestionedNotifier,
+  ValueNotifier<bool> hasAskedAI,
+  ValueNotifier<bool> hasViewedVideo,
+  ValueNotifier<bool> hasViewedKnowledge,
 ) {
   
   Future<void> askAI() async {
@@ -681,6 +740,12 @@ Widget _buildSimpleAIContent(
       // 确保最终结果完整
       if (response.isNotEmpty) {
         aiResponseNotifier.value = response;
+        // 记录问AI行为
+        StudyData.instance.recordAskAI();
+        if (!hasAskedAI.value) {
+          hasAskedAI.value = true;
+          _checkAndRecordCombinations(hasAskedAI.value, hasViewedVideo.value, hasViewedKnowledge.value);
+        }
       }
     } catch (e) {
       aiResponseNotifier.value = '获取AI回答时出现错误：$e';
@@ -1423,7 +1488,7 @@ Widget _buildSimpleKnowledgeContent(String knowledgepoint, BuildContext context,
   );
 }
 
-Widget _buildAnswerSection(String? answer, String? note, BuildContext context, [SingleQuestionData? currentQuestionData, QuestionBank? questionBank]) {
+Widget _buildAnswerSection(String? answer, String? note, BuildContext context, VoidCallback checkAndRecordCombinationsCallback, [SingleQuestionData? currentQuestionData, QuestionBank? questionBank, ValueNotifier<bool>? hasAskedAI, ValueNotifier<bool>? hasViewedVideo, ValueNotifier<bool>? hasViewedKnowledge]) {
   final hasNote = note?.isNotEmpty ?? false;
   final Color primaryColor = Theme.of(context).primaryColor;
   
@@ -1471,6 +1536,10 @@ Widget _buildAnswerSection(String? answer, String? note, BuildContext context, [
                   primaryColor: primaryColor,
                   currentQuestionData: currentQuestionData,
                   questionBank: questionBank,
+                  hasAskedAI: hasAskedAI,
+                  hasViewedVideo: hasViewedVideo,
+                  hasViewedKnowledge: hasViewedKnowledge,
+                  onVideoViewed: checkAndRecordCombinationsCallback,
                 )
               : (answer?.isNotEmpty ?? false)
               ? Builder(builder: (context) {
@@ -1699,5 +1768,31 @@ void _showRandomSimilarQuestion(BuildContext context, SingleQuestionData? curren
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('获取同源题失败')),
     );
+  }
+} 
+
+// 检查并记录各种组合行为
+void _checkAndRecordCombinations(bool hasAI, bool hasVideo, bool hasKnowledge) {
+  // 计算有多少种行为被触发
+  int count = 0;
+  if (hasAI) count++;
+  if (hasVideo) count++;
+  if (hasKnowledge) count++;
+  
+  // 只有当用户在当前题目上进行了多种行为时才记录组合
+  if (count >= 2) {
+    if (hasAI && hasVideo && hasKnowledge) {
+      // 三个都看
+      StudyData.instance.recordAllThree();
+    } else if (hasAI && hasVideo) {
+      // 问AI + 视频解析
+      StudyData.instance.recordAiAndVideo();
+    } else if (hasAI && hasKnowledge) {
+      // 问AI + 看知识点
+      StudyData.instance.recordAiAndKnowledge();
+    } else if (hasVideo && hasKnowledge) {
+      // 视频解析 + 看知识点
+      StudyData.instance.recordVideoAndKnowledge();
+    }
   }
 } 

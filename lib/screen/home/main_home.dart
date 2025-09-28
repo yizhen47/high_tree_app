@@ -771,15 +771,16 @@ class _MainHomePageState extends State<MainHomePage>
                               ),
                               const SizedBox(height: 4),
                               
-                              // 进度指示器
+                              // 掌握度进度指示器
                               LinearProgressIndicator(
-                                value: LearningPlanManager.instance.learningPlanItems[index].getSectionLearningData(LearningPlanManager.instance.learningPlanItems[index].targetSection!).alreadyCompleteQuestion / 
-                                    max(LearningPlanManager.instance.learningPlanItems[index].getSectionLearningData(LearningPlanManager.instance.learningPlanItems[index].targetSection!).allNeedCompleteQuestion, 1),
+                                value: LearningPlanManager.instance.learningPlanItems[index].calculateSectionMastery(LearningPlanManager.instance.learningPlanItems[index].targetSection!),
                                 backgroundColor: Colors.grey.withOpacity(0.2),
                                 valueColor: AlwaysStoppedAnimation(
-                                  LearningPlanManager.instance.learningPlanItems[index].getSectionLearningData(LearningPlanManager.instance.learningPlanItems[index].targetSection!).alreadyCompleteQuestion > 0 
+                                  LearningPlanManager.instance.learningPlanItems[index].calculateSectionMastery(LearningPlanManager.instance.learningPlanItems[index].targetSection!) >= 0.7
                                     ? AppTheme.successColor 
-                                    : AppTheme.primaryColor,
+                                    : LearningPlanManager.instance.learningPlanItems[index].calculateSectionMastery(LearningPlanManager.instance.learningPlanItems[index].targetSection!) >= 0.4
+                                      ? AppTheme.warningColor
+                                      : Colors.redAccent,
                                 ),
                                 minHeight: 3,
                                 borderRadius: BorderRadius.circular(1.5),
@@ -803,7 +804,7 @@ class _MainHomePageState extends State<MainHomePage>
                                   const SizedBox(width: 8),
                                   Flexible(
                                     child: Text(
-                                      '掌握: ${(StudyData.instance.getTopicMastery(LearningPlanManager.instance.learningPlanItems[index].targetSection!.id) * 100).toStringAsFixed(0)}%',
+                                      '掌握: ${(LearningPlanManager.instance.learningPlanItems[index].calculateSectionMastery(LearningPlanManager.instance.learningPlanItems[index].targetSection!) * 100).toStringAsFixed(0)}%',
                                       style: const TextStyle(
                                         fontSize: 11,
                                         color: AppTheme.textSecondary,

@@ -5,6 +5,7 @@ import 'package:flutter_application_1/tool/question/question_controller.dart';
 import 'package:flutter_application_1/tool/question/wrong_question_book.dart';
 import 'package:flutter_application_1/widget/latex.dart';
 import 'package:flutter_application_1/widget/question_card/question_card_widget.dart';
+import 'package:flutter_application_1/widget/question_card/latex_config.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 
 class WrongQuestionScreen extends StatefulWidget {
@@ -654,11 +655,20 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidget> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    '$categoryName (${questions.length}题)',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+                  LaTeX(
+                    laTeXCode: Text(
+                      convertLatexDelimiters('$categoryName (${questions.length}题)'),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: categoryColor,
+                      ),
+                    ),
+                    equationStyle: TextStyle(
+                      fontSize: 13,
+                      fontWeight: latexStyleConfig.fontWeight,
+                      fontFamily: latexStyleConfig.mathFontFamily,
+                      fontStyle: FontStyle.italic,
                       color: categoryColor,
                     ),
                   ),
@@ -701,16 +711,134 @@ class _WrongQuestionWidthInnerState extends State<WrongQuestionWidget> {
                                 child: SizedBox(
                                   width: screenWidth - 80,
                                   height: screenHeight - 150,
-                                  child: buildQuestionCard(
-                                      context,
-                                      q.getKonwledgePoint(),
-                                      q.question['q']!,
-                                      q.question['w'],
-                                      WrongQuestionBook.instance
-                                          .getQuestion(q.question['id']!)
-                                          .note,
-                                      q,
-                                      _findQuestionBankByFromId(q.fromId)),
+                                  child: Column(
+                                    children: [
+                                      // 题目内容区域
+                                      Expanded(
+                                        child: buildQuestionCard(
+                                            context,
+                                            q.getKonwledgePoint(),
+                                            q.question['q']!,
+                                            q.question['w'],
+                                            WrongQuestionBook.instance
+                                                .getQuestion(q.question['id']!)
+                                                .note,
+                                            q,
+                                            _findQuestionBankByFromId(q.fromId)),
+                                      ),
+                                      
+                                      // 做对做错按钮区域
+                                      Container(
+                                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: const BorderRadius.only(
+                                            bottomLeft: Radius.circular(15),
+                                            bottomRight: Radius.circular(15),
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withOpacity(0.1),
+                                              blurRadius: 4,
+                                              offset: const Offset(0, -2),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            // 做错了按钮
+                                            Expanded(
+                                              child: TextButton.icon(
+                                                style: TextButton.styleFrom(
+                                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                                  backgroundColor: Colors.red.shade50,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius: BorderRadius.circular(8),
+                                                    side: BorderSide(color: Colors.red.shade200),
+                                                  ),
+                                                ),
+                                                onPressed: () {
+                                                  // 增加错误次数，调整掌握程度
+                                                  WrongQuestionBook.instance.mksureQuestion(questionId);
+                                                  final questionData = WrongQuestionBook.instance.getQuestion(questionId);
+                                                  // 可以在这里增加错误记录或调整掌握程度
+                                                  setState(() {});
+                                                  Navigator.pop(context);
+                                                  
+                                                  // 显示提示
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(
+                                                      content: const Text('已记录错误，继续加油！'),
+                                                      backgroundColor: Colors.red.shade400,
+                                                      behavior: SnackBarBehavior.floating,
+                                                      duration: const Duration(seconds: 2),
+                                                    ),
+                                                  );
+                                                },
+                                                icon: Icon(Icons.close, color: Colors.red.shade600, size: 18),
+                                                label: Text(
+                                                  '做错了',
+                                                  style: TextStyle(
+                                                    color: Colors.red.shade600,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            
+                                            const SizedBox(width: 12),
+                                            
+                                            // 做对了按钮
+                                            Expanded(
+                                              child: TextButton.icon(
+                                                style: TextButton.styleFrom(
+                                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                                  backgroundColor: Colors.green.shade50,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius: BorderRadius.circular(8),
+                                                    side: BorderSide(color: Colors.green.shade200),
+                                                  ),
+                                                ),
+                                                onPressed: () {
+                                                  // 移除错题
+                                                  WrongQuestionBook.instance.removeWrongQuestion(questionId);
+                                                  setState(() {});
+                                                  Navigator.pop(context);
+                                                  
+                                                  // 显示成功提示
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(
+                                                      content: const Text('恭喜！已从错题本中移除'),
+                                                      backgroundColor: Colors.green.shade400,
+                                                      behavior: SnackBarBehavior.floating,
+                                                      duration: const Duration(seconds: 2),
+                                                      action: SnackBarAction(
+                                                        label: '撤销',
+                                                        textColor: Colors.white,
+                                                                                                                 onPressed: () {
+                                                           // 撤销操作，重新添加到错题本
+                                                           WrongQuestionBook.instance.addWrongQuestion(questionId, q);
+                                                           setState(() {});
+                                                         },
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                                icon: Icon(Icons.check, color: Colors.green.shade600, size: 18),
+                                                label: Text(
+                                                  '做对了',
+                                                  style: TextStyle(
+                                                    color: Colors.green.shade600,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               );
                             },

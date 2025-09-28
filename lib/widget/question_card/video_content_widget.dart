@@ -4,17 +4,26 @@ import 'video_player_widget.dart';
 import 'dart:io';
 import 'package:path/path.dart' as path;
 import 'dart:developer' as developer;
+import 'package:flutter_application_1/tool/study_data.dart';
 
 class VideoContentWidget extends StatefulWidget {
   final Color primaryColor;
   final SingleQuestionData? currentQuestionData;
   final QuestionBank? questionBank;
+  final ValueNotifier<bool>? hasAskedAI;
+  final ValueNotifier<bool>? hasViewedVideo;
+  final ValueNotifier<bool>? hasViewedKnowledge;
+  final VoidCallback? onVideoViewed;
 
   const VideoContentWidget({
     super.key,
     required this.primaryColor,
     this.currentQuestionData,
     this.questionBank,
+    this.hasAskedAI,
+    this.hasViewedVideo,
+    this.hasViewedKnowledge,
+    this.onVideoViewed,
   });
 
   @override
@@ -80,6 +89,12 @@ class _VideoContentWidgetState extends State<VideoContentWidget> {
               videoPath: foundPath,
               primaryColor: widget.primaryColor,
             );
+            // 记录查看视频行为
+            StudyData.instance.recordViewVideo();
+            if (widget.hasViewedVideo != null && !widget.hasViewedVideo!.value) {
+              widget.hasViewedVideo!.value = true;
+              widget.onVideoViewed?.call();
+            }
           } else {
             _error = '视频文件未找到: $videoPath';
           }

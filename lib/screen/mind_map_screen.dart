@@ -10,6 +10,7 @@ import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:flutter_application_1/widget/mind_map.dart';
 import 'package:flutter_application_1/widget/question_card/knowledge_card_widget.dart';
 import 'package:flutter_application_1/widget/tech_ui_components.dart';
+import 'package:flutter_application_1/screen/fan_mind_map_screen.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 
 class MindMapScreen extends StatefulWidget {
@@ -113,29 +114,69 @@ class _ChapterMindMapState extends State<ChapterMindMapScreen> with TickerProvid
                        ),
                     ],
                   ),
-      trailing: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        const Color(0xFF00F5FF).withOpacity(0.6),
-                        Colors.transparent,
-                      ],
-                    ),
-                    border: Border.all(
-                      color: const Color(0xFF00FFFF).withOpacity(0.4),
-                      width: 1,
-                    ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  const Color(0xFF00F5FF).withOpacity(0.6),
+                  Colors.transparent,
+                ],
+              ),
+              border: Border.all(
+                color: const Color(0xFF00FFFF).withOpacity(0.4),
+                width: 1,
+              ),
+            ),
+            child: IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const FanMindMapScreen(),
                   ),
-                  child: Center(
-                    child: Icon(
-                      Icons.account_tree,
-                      color: const Color(0xFF00F5FF).withOpacity(0.8),
-                      size: 20,
+                );
+              },
+              icon: Icon(
+                Icons.donut_large,
+                color: const Color(0xFF00F5FF).withOpacity(0.8),
+                size: 18,
+              ),
+              padding: EdgeInsets.zero,
+              tooltip: '知识图谱',
+            ),
           ),
-        ),
+          const SizedBox(width: 8),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  const Color(0xFF00F5FF).withOpacity(0.6),
+                  Colors.transparent,
+                ],
+              ),
+              border: Border.all(
+                color: const Color(0xFF00FFFF).withOpacity(0.4),
+                width: 1,
+              ),
+            ),
+            child: Center(
+              child: Icon(
+                Icons.account_tree,
+                color: const Color(0xFF00F5FF).withOpacity(0.8),
+                size: 20,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -185,13 +226,20 @@ class _ChapterMindMapState extends State<ChapterMindMapScreen> with TickerProvid
     });
   }
   
+  // 清理章节标题，去掉"第x章"前缀
+  String _cleanChapterTitle(String title) {
+    // 使用正则表达式匹配"第x章"模式并去掉，支持阿拉伯数字和中文数字
+    final regex = RegExp(r'^第[\d一二三四五六七八九十百千万]+章\s*');
+    return title.replaceFirst(regex, '').trim();
+  }
+  
   // 递归构建章节节点
   void _buildChapterNodes(MindMapNode<Section> parentNode, Section section) {
     if (section.children != null && section.children!.isNotEmpty) {
       for (var child in section.children!) {
         var childNode = MindMapHelper.addChildNode<Section>(
           parentNode,
-          child.title,
+          _cleanChapterTitle(child.title),
           id: child.id,
           data: child,
           image: child.image,
@@ -311,29 +359,69 @@ class _InnerState extends State<MindMapScreen> with TickerProviderStateMixin {
                       ],
                     ),
                   ),
-      trailing: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        const Color(0xFF00F5FF).withOpacity(0.6),
-                        Colors.transparent,
-                      ],
-                    ),
-                    border: Border.all(
-                      color: const Color(0xFF00FFFF).withOpacity(0.4),
-                      width: 1,
-                    ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  const Color(0xFF00F5FF).withOpacity(0.6),
+                  Colors.transparent,
+                ],
+              ),
+              border: Border.all(
+                color: const Color(0xFF00FFFF).withOpacity(0.4),
+                width: 1,
+              ),
+            ),
+            child: IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const FanMindMapScreen(),
                   ),
-                  child: Center(
-                    child: Icon(
-                      Icons.blur_on,
-                      color: const Color(0xFF00F5FF).withOpacity(0.8),
-                      size: 20,
+                );
+              },
+              icon: Icon(
+                Icons.donut_large,
+                color: const Color(0xFF00F5FF).withOpacity(0.8),
+                size: 18,
+              ),
+              padding: EdgeInsets.zero,
+              tooltip: '知识图谱',
+            ),
           ),
-        ),
+          const SizedBox(width: 8),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  const Color(0xFF00F5FF).withOpacity(0.6),
+                  Colors.transparent,
+                ],
+              ),
+              border: Border.all(
+                color: const Color(0xFF00FFFF).withOpacity(0.4),
+                width: 1,
+              ),
+            ),
+            child: Center(
+              child: Icon(
+                Icons.blur_on,
+                color: const Color(0xFF00F5FF).withOpacity(0.8),
+                size: 20,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -388,7 +476,7 @@ class _InnerState extends State<MindMapScreen> with TickerProviderStateMixin {
             }
             
             // 检查是否是章节节点（包含"第"和"章"的节点）
-            if (_isChapterNode(node)) {
+            if ( _isChapterNode(node)) {
               // 找到对应的题库
               final bank = findBank(node.data!);
               if (bank != null) {
@@ -544,8 +632,10 @@ class _NodeActionDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    bool isAlreadyInPlan = LearningPlanManager.instance.learningPlanItems
-        .any((item) => item.targetSection?.id == node.data!.id);
+    String key =
+        (questionBank != null) ? "${questionBank!.id!}/${node.data!.id}" : "";
+    bool isAlreadyInPlan = questionBank != null &&
+        LearningPlanManager.instance.isSectionInManualPlan(questionBank!.id!, node.data!.id);
     
     // 检查节点是否有学习价值（可以添加到学习计划）
     bool canAddToPlan = node.data!.hasLearnableContent();

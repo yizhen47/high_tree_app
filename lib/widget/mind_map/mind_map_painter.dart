@@ -409,7 +409,7 @@ class MindMapPainter extends CustomPainter {
         final latexImage = latexCache[node.latexContent];
         if (latexImage != null) {
           // 绘制渲染好的 LaTeX 图片
-          const double textAreaHeight = 50.0;
+          const double textAreaHeight = 30.0;
           final double textYCenter =
               node.position.dy + (node.size.height / 2) - (textAreaHeight / 2);
 
@@ -445,9 +445,23 @@ class MindMapPainter extends CustomPainter {
             text: TextSpan(
               text: node.text,
               style: TextStyle(
-                color: const Color(0xFF00F5FF).withOpacity(0.7), // 降低亮度以示区别
-                fontSize: 14,
-                fontStyle: FontStyle.italic,
+                color: const Color(0xFF00F5FF),
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.0,
+                fontStyle: FontStyle.italic, // 保留斜体以示区别
+                shadows: [
+                  Shadow(
+                    offset: const Offset(0, 0),
+                    blurRadius: 8.0,
+                    color: const Color(0xFF00F5FF).withOpacity(0.8),
+                  ),
+                  Shadow(
+                    offset: const Offset(0, 0),
+                    blurRadius: 16.0,
+                    color: const Color(0xFF00F5FF).withOpacity(0.4),
+                  ),
+                ],
               ),
             ),
             textDirection: TextDirection.ltr,
@@ -490,14 +504,6 @@ class MindMapPainter extends CustomPainter {
       textPainter.paint(canvas, textPos);
       }
     }
-
-    // 霓虹边框
-    final neonBorderPaint = Paint()
-      ..color = const Color(0xFF00FFFF).withOpacity(0.8)
-      ..strokeWidth = 2.0
-      ..style = PaintingStyle.stroke
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
-    canvas.drawRRect(rect, neonBorderPaint);
   }
 
   // 科技风文本节点

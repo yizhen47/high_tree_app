@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screen/about.dart';
 import 'package:flutter_application_1/screen/background_customization.dart';
+import 'package:flutter_application_1/screen/class_management.dart';
 import 'package:flutter_application_1/screen/splash_customization.dart';
 import 'package:flutter_application_1/tool/study_data.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
@@ -191,6 +192,19 @@ class _InnerState extends State<SettingScreen> {
                     )),
                 TDCellGroup(
                   cells: [
+                    TDCell(
+                      leftIcon: Icons.class_,
+                      title: "班级管理",
+                      onClick: (_) {
+                        Navigator.push(
+                          context,
+                          CupertinoPageRoute(
+                            builder: (context) => const ClassManagementScreen(),
+                          ),
+                        );
+                      },
+                      rightIconWidget: const Icon(Icons.arrow_forward_ios, size: 16),
+                    ),
                     TDCell(
                         leftIcon: Icons.info_outline,
                         title: "关于",

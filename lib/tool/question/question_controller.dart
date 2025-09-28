@@ -46,26 +46,31 @@ class LearningPlanItem {
 
   /// Find all leaf sections in the bank that need to be learned
   Iterable<Section> getAllSectionsToLearn() sync* {
-    yield* _getAllSectionsToLearn(bank.data!, []);
+    final yieldedSectionIds = <String>{};
+    yield* _getAllSectionsToLearn(bank.data!, [], yieldedSectionIds);
   }
 
   Iterable<Section> _getAllSectionsToLearn(
-      List<Section> sections, List<String> indexPath) sync* {
+      List<Section> sections, List<String> indexPath, Set<String> yieldedSectionIds) sync* {
     for (var section in sections) {
       if (section.children != null && section.children!.isNotEmpty) {
         // 非叶子节点，继续遍历子节点
-        yield* _getAllSectionsToLearn(section.children!, [...indexPath, section.index]);
+        yield* _getAllSectionsToLearn(section.children!, [...indexPath, section.index], yieldedSectionIds);
       } else {
         // 叶子节点，检查是否有学习价值且需要学习
         if (section.hasLearnableContent() && needsToLearn(section)) {
-        yield section;
+          if (yieldedSectionIds.add(section.id)) {
+            yield section;
+          }
       }
         // 如果叶子节点没有学习价值（只有图片等），则查找其父节点
         else if (!section.hasLearnableContent() && needsToLearn(section)) {
           // 向上查找有学习价值的父节点
           Section? parent = _findLearnableParent(indexPath);
           if (parent != null && needsToLearn(parent)) {
-            yield parent;
+            if (yieldedSectionIds.add(parent.id)) {
+              yield parent;
+            }
           }
         }
       }
@@ -127,6 +132,9 @@ class LearningPlanItem {
     bankData.alreadyLearnSectionNum = 
         min(bankData.alreadyLearnSectionNum + 1, bankData.needLearnSectionNum);
     saveBankLearningData(bankData);
+    
+    // Remove this completed item from the learning plan
+    LearningPlanManager.instance.removeCompletedPlanItem(this);
   }
 
   /// Mark the current section as failed and replace questions
@@ -279,6 +287,99 @@ class LearningPlanItem {
     WrongQuestionBook.instance.sectionLearnBox.put(bank.id!, data);
   }
 
+  /// Calculate section mastery using Ebbinghaus forgetting curve algorithm
+  /// This method provides consistent mastery calculation across the app
+  double calculateSectionMastery(Section section) {
+    if (section == null) return 0.0;
+    
+    double mastery = 0.5; // Default mastery value
+    DateTime? lastStudyTime;
+    int studyCount = 0;
+    
+    // Get section learning data
+    final sectionData = getSectionLearningData(section);
+    
+    // Calculate basic mastery from completion rate
+    if (sectionData.allNeedCompleteQuestion > 0) {
+      mastery = sectionData.alreadyCompleteQuestion / sectionData.allNeedCompleteQuestion;
+    }
+    
+    // Get study count
+    studyCount = sectionData.learnTimes;
+    
+    // Get last study time
+    if (sectionData.lastLearnTime > 0) {
+      lastStudyTime = DateTime.fromMillisecondsSinceEpoch(sectionData.lastLearnTime);
+    }
+    
+    // Try to get more precise data from StudyData
+    final sectionId = section.id;
+    if (sectionId != null) {
+      final topicMastery = StudyData.instance.getTopicMastery(sectionId);
+      if (topicMastery > 0) {
+        mastery = topicMastery;
+      }
+      
+      final topicStudyCount = StudyData.instance.getTopicStudyCount(sectionId);
+      if (topicStudyCount > 0) {
+        studyCount = topicStudyCount;
+      }
+      
+      final topicLastStudyTime = StudyData.instance.getTopicLastStudyTime(sectionId);
+      if (topicLastStudyTime != null) {
+        lastStudyTime = topicLastStudyTime;
+      }
+    }
+    
+    // Apply Ebbinghaus forgetting curve if there's a last study time
+    if (lastStudyTime != null) {
+      // Calculate days since last study (with decimal precision)
+      final daysSinceLastStudy = DateTime.now().difference(lastStudyTime).inHours / 24.0;
+      
+      // Use effective study count
+      int effectiveStudyCount = max(studyCount, 1);
+      if (sectionId != null) {
+        effectiveStudyCount = max(StudyData.instance.getTopicStudyCount(sectionId), studyCount);
+      }
+      
+      // Calculate retention rate based on Ebbinghaus curve: R = e^(-t/S)
+      // Where S is stability factor and t is time in days
+      double retentionRate;
+      
+      if (effectiveStudyCount <= 1) {
+        // First study, moderate decay
+        const stabilityFactor = 2.5;
+        retentionRate = exp(-daysSinceLastStudy / stabilityFactor);
+      } else if (effectiveStudyCount == 2) {
+        // Second study, significantly improved stability
+        const stabilityFactor = 5.0;
+        retentionRate = exp(-daysSinceLastStudy / stabilityFactor);
+        retentionRate = max(retentionRate, 0.4); // Minimum 40% retention
+      } else if (effectiveStudyCount == 3) {
+        // Third study, more stable memory
+        const stabilityFactor = 8.0;
+        retentionRate = exp(-daysSinceLastStudy / stabilityFactor);
+        retentionRate = max(retentionRate, 0.5); // Minimum 50% retention
+      } else if (effectiveStudyCount == 4) {
+        // Fourth study, entering long-term memory
+        const stabilityFactor = 12.0;
+        retentionRate = exp(-daysSinceLastStudy / stabilityFactor);
+        retentionRate = max(retentionRate, 0.6); // Minimum 60% retention
+      } else {
+        // 5+ times, very stable memory
+        final stabilityFactor = 15.0 + ((effectiveStudyCount - 5) * 3.0);
+        retentionRate = exp(-daysSinceLastStudy / stabilityFactor);
+        // Minimum 70% + bonus for additional studies (up to 95%)
+        retentionRate = max(retentionRate, 0.7 + min((effectiveStudyCount - 5) * 0.05, 0.25));
+      }
+      
+      // Apply forgetting curve to mastery
+      mastery = (mastery * retentionRate).clamp(0.1, 1.0);
+    }
+    
+    return mastery.clamp(0.1, 1.0);
+  }
+
   /// Remove duplicate questions from the question list
   LearningPlanItem removeDuplicateQuestions() {
     var uniqueQuestions = <String, SingleQuestionData>{};
@@ -385,9 +486,6 @@ class LearningPlanManager {
   
   /// Cached question banks for quick reference
   List<QuestionBank> questionBanks = [];
-  
-  /// Sections manually added to the learning plan
-  Map<String, Section> manuallyAddedSections = {};
 
   /// Access to persistent storage
   Box get sectionData => WrongQuestionBook.instance.sectionDataBox;
@@ -399,86 +497,25 @@ class LearningPlanManager {
   /// Singleton instance
   static LearningPlanManager instance = LearningPlanManager();
 
-  LearningPlanManager() {
-    // Load manually added sections from persistent storage
-    _loadManualSections();
-  }
+  LearningPlanManager();
   
-  /// Load manually added sections from persistent storage
-  void _loadManualSections() async {
-    try {
-      // First load all question banks
-      questionBanks = await QuestionBank.getAllLoadedQuestionBanks();
-      
-      // Get saved manual section IDs
-      final keys = manualSectionsBox.keys;
-      for (var key in keys) {
-        // Format: bankId:sectionId
-        final value = manualSectionsBox.get(key);
-        if (value != null) {
-          final parts = value.split(':');
-          if (parts.length == 2) {
-            final bankId = parts[0];
-            final sectionId = parts[1];
-            
-            // Find corresponding bank and section
-            for (var bank in questionBanks) {
-              if (bank.id == bankId) {
-                Section section = bank.findSection(sectionId.split('/'));
-                // Restore to in-memory map
-                manuallyAddedSections[key.toString()] = section;
-                              break;
-              }
-            }
-          }
-        }
-      }
-    } catch (e) {
-      print('Error loading manual sections: $e');
-    }
+  /// Check if a section is already in the manual learning plan
+  bool isSectionInManualPlan(String bankId, String sectionId) {
+    String key = "$bankId/$sectionId";
+    return manualSectionsBox.containsKey(key);
   }
 
-  /// Add a section to the manual learning plan (only sections with learnable content allowed)
+  /// Add a section to the manual learning plan.
+  /// This method solely records the user's intent to learn a section, allowing for re-learning.
   bool addSectionToManualLearningPlan(Section section, QuestionBank bank) {
-    // 直接检查是否有学习价值
     if (!section.hasLearnableContent()) {
+      print('HighTree-Debug: Section ${section.title} has no learnable content.');
       return false;
     }
-    
     String key = "${bank.id!}/${section.id}";
-
-    // Return if already exists
-    if (manuallyAddedSections.containsKey(key)) {
-      return false;
-    }
-
-    // Add to manual selection collection
-    manuallyAddedSections[key] = section;
-    
-    // Save to persistent storage
+    // Always allow adding/re-adding. This simply records the user's intent to learn this section.
     manualSectionsBox.put(key, "${bank.id!}:${section.id}");
-
-    // Create and add learning plan item
-    LearningPlanItem planItem = LearningPlanItem(bank);
-    planItem.targetSection = section;
-    planItem.addGradedQuestions(); // 使用新的抽题逻辑
-
-    // Only add if not already exists
-    bool alreadyInPlan = learningPlanItems.any((item) => item.targetSection?.id == section.id);
-    
-    if (!alreadyInPlan) {
-      // 设置题目数量到学习数据中
-      var sectionData = planItem.getSectionLearningData(section);
-      sectionData.allNeedCompleteQuestion = planItem.questionList.length;
-      planItem.saveSectionLearningData(section, sectionData);
-      
-      learningPlanItems.add(planItem);
-
-      // Update bank learning data
-      var bankData = planItem.getBankLearningData();
-      bankData.needLearnSectionNum += 1;
-      planItem.saveBankLearningData(bankData);
-    }
+    print('HighTree-Debug: Added section ${section.title} to manual plan.');
     return true;
   }
 
@@ -486,88 +523,93 @@ class LearningPlanManager {
 
   /// Clear all manually added sections
   void clearManuallyAddedSections() {
-    manuallyAddedSections.clear();
+    // manuallyAddedSections.clear(); // This line is removed
     manualSectionsBox.clear();
   }
 
-  /// Update the learning plan based on auto-selected and manually added sections
-  Future<void> updateLearningPlan() async {
-    // Save manually added sections for later
-    Map<String, Section> savedManualSections = Map.from(manuallyAddedSections);
-    Map<String, QuestionBank> bankMap = {};
+  /// Remove a completed plan item from all data sources
+  void removeCompletedPlanItem(LearningPlanItem planItem) {
+    if (planItem.targetSection == null || planItem.bank.id == null) {
+      return;
+    }
+    
+    String key = "${planItem.bank.id!}/${planItem.targetSection!.id}";
+    
+    // Remove from Hive persistent storage (single source of truth)
+    manualSectionsBox.delete(key);
+    
+    // Remove from memory cache
+    // manuallyAddedSections.remove(key); // This line is removed
+    
+    // Remove from current learning plan items
+    learningPlanItems.removeWhere((item) => 
+        item.bank.id == planItem.bank.id && 
+        item.targetSection?.id == planItem.targetSection?.id);
+    
+    print('HighTree-Debug: Removed completed plan item: ${planItem.targetSection!.title}');
+  }
 
-    // Clear existing plan and reload banks
-    print('HighTree-Debug: Clearing existing learning plan...');
+  /// Update the learning plan based on manually added sections only
+  Future<void> updateLearningPlan() async {
+    // 0. Setup: Load banks, clear old plan
+    print('HighTree-Debug: Updating learning plan...');
+    Map<String, QuestionBank> bankMap = {};
     learningPlanItems.clear();
     questionBanks.clear();
     questionBanks.addAll(await QuestionBank.getAllLoadedQuestionBanks());
-    print('HighTree-Debug: Loaded ${questionBanks.length} question banks');
-
-    // Create bank lookup map
+    print('HighTree-Debug: Loaded ${questionBanks.length} question banks.');
     for (var bank in questionBanks) {
       bankMap[bank.id!] = bank;
     }
-    print('HighTree-Debug: Available question banks: ${bankMap.keys.toList()}');
+    final addedSectionIds = <String>{};
 
-    // First add auto-selected sections
-    for (var bank in questionBanks) {
-      var tempPlanItem = LearningPlanItem(bank);
-      int remainingSections = tempPlanItem.getBankLearningData().needLearnSectionNum - 
-                             tempPlanItem.getBankLearningData().alreadyLearnSectionNum;
-                             
-      tempPlanItem.getSectionsToLearn(remainingSections).forEach((section) {
-        var planItem = LearningPlanItem(bank);
-        planItem.targetSection = section;
-        planItem.addGradedQuestions(); // 使用新的抽题逻辑
-        
-        // 只添加有有效题目的计划项
-        if (planItem.questionList.isNotEmpty) {
-          // 设置题目数量到学习数据中
-          var sectionData = planItem.getSectionLearningData(section);
-          sectionData.allNeedCompleteQuestion = planItem.questionList.length;
-          planItem.saveSectionLearningData(section, sectionData);
-          
-          learningPlanItems.add(planItem);
-        } else {
-          print('HighTree-Debug: Skipping section ${section.title} due to no valid questions');
-        }
-      });
-    }
+    // Reload manual sections from Hive every time to ensure it's the single source of truth.
+    // ... (removed old logic for manuallyAddedSections map)
 
-    // Then add manually selected sections
-    for (var entry in savedManualSections.entries) {
-      String fullId = entry.key;
-      Section section = entry.value;
+    // 1. Build plan from the single source of truth: the user's intent in manualSectionsBox.
+    // This logic does not filter by 'needsToLearn', allowing any section to be re-added for learning.
+    print(
+        'HighTree-Debug: Building plan from ${manualSectionsBox.length} manual sections...');
+    for (var key in manualSectionsBox.keys.toList()) { // Use toList() to allow safe deletion during iteration
+      final value = manualSectionsBox.get(key);
+      if (value == null) continue;
 
-      // Extract bank ID
-      String bankId = fullId.substring(0, fullId.indexOf("/"));
+      final parts = value.split(':');
+      if (parts.length != 2) continue;
 
-      // Find corresponding bank
-      if (bankMap.containsKey(bankId)) {
-        QuestionBank bank = bankMap[bankId]!;
+      final bankId = parts[0];
+      final sectionId = parts[1];
 
-        LearningPlanItem planItem = LearningPlanItem(bank);
-        planItem.targetSection = section;
-        
-        // Ensure section is not duplicate and needs learning
-        if (!learningPlanItems.any((item) => item.targetSection?.id == section.id) &&
-            planItem.needsToLearn(section)) {
-          planItem.addGradedQuestions(); // 使用新的抽题逻辑
-          
-          // 只添加有有效题目的计划项
+      // Use the composite key for uniqueness check to prevent duplicates from the same bank
+      if (bankMap.containsKey(bankId) && addedSectionIds.add(key.toString())) {
+        final bank = bankMap[bankId]!;
+        try {
+          final section = bank.findSection(sectionId.split('/'));
+          final planItem = LearningPlanItem(bank);
+          planItem.targetSection = section;
+          planItem.addGradedQuestions();
+
           if (planItem.questionList.isNotEmpty) {
-            // 设置题目数量到学习数据中
             var sectionData = planItem.getSectionLearningData(section);
             sectionData.allNeedCompleteQuestion = planItem.questionList.length;
             planItem.saveSectionLearningData(section, sectionData);
-            
             learningPlanItems.add(planItem);
           } else {
-            print('HighTree-Debug: Skipping manually selected section ${section.title} due to no valid questions');
+            // Housekeeping: remove sections that are impossible to learn (e.g., no questions)
+            print(
+                'HighTree-Debug: Skipping manual section ${section.title} (no questions). Removing from plan.');
+            manualSectionsBox.delete(key);
           }
+        } catch (e) {
+          // Housekeeping: remove invalid section references
+          print("Error finding section $sectionId for manual plan, removing: $e");
+          manualSectionsBox.delete(key);
         }
       }
     }
+    
+    print(
+        'HighTree-Debug: Final learning plan has ${learningPlanItems.length} items.');
   }
 
   /// Get the list of question banks used in the learning plan
@@ -585,6 +627,9 @@ class LearningPlanManager {
         bankLearningData.put(bankId, data);
       }
     }
+    
+    // Clear manually added sections to allow re-adding learned content
+    clearManuallyAddedSections();
   }
 
   /// Calculate daily learning progress

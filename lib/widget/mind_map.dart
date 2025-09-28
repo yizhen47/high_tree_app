@@ -194,14 +194,27 @@ class MindMapState<T> extends State<MindMap<T>> with TickerProviderStateMixin im
           child: LaTexT(
             laTeXCode: Text(
               latex,
-              style: const TextStyle(
-                color: Color(0xFF00F5FF), // 统一为科技蓝色
+              style: TextStyle(
+                color: Color(0xFF00F5FF), // 科技蓝色
                 fontSize: 48, // 提高分辨率
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.5,
                 decoration: null,
                 decorationStyle: null,
                 decorationColor: null,
                 decorationThickness: 0.0,
+                shadows: [
+                  Shadow(
+                    offset: Offset.zero,
+                    blurRadius: 12.0,
+                    color: Color(0xFF00F5FF).withOpacity(0.8),
+                  ),
+                  Shadow(
+                    offset: Offset.zero,
+                    blurRadius: 24.0,
+                    color: Color(0xFF00F5FF).withOpacity(0.4),
+                  ),
+                ],
               ),
             ),
           ),

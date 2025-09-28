@@ -679,4 +679,128 @@ class StudyData {
       sharedPreferences?.remove('extractedLogoColor');
     }
   }
+  
+  // 提问习惯统计相关
+  int get askAiCount {
+    return sharedPreferences?.getInt('askAiCount') ?? 0;
+  }
+  
+  set askAiCount(int value) {
+    sharedPreferences?.setInt('askAiCount', value);
+  }
+  
+  int get viewKnowledgeVideoCount {
+    return sharedPreferences?.getInt('viewKnowledgeVideoCount') ?? 0;
+  }
+  
+  set viewKnowledgeVideoCount(int value) {
+    sharedPreferences?.setInt('viewKnowledgeVideoCount', value);
+  }
+  
+  int get bothAiAndVideoCount {
+    return sharedPreferences?.getInt('bothAiAndVideoCount') ?? 0;
+  }
+  
+  set bothAiAndVideoCount(int value) {
+    sharedPreferences?.setInt('bothAiAndVideoCount', value);
+  }
+  
+  // 新增：看知识点的次数
+  int get viewKnowledgeCount {
+    return sharedPreferences?.getInt('viewKnowledgeCount') ?? 0;
+  }
+  
+  set viewKnowledgeCount(int value) {
+    sharedPreferences?.setInt('viewKnowledgeCount', value);
+  }
+  
+  // 新增：问AI+视频解析的次数
+  int get aiAndVideoCount {
+    return sharedPreferences?.getInt('aiAndVideoCount') ?? 0;
+  }
+  
+  set aiAndVideoCount(int value) {
+    sharedPreferences?.setInt('aiAndVideoCount', value);
+  }
+  
+  // 新增：问AI+看知识点的次数  
+  int get aiAndKnowledgeCount {
+    return sharedPreferences?.getInt('aiAndKnowledgeCount') ?? 0;
+  }
+  
+  set aiAndKnowledgeCount(int value) {
+    sharedPreferences?.setInt('aiAndKnowledgeCount', value);
+  }
+  
+  // 新增：视频解析+看知识点的次数
+  int get videoAndKnowledgeCount {
+    return sharedPreferences?.getInt('videoAndKnowledgeCount') ?? 0;
+  }
+  
+  set videoAndKnowledgeCount(int value) {
+    sharedPreferences?.setInt('videoAndKnowledgeCount', value);
+  }
+  
+  // 新增：三个都看的次数
+  int get allThreeCount {
+    return sharedPreferences?.getInt('allThreeCount') ?? 0;
+  }
+  
+  set allThreeCount(int value) {
+    sharedPreferences?.setInt('allThreeCount', value);
+  }
+  
+  // 新增：记录查看知识点行为
+  void recordViewKnowledge() {
+    viewKnowledgeCount = viewKnowledgeCount + 1;
+  }
+  
+  // 记录问AI行为
+  void recordAskAI() {
+    askAiCount = askAiCount + 1;
+  }
+  
+  // 记录查看知识点视频行为
+  void recordViewVideo() {
+    viewKnowledgeVideoCount = viewKnowledgeVideoCount + 1;
+  }
+  
+  // 记录既问AI又看视频的行为
+  void recordBothAiAndVideo() {
+    bothAiAndVideoCount = bothAiAndVideoCount + 1;
+  }
+  
+  // 新增：记录问AI+视频解析的行为
+  void recordAiAndVideo() {
+    aiAndVideoCount = aiAndVideoCount + 1;
+  }
+  
+  // 新增：记录问AI+看知识点的行为
+  void recordAiAndKnowledge() {
+    aiAndKnowledgeCount = aiAndKnowledgeCount + 1;
+  }
+  
+  // 新增：记录视频解析+看知识点的行为
+  void recordVideoAndKnowledge() {
+    videoAndKnowledgeCount = videoAndKnowledgeCount + 1;
+  }
+  
+  // 新增：记录三个都看的行为
+  void recordAllThree() {
+    allThreeCount = allThreeCount + 1;
+  }
+  
+  // 获取提问习惯统计信息
+  Map<String, int> getQuestionHabitStats() {
+    return {
+      'askAiCount': askAiCount,
+      'viewKnowledgeVideoCount': viewKnowledgeVideoCount, 
+      'viewKnowledgeCount': viewKnowledgeCount,
+      'bothAiAndVideoCount': bothAiAndVideoCount,
+      'aiAndVideoCount': aiAndVideoCount,
+      'aiAndKnowledgeCount': aiAndKnowledgeCount,
+      'videoAndKnowledgeCount': videoAndKnowledgeCount,
+      'allThreeCount': allThreeCount,
+    };
+  }
 }
